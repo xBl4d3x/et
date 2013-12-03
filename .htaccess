@@ -1,0 +1,40 @@
+RewriteEngine on
+Options -Indexes +FollowSymlinks
+
+#AddDefaultCharset utf-8
+
+#####################################################
+# GZIP COMPRESSION                                  #
+# required apache modules: deflate, filter, headers #
+#####################################################
+<IfModule mod_deflate.c>
+<IfModule mod_filter.c>
+<IfModule mod_setenvif.c>
+<IfModule mod_headers.c>
+
+	SetOutputFilter DEFLATE
+	AddOutputFilterByType DEFLATE text/html text/css text/plain application/json text/json text/xml application/x-javascript application/x-httpd-php
+	BrowserMatch ^Mozilla/4 gzip-only-text/html
+	BrowserMatch ^Mozilla/4\.0[678] no-gzip
+	BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
+	BrowserMatch \bMSI[E] !no-gzip !gzip-only-text/html
+	SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip
+	Header append Vary User-Agent env=!dont-vary
+
+</IfModule>
+</IfModule>
+</IfModule>
+</IfModule>
+
+# Direct access paths:
+# ==========================================
+# /_docs/
+# /modules/[module_name]/static/
+# /data/public/
+# /error_pages/
+# /scripts/public/
+# /static/
+# /sites/[site_ID]/static/
+# ==========================================
+RewriteRule !(^(_docs|modules/\w+/static|data/public|error_pages|scripts/public|static|sites/\w+/static)/) bootstrap.php
+
