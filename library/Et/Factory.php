@@ -2,6 +2,8 @@
 namespace Et;
 class Factory {
 
+	const ENVIRONMENT_CONFIG_SECTION = "overloaded_classes";
+
 	/**
 	 * array(
 	 *  'Original\Class_Name' => 'Real\Class_Name') ...
@@ -14,6 +16,16 @@ class Factory {
 	 * @var array
 	 */
 	protected static $class_override_check_cache = array();
+
+	public static function initialize(){
+		et_require("Application");
+		$class_override_map = Application::getEnvironment()->getSectionData(static::ENVIRONMENT_CONFIG_SECTION);
+		foreach($class_override_map as $k => $v){
+			if(!isset(static::$class_override_map[$k])){
+				static::$class_override_map[$k] = (string)$v;
+			}
+		}
+	}
 
 	/**
 	 * @param array $class_override_map

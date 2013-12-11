@@ -1,0 +1,227 @@
+<?php
+namespace Et;
+class Http_Request extends Object {
+
+	/**
+	 * @var Http_Request
+	 */
+	protected static $current_request;
+
+	/**
+	 * @var Http_Request_Data_GET
+	 */
+	protected static $GET;
+
+	/**
+	 * @var Http_Request_Data_POST
+	 */
+	protected static $POST;
+
+	/**
+	 * @var Http_Request_Data_SERVER
+	 */
+	protected static $SERVER;
+
+	/**
+	 * @var string
+	 */
+	protected static $raw_request_data;
+
+	/**
+	 * @var bool
+	 */
+	protected static $initialized = false;
+
+
+	/**
+	 * @var Http_Request_URL
+	 */
+	protected $URL;
+
+	/**
+	 * @var string
+	 */
+	protected $request_method;
+
+
+	/**
+	 * @param bool $override_super_global_variables [optional]
+	 */
+	public static function initialize($override_super_global_variables = true){
+
+		if(static::$initialized){
+			return;
+		}
+
+		if(!$_GET instanceof Http_Request_Data_GET){
+			static::$GET = new Http_Request_Data_GET($_GET);
+		}
+
+		if(!$_POST instanceof Http_Request_Data_POST){
+			static::$POST = new Http_Request_Data_POST($_POST);
+		}
+
+		if(!$_SERVER instanceof Http_Request_Data_SERVER){
+			static::$SERVER = new Http_Request_Data_SERVER($_SERVER);
+		}
+
+		if($override_super_global_variables){
+			$_GET = static::$GET;
+			$_POST = static::$POST;
+			$_SERVER = static::$SERVER;
+		}
+
+		static::getCurrentRequest();
+		static::$initialized = true;
+
+	}
+
+	/**
+	 * @param Http_Request_URL|string $URL
+	 * @param null|string $request_method
+	 */
+	function __construct($URL, $request_method){
+		self::assert()->isStringMatching($request_method, '^[A-Z]+$');
+		if(!$URL instanceof Http_Request_URL){
+			$URL = new Http_Request_URL($URL);
+		}
+		$this->URL = $URL;
+		$this->request_method = $request_method;
+	}
+
+
+	/**
+	 * @param bool $include_query_string [optional]
+	 *
+	 * @return string
+	 */
+	function getURL($include_query_string = true){
+		return $this->URL->getURL($include_query_string);
+	}
+
+
+	/**
+	 * @param bool $include_query_string [optional]
+	 *
+	 * @return string
+	 */
+	function getURI($include_query_string = true){
+		return $this->URL->getPath($include_query_string);
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getIsHttpsRequest() {
+		return $this->URL->getIsHttps();
+	}
+
+	/**
+	 * @return Http_Request_Data
+	 */
+	public function getQueryData() {
+		return $this->URL->getQueryData();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getQueryString() {
+		return $this->URL->getQueryString();
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getRequestMethod() {
+		return $this->request_method;
+	}
+
+	/**
+	 * @return Http_Request_URL
+	 */
+	public function getURLInstance() {
+		return $this->URL;
+	}
+
+	/**
+	 * @return Http_Request
+	 */
+	public static function getCurrentRequest(){
+		if(!static::$current_request){
+			static::$current_request = new static(ET_REQUEST_URL_WITH_QUERY, ET_REQUEST_METHOD);
+		}
+		return static::$current_request;
+	}
+
+	/**
+	 * @return Http_Request_Data_GET
+	 */
+	public static function GET(){
+		if(self::$GET === null){
+			self::$GET = new Http_Request_Data_GET();
+		}
+		return self::$GET;
+	}
+
+	/**
+	 * @return Http_Request_Data_POST
+	 */
+	public static function POST(){
+		if(self::$POST === null){
+			self::$POST = new Http_Request_Data_POST();
+		}
+		return self::$POST;
+	}
+
+	/**
+	 * @return Http_Request_Data_SERVER
+	 */
+	public static function SERVER(){
+		if(self::$SERVER === null){
+			self::$SERVER = new Http_Request_Data_SERVER();
+		}
+		return self::$SERVER;
+	}
+
+	/**
+	 * @param string $default_value [optional]
+	 *
+	 * @return string
+	 */
+	public static function getReferer($default_value = ""){
+		return ET_REQUEST_REFERER === "" ? $default_value : ET_REQUEST_REFERER;
+	}
+
+	/**
+	 * @param string $default_value [optional]
+	 *
+	 * @return null|string
+	 */
+	public static function getRemoteIP($default_value = "unknown"){
+		return ET_REQUEST_IP != "unknown"
+				? ET_REQUEST_IP
+				: (string)$default_value;
+	}
+
+	/**
+	 * @param string $default_value [optional]
+	 *
+	 * @return string
+	 */
+	public static function getUserAgent($default_value = "unknown"){
+		return ET_REQUEST_USER_AGENT != "unknown"
+			? ET_REQUEST_USER_AGENT
+			: (string)$default_value;
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function getRawRequestData(){
+		if(static::$raw_request_data === null){
+			static::$raw_request_data = file_get_contents("php://input");
+		}
+		return static::$raw_request_data;
+	}
+}

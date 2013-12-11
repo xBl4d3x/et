@@ -101,10 +101,8 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param array $data
 	 */
 	public function mergeData(array $data){
-		if(!$this->data){
-			$this->data = $data;
-		} else {
-			$this->data = array_merge($this->data, $data);
+		foreach($data as $k => $v){
+			$this->data[$k] = $v;
 		}
 	}
 

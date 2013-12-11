@@ -41,6 +41,9 @@ et_require("Loader_Et");
 Loader::enable();
 Loader::registerLoader(new Loader_Et());
 
+et_require("Factory");
+Factory::initialize();
+
 // =========================================================================================
 // Profiler
 // =========================================================================================
