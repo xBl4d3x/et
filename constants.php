@@ -19,6 +19,7 @@ define("ET_SYSTEM_DATA_PATH", "{$data_path}system/");
 define("ET_TEMPORARY_DATA_PATH", "{$data_path}temporary/");
 
 define("ET_ENVIRONMENTS_PATH", "{$base_path}environments/");
+define("ET_APPLICATIONS_PATH", "{$base_path}applications/");
 define("ET_ERROR_PAGES_PATH", "{$base_path}error_pages/");
 define("ET_LIBRARY_PATH", "{$base_path}library/");
 define("ET_LOGS_PATH", "{$base_path}logs/");
@@ -29,18 +30,13 @@ define("ET_SCRIPTS_PATH", $scripts_path);
 define("ET_PRIVATE_SCRIPTS_PATH", "{$scripts_path}private/");
 define("ET_PUBLIC_SCRIPTS_PATH", "{$scripts_path}public/");
 
-define("ET_SITES_PATH", "{$base_path}sites/");
-
 $static_path = "{$base_path}static/";
 define("ET_STATIC_PATH", $static_path);
 define("ET_STATIC_FILES_PATH", "{$static_path}files/");
 define("ET_STATIC_IMAGES_PATH", "{$static_path}images/");
-define("ET_STATIC_ICONS_PATH", "{$static_path}icons/");
 define("ET_STATIC_JS_PATH", "{$static_path}js/");
 define("ET_STATIC_CSS_PATH", "{$static_path}css/");
 define("ET_STATIC_LIBS_PATH", "{$static_path}libs/");
-
-define("ET_TEMPLATES_PATH", "{$base_path}templates/");
 
 $_ENV['TMP'] = ET_TEMPORARY_DATA_PATH;
 $_ENV['TMPDIR'] = ET_TEMPORARY_DATA_PATH;
@@ -65,6 +61,9 @@ if(!defined("ET_DEFAULT_TIMEZONE")){
 // current platform environment - corresponds to [root]/environments/[some_environment].php
 defined("ET_APPLICATION_ENVIRONMENT") || define("ET_APPLICATION_ENVIRONMENT", "default");
 
+// default application ID - points to [root]/applications/[application_ID]
+defined("ET_DEFAULT_APPLICATION_ID") || define("ET_DEFAULT_APPLICATION_ID", "default");
+
 // default project locale
 defined("ET_DEFAULT_LOCALE") || define("ET_DEFAULT_LOCALE", "en_US");
 
@@ -86,14 +85,14 @@ defined("ET_DEFAULT_CHOWN_USER") || define("ET_DEFAULT_CHOWN_USER", "");
 // default chgrp() group for writable directories and files
 defined("ET_DEFAULT_CHOWN_GROUP") || define("ET_DEFAULT_CHOWN_GROUP", "");
 
-define("ET_REQUEST_IS_CLI", PHP_SAPI == "cli");
+define("ET_CLI_MODE", PHP_SAPI == "cli");
 defined("ET_HTTP_PORT") || define("ET_HTTP_PORT", 80);
 defined("ET_HTTPS_PORT") || define("ET_HTTPS_PORT", 443);
 
 // request method - GET/POST/.../CLI
-define("ET_REQUEST_METHOD", ET_REQUEST_IS_CLI ? "CLI" : (isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : "GET"));
+define("ET_REQUEST_METHOD", ET_CLI_MODE ? "CLI" : (isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : "GET"));
 
-if(ET_REQUEST_IS_CLI){
+if(ET_CLI_MODE){
 	$_SERVER["HTTP_HOST"] = "cli";
 	$php_script = $_SERVER['PHP_SELF'];
 	$script_file = realpath(getcwd() . "/" . $php_script);
@@ -142,7 +141,7 @@ if($base_URI == '//'){
 $full_URI = $_SERVER['REQUEST_URI'];
 list($clear_URI) = explode("?", $full_URI);
 if(substr($clear_URI, -1) != "/" && !preg_match('~\.\w+$~', $clear_URI)){
-	if(ET_REQUEST_IS_CLI){
+	if(ET_CLI_MODE){
 		$clear_URI .= "/";
 	} else {
 		$redirect_URI = $clear_URI . "/";
@@ -167,9 +166,9 @@ define("ET_REQUEST_REFERER", isset($_SERVER['HTTP_REFERER']) ? strip_tags($_SERV
 // server port (usually 80 or 443 for SSL)
 define("ET_REQUEST_PORT",  (int)$port);
 // HTTP request URI including query part
-define("ET_REQUEST_FULL_URI", $full_URI);
+define("ET_REQUEST_URI_WITH_QUERY", $full_URI);
 // HTTP request URI without query part
-define("ET_REQUEST_CLEAR_URI", $clear_URI);
+define("ET_REQUEST_URI_WITHOUT_QUERY", $clear_URI);
 // HTTP request query string
 define("ET_REQUEST_QUERY_STRING", isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : "");
 
@@ -183,9 +182,9 @@ $base_URL_HTTP = !$is_HTTPS ? $base_URL : "http://{$host}".(ET_HTTP_PORT != 80 ?
 $base_URL_HTTPS = $is_HTTPS ? $base_URL : "https://{$host}".(ET_HTTPS_PORT != 443 ? ":" . ET_HTTPS_PORT : "").$base_URI;
 
 // request URL without query part
-define("ET_REQUEST_CLEAR_URL", $scheme_and_host . ET_REQUEST_CLEAR_URI);
+define("ET_REQUEST_URL_WITHOUT_QUERY", $scheme_and_host . ET_REQUEST_URI_WITHOUT_QUERY);
 // request URL with query part
-define("ET_REQUEST_FULL_URL", $scheme_and_host . ET_REQUEST_FULL_URI);
+define("ET_REQUEST_URL_WITH_QUERY", $scheme_and_host . ET_REQUEST_URI_WITH_QUERY);
 
 // base URI (URI to [root])
 define("ET_BASE_URI", $base_URI);
@@ -195,11 +194,12 @@ define("ET_BASE_URL_HTTP", $base_URL_HTTP);
 define("ET_BASE_URL_HTTPS", $base_URL_HTTPS);
 
 // relative request path to base URI without query
-define("ET_REQUEST_CLEAR_PATH", substr(ET_REQUEST_CLEAR_URI, strlen($base_URI) - 1));
+define("ET_REQUEST_PATH_WITHOUT_QUERY", substr(ET_REQUEST_URI_WITHOUT_QUERY, strlen($base_URI) - 1));
 // relative request path to base URI with query
-define("ET_REQUEST_FULL_PATH", substr(ET_REQUEST_FULL_URI, strlen($base_URI) - 1));
+define("ET_REQUEST_PATH_WITH_QUERY", substr(ET_REQUEST_URI_WITH_QUERY, strlen($base_URI) - 1));
 
 define("ET_DOCS_URI", "{$base_URI}_docs/");
+define("ET_APPLICATIONS_URI", "{$base_URI}applications/");
 define("ET_SCRIPTS_URI", "{$base_URI}scripts/");
 define("ET_PUBLIC_SCRIPTS_URI", ET_SCRIPTS_URI . "public/");
 define("ET_SITES_URI", "{$base_URI}sites/");
@@ -208,7 +208,6 @@ $static_URI = "{$base_URI}static/";
 define("ET_STATIC_URI", $static_URI);
 define("ET_STATIC_FILES_URI", "{$static_URI}files/");
 define("ET_STATIC_IMAGES_URI", "{$static_URI}images/");
-define("ET_STATIC_ICONS_URI", "{$static_URI}icons/");
 define("ET_STATIC_LIBS_URI", "{$static_URI}libs/");
 define("ET_STATIC_JS_URI", "{$static_URI}js/");
 define("ET_STATIC_CSS_URI", "{$static_URI}css/");
@@ -219,6 +218,7 @@ define("ET_PUBLIC_DATA_URI", "{$data_URI}public/");
 define("ET_MODULES_URI", "{$base_URI}modules/");
 
 define("ET_DOCS_URL", "{$base_URL}_docs/");
+define("ET_APPLICATIONS_URL", "{$base_URL}applications/");
 define("ET_SCRIPTS_URL", "{$base_URL}scripts/");
 define("ET_PUBLIC_SCRIPTS_URL", ET_SCRIPTS_URL . "public/");
 define("ET_SITES_URL", "{$base_URL}sites/");
@@ -230,7 +230,6 @@ define("ET_STATIC_IMAGES_URL", "{$static_URL}images/");
 define("ET_STATIC_LIBS_URL", "{$static_URL}libs/");
 define("ET_STATIC_JS_URL", "{$static_URL}js/");
 define("ET_STATIC_CSS_URL", "{$static_URL}css/");
-define("ET_STATIC_ICONS_URL", "{$static_URL}icons/");
 
 $data_URL = "{$base_URL}data/";
 define("ET_DATA_URL", $data_URL);

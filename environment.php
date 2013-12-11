@@ -1,5 +1,6 @@
 <?php
 define("ET_APPLICATION_ENVIRONMENT", "default");
+define("ET_DEFAULT_APPLICATION_ID", "default");
 define("ET_DEBUG_MODE", true);
 define("ET_PROFILE_MODE", true);
 define("ET_DEFAULT_LOCALE", "en_US");

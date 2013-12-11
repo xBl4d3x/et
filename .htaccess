@@ -30,11 +30,10 @@ Options -Indexes +FollowSymlinks
 # ==========================================
 # /_docs/
 # /modules/[module_name]/static/
+# /application/[application_ID]/static/
 # /data/public/
-# /error_pages/
 # /scripts/public/
 # /static/
-# /sites/[site_ID]/static/
 # ==========================================
-RewriteRule !(^(_docs|modules/\w+/static|data/public|error_pages|scripts/public|static|sites/\w+/static)/) bootstrap.php
+RewriteRule !(^(_docs|modules/\w+/static|applications/\w+/static|data/public|error_pages|scripts/public|static|sites/\w+/static)/) bootstrap.php
 

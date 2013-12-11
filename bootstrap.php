@@ -5,7 +5,6 @@ require(__DIR__ . "/init.php");
 
 Application::initialize();
 
-
 echo "ET RUNNING [" . Debug::getDuration() . "s]";
 
 Application::end();
