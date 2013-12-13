@@ -8,16 +8,25 @@ class System_Components_Config extends Config {
 	protected static $_environment_config_section = "/system/components";
 
 	/**
+	 * Definition of config properties
+	 *
+	 * @var array
+	 */
+	protected static $_definition = array(
+		"backend_config" => [
+			self::DEF_TYPE => self::TYPE_CONFIG,
+			self::DEF_CONFIG_CLASS => "Et\\System_Components_Backend_Config_Abstract",
+			self::DEF_CONFIG_CLASS_TEMPLATE => "Et\\System_Components_Backend_{TYPE}_Config"
+		]
+	);
+
+	/**
 	 * @var System_Components_Backend_Config_Abstract
 	 */
 	protected $backend_config = array(
-		"backend_type" => "Default"
+		self::CONFIG_TYPE_KEY => "Default"
 	);
-	protected static $__backend_config__definition = array(
-		self::DEF_TYPE => self::TYPE_CONFIG,
-		self::DEF_NAME => "Backend configuration",
-		self::DEF_CONFIG_CLASS => 'Et\System_Components_Backend_Config_Abstract'
-	);
+
 
 	/**
 	 * @return System_Components_Backend_Config_Abstract
@@ -25,12 +34,4 @@ class System_Components_Config extends Config {
 	public function getBackendConfig() {
 		return $this->backend_config;
 	}
-
-	/**
-	 * @return System_Components_Backend_Abstract
-	 */
-	public function getBackend(){
-		return $this->getBackendConfig()->getBackendInstance();
-	}
-
 }

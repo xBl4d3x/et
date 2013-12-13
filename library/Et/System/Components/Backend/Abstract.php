@@ -1,17 +1,19 @@
 <?php
 namespace Et;
 
-abstract class System_Components_Backend_Abstract extends Object_Adapter {
-
-	/**
-	 * @var string
-	 */
-	protected static $__adapter_class_prefix = 'Et\System_Components_Backend';
+abstract class System_Components_Backend_Abstract extends Object {
 
 	/**
 	 * @var System_Components_Backend_Config_Abstract
 	 */
 	protected $config;
+
+	/**
+	 * @param System_Components_Backend_Config_Abstract $config
+	 */
+	function __construct(System_Components_Backend_Config_Abstract $config){
+		$this->config = $config;
+	}
 
 	/**
 	 * @return System_Components_Backend_Config_Abstract

@@ -1,30 +1,29 @@
 <?php
 namespace Et;
-
 class System_Components_Backend_Default_Config extends System_Components_Backend_Config_Abstract {
 
 	/**
 	 * @var string
 	 */
-	protected static $_adapter_type = "Default";
+	protected $_type = "Default";
 
 	/**
 	 * @var string
 	 */
-	protected $storage_dir;
-	protected static $__storage_dir__definition = array(
-		self::DEF_TYPE => self::TYPE_STRING,
-		self::DEF_NAME => "Storage directory"
-	);
+	protected $storage_dir = "";
 
 	/**
 	 * @var System_Dir
 	 */
 	protected $_storage_dir;
 
-	protected function initDefaultValues(){
-		parent::initDefaultValues();
-		$this->storage_dir = ET_SYSTEM_DATA_PATH . "components/";
+	/**
+	 * @return array
+	 */
+	public static function getDefaultValues(){
+		$values = parent::getDefaultValues();
+		$values["storage_dir"] =  ET_SYSTEM_DATA_PATH . "components/";
+		return $values;
 	}
 
 
@@ -38,7 +37,7 @@ class System_Components_Backend_Default_Config extends System_Components_Backend
 		}
 
 		if(!$this->_storage_dir || (string)$this->_storage_dir != $this->storage_dir){
-			$this->_storage_dir = new System_Dir($this->storage_dir);
+			$this->_storage_dir = System::getDir($this->storage_dir);
 			$this->storage_dir = (string)$this->_storage_dir;
 		}
 

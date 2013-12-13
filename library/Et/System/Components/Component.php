@@ -4,18 +4,18 @@ et_require("Object");
 class System_Components_Component extends Object {
 
 	/**
-	 * Component name
+	 * Component id
 	 *
 	 * @var string
 	 */
-	protected $name;
+	protected $ID;
 
 	/**
-	 * Human readable component label
+	 * Human readable component name
 	 *
 	 * @var string
 	 */
-	protected $label = "";
+	protected $name = "";
 
 
 	/**
@@ -52,15 +52,15 @@ class System_Components_Component extends Object {
 	protected $changed = false;
 
 	/**
-	 * @param string $component_name
-	 * @param string $label [optional]
+	 * @param string $component_ID
+	 * @param string $name [optional]
 	 * @param string $description [optional]
 	 */
-	function __construct($component_name, $label = "", $description = ""){
-		$this->assert()->isVariableName($component_name);
+	function __construct($component_ID, $name = "", $description = ""){
+		$this->assert()->isIdentifier($component_ID);
 
-		$this->name = $component_name;
-		$this->setLabel($label);
+		$this->ID = $component_ID;
+		$this->setName($name);
 		$this->setDescription($description);
 		$this->changed = true;
 	}
@@ -84,7 +84,7 @@ class System_Components_Component extends Object {
 	function enable(){
 		if(!$this->isInstalled()){
 			throw new System_Components_Exception(
-				"Component '{$this->name}' is not installed, it can not be enabled",
+				"Component '{$this->ID}' is not installed, it can not be enabled",
 				System_Components_Exception::CODE_NOT_INSTALLED
 			);
 		}
@@ -164,7 +164,7 @@ class System_Components_Component extends Object {
 	function setInstalledVersion($version){
 		if(!$this->installed){
 			throw new System_Components_Exception(
-				"Component '{$this->name}' is not installed, cannot change version number",
+				"Component '{$this->ID}' is not installed, cannot change version number",
 				System_Components_Exception::CODE_NOT_INSTALLED
 			);
 		}
@@ -195,19 +195,19 @@ class System_Components_Component extends Object {
 	/**
 	 * @return string
 	 */
-	public function getLabel() {
-		return $this->label;
+	public function getName() {
+		return $this->name;
 	}
 
 	/**
 	 * @param string $label
 	 */
-	public function setLabel($label) {
+	public function setName($label) {
 		$label = trim($label);
-		if($this->label !== $label){
+		if($this->name !== $label){
 			$this->changed = true;
 		}
-		$this->label = $label;
+		$this->name = $label;
 	}
 
 	/**
@@ -224,14 +224,14 @@ class System_Components_Component extends Object {
 	/**
 	 * @return string
 	 */
-	public function getName() {
-		return $this->name;
+	public function getID() {
+		return $this->ID;
 	}
 
 	/**
 	 * @return string
 	 */
 	function __toString(){
-		return $this->getName();
+		return $this->getID();
 	}
 }

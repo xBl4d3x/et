@@ -89,7 +89,6 @@ class Http_Request extends Object {
 		$this->request_method = $request_method;
 	}
 
-
 	/**
 	 * @param bool $include_query_string [optional]
 	 *
@@ -155,33 +154,48 @@ class Http_Request extends Object {
 	}
 
 	/**
-	 * @return Http_Request_Data_GET
+	 * @param null|string $path [optional]
+	 * @param null|mixed $default_value [optional]
+	 * @return Http_Request_Data_GET|mixed
 	 */
-	public static function GET(){
+	public static function GET($path = null, $default_value = null){
 		if(self::$GET === null){
 			self::$GET = new Http_Request_Data_GET();
 		}
-		return self::$GET;
+		if($path === null){
+			return self::$GET;
+		}
+		return self::$GET->getScalar($path, $default_value);
 	}
 
 	/**
-	 * @return Http_Request_Data_POST
+	 * @param null|string $path [optional]
+	 * @param null|mixed $default_value [optional]
+	 * @return Http_Request_Data_POST|mixed
 	 */
-	public static function POST(){
+	public static function POST($path = null, $default_value = null){
 		if(self::$POST === null){
 			self::$POST = new Http_Request_Data_POST();
 		}
-		return self::$POST;
+		if($path === null){
+			return self::$POST;
+		}
+		return self::$POST->getScalar($path, $default_value);
 	}
 
 	/**
-	 * @return Http_Request_Data_SERVER
+	 * @param null|string $path [optional]
+	 * @param null|mixed $default_value [optional]
+	 * @return Http_Request_Data_SERVER|mixed
 	 */
-	public static function SERVER(){
+	public static function SERVER($path = null, $default_value = null){
 		if(self::$SERVER === null){
 			self::$SERVER = new Http_Request_Data_SERVER();
 		}
-		return self::$SERVER;
+		if($path === null){
+			return self::$SERVER;
+		}
+		return self::$SERVER->getScalar($path, $default_value);
 	}
 
 	/**

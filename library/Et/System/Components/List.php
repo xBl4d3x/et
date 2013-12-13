@@ -98,7 +98,7 @@ class System_Components_List extends Object implements \Countable,\Iterator,\Arr
 	 * @param System_Components_Component $component
 	 */
 	function addComponent(System_Components_Component $component){
-		$this->components[$component->getName()] = $component;
+		$this->components[$component->getID()] = $component;
 		$this->sortComponents();
 	}
 

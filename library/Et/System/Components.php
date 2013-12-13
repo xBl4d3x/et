@@ -27,43 +27,48 @@ class System_Components extends Object {
 	 * @param System_Components_Backend_Abstract $backend
 	 */
 	public static function setBackend(System_Components_Backend_Abstract $backend) {
-		self::$backend = $backend;
+		static::$backend = $backend;
 	}
 
 	/**
 	 * @return System_Components_Backend_Abstract
 	 */
 	public static function getBackend() {
-		if(!self::$backend){
-			self::$backend = self::getConfig()->getBackendConfig()->getBackendInstance();
+		if(!static::$backend){
+			$backend_config = static::getConfig()->getBackendConfig();
+			$backend_class = Factory::getClassName(
+									"Et\\System_Components_Backend_{$backend_config->getType()}",
+									"Et\\System_Components_Backend_Abstract"
+							);
+			static::$backend = new $backend_class($backend_config);
 		}
-		return self::$backend;
+		return static::$backend;
 	}
 
 	/**
 	 * @param System_Components_Config $config
 	 */
 	public static function setConfig(System_Components_Config $config) {
-		self::$config = $config;
-		self::$backend = null;
+		static::$config = $config;
+		static::$backend = null;
 	}
 
 	/**
 	 * @return System_Components_Config
 	 */
 	public static function getConfig() {
-		if(!self::$config){
-			self::$config = System_Components_Config::getFromApplicationConfig();
+		if(!static::$config){
+			static::$config = System_Components_Config::getFromEnvironmentConfig();
 		}
-		return self::$config;
+		return static::$config;
 	}
 	
 	protected static function registerSave(){
-		if(self::$_save_registered){
+		if(static::$_save_registered){
 			return;
 		}
 		Application::addOnEndCallback(array(get_called_class(), "saveComponents"));
-		self::$_save_registered = true;
+		static::$_save_registered = true;
 	}
 
 
@@ -73,21 +78,21 @@ class System_Components extends Object {
 	 * @throws System_Components_Exception when load failed (i.e. backend failure)
 	 */
 	public static function getComponentsList($components_type){
-		if(isset(self::$components[$components_type])){
-			return self::$components[$components_type];
+		if(isset(static::$components[$components_type])){
+			return static::$components[$components_type];
 		}		
 		
 		try {
 			
-			$list = self::getBackend()->loadComponents($components_type);
+			$list = static::getBackend()->loadComponents($components_type);
 			if(!$list){
 				$list = new System_Components_List($components_type);
 			}
-			self::$components[$components_type] = $list;
+			static::$components[$components_type] = $list;
 			
-			self::registerSave();
+			static::registerSave();
 			
-			return self::$components[$components_type];
+			return static::$components[$components_type];
 			
 		} catch(\Exception $e){
 			
@@ -105,7 +110,7 @@ class System_Components extends Object {
 	 * @return System_Components_Component[]
 	 */
 	public static function getComponents($components_type){
-		return self::getComponentsList($components_type)->getComponents();
+		return static::getComponentsList($components_type)->getComponents();
 	}
 
 	/**
@@ -113,7 +118,7 @@ class System_Components extends Object {
 	 * @return System_Components_Component[]
 	 */
 	public static function getInstalledComponents($components_type){
-		return self::getComponentsList($components_type)->getInstalledComponents();
+		return static::getComponentsList($components_type)->getInstalledComponents();
 	}
 
 	/**
@@ -121,7 +126,7 @@ class System_Components extends Object {
 	 * @return System_Components_Component[]
 	 */
 	public static function getEnabledComponents($components_type){
-		return self::getComponentsList($components_type)->getEnabledComponents();
+		return static::getComponentsList($components_type)->getEnabledComponents();
 	}
 	
 
@@ -131,7 +136,7 @@ class System_Components extends Object {
 	 * @return bool|System_Components_Component
 	 */
 	public static function getComponent($component_type, $component_name){
-		return self::getComponentsList($component_type)->getComponent($component_name);
+		return static::getComponentsList($component_type)->getComponent($component_name);
 	}
 
 	/**
@@ -140,7 +145,7 @@ class System_Components extends Object {
 	 * @return bool
 	 */
 	public static function getComponentExists($component_type, $component_name){
-		return self::getComponentsList($component_type)->getComponentExists($component_name);	
+		return static::getComponentsList($component_type)->getComponentExists($component_name);	
 	}
 
 	/**
@@ -149,7 +154,7 @@ class System_Components extends Object {
 	 * @return bool
 	 */
 	public static function getComponentIsInstalled($component_type, $component_name){
-		return self::getComponentsList($component_type)->getComponentIsInstalled($component_name);
+		return static::getComponentsList($component_type)->getComponentIsInstalled($component_name);
 	}
 
 	/**
@@ -158,7 +163,7 @@ class System_Components extends Object {
 	 * @return bool
 	 */
 	public static function getComponentIsEnabled($component_type, $component_name){
-		return self::getComponentsList($component_type)->getComponentIsEnabled($component_name);
+		return static::getComponentsList($component_type)->getComponentIsEnabled($component_name);
 	}
 
 	/**
@@ -167,7 +172,7 @@ class System_Components extends Object {
 	 * @return bool
 	 */
 	public static function removeComponent($component_type, $component_name){
-		return self::getComponentsList($component_type)->removeComponent($component_name);
+		return static::getComponentsList($component_type)->removeComponent($component_name);
 	}
 
 	/**
@@ -175,10 +180,10 @@ class System_Components extends Object {
 	 * @return bool
 	 */
 	public static function removeComponents($components_type){
-		if(isset(self::$components[$components_type])){
-			unset(self::$components[$components_type]);
+		if(isset(static::$components[$components_type])){
+			unset(static::$components[$components_type]);
 		}
-		return self::getBackend()->removeComponents($components_type);
+		return static::getBackend()->removeComponents($components_type);
 	}
 
 
@@ -190,7 +195,7 @@ class System_Components extends Object {
 	 * @return System_Components_Component
 	 */
 	public static function createComponent($component_type, $component_name, $label = "", $description = ""){
-		return self::getComponentsList($component_type)->createComponent($component_name, $label, $description);
+		return static::getComponentsList($component_type)->createComponent($component_name, $label, $description);
 	}
 
 	/**
@@ -202,15 +207,15 @@ class System_Components extends Object {
 	 * @return System_Components_Component
 	 */
 	public static function getOrCreateComponent($component_type, $component_name, $label = "", $description = "", $store_component = true){
-		return self::getComponentsList($component_type)->getOrCreateComponent($component_name, $label, $description, $store_component);
+		return static::getComponentsList($component_type)->getOrCreateComponent($component_name, $label, $description, $store_component);
 	}
 	
 	
 
 	public static function saveComponents(){
-		foreach(self::$components as $list){
+		foreach(static::$components as $list){
 			if($list->hasChanged()){
-				self::getBackend()->storeComponents($list);
+				static::getBackend()->storeComponents($list);
 			}
 		}
 	}
@@ -220,14 +225,14 @@ class System_Components extends Object {
 	 * @return System_Components_List[]
 	 */
 	public static function getAllComponentsLists(){
-		$backend = self::getBackend();
+		$backend = static::getBackend();
 		$types = $backend->getComponentsTypes();
 		foreach($types as $type){
-			if(!isset(self::$components[$type])){
-				self::$components[$type] = self::getComponentsList($type);
+			if(!isset(static::$components[$type])){
+				static::$components[$type] = static::getComponentsList($type);
 			}
 		}
-		return self::$components;
+		return static::$components;
 	}
 
 	/**
@@ -235,7 +240,7 @@ class System_Components extends Object {
 	 */
 	public static function getAllComponents(){
 		$output = array();
-		$lists = self::getAllComponentsLists();
+		$lists = static::getAllComponentsLists();
 		foreach($lists as $components_type => $components){
 			$output[$components_type] = array();
 			foreach($components as $component_name => $component){

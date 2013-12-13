@@ -102,12 +102,21 @@ abstract class Config extends Object {
 	 */
 	function __construct(array $properties_values = null){
 		$this->getDefinition();
+		if(!$properties_values){
+			$properties_values = array();
+		}
+
 		$default_values = $this->getDefaultValues();
 		foreach($default_values as $k => $v){
+			if(!is_scalar($v) && !isset($properties_values[$k])){
+				$properties_values[$k] = $v;
+				continue;
+			}
 			$this->{$k} = $v;
 		}
 
-		if($properties_values !== null){
+
+		if($properties_values){
 			$this->setPropertiesValues($properties_values);
 		}
 	}
@@ -587,6 +596,14 @@ abstract class Config extends Object {
 		
 		$data = Application::getEnvironment()->getSectionData($custom_environment_config_section);
 		return new static($data);
+	}
+
+	/**
+	 * @param array|null $properties_values [optional]
+	 * @return static|\Et\Config
+	 */
+	public static function getInstance(array $properties_values = null){
+		return new static($properties_values);
 	}
 	
 

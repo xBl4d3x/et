@@ -4,11 +4,6 @@ namespace Et;
 class System_Components_Backend_Default extends System_Components_Backend_Abstract {
 
 	/**
-	 * @var string
-	 */
-	protected static $_adapter_type = "Default";
-
-	/**
 	 * @var System_Components_Backend_Default_Config
 	 */
 	protected $config;
@@ -53,7 +48,7 @@ class System_Components_Backend_Default extends System_Components_Backend_Abstra
 	 */
 	function getComponentsTypes() {
 		$types = $this->storage_dir->listFiles(function(System_File $file){
-			return (bool)preg_match('~^\w+\.components$~', $file->getName());
+			return (bool)preg_match('~^[\w\-]+\.components$~', $file->getName());
 		});
 		return array_keys($types);
 	}
@@ -63,8 +58,8 @@ class System_Components_Backend_Default extends System_Components_Backend_Abstra
 	 * @return System_File
 	 */
 	function getComponentsFile($component_type){
-		$this->assert()->isVariableName($component_type);
-		return new System_File((string)$this->storage_dir . $component_type . ".components");
+		$this->assert()->isIdentifier($component_type);
+		return System::getFile((string)$this->storage_dir . $component_type . ".components");
 	}
 
 	/**
