@@ -1,46 +1,30 @@
 <?php
 namespace Et;
-et_require("Object");
-class System_Signals extends Object {
-
-	/**
-	 * @var System_Signals
-	 */
-	protected static $instance;
+class System_Signals {
 
 	/**
 	 * @var callable[]
 	 */
-	protected $subscriptions = array();
+	protected static $subscriptions = array();
 
 	/**
 	 * @var array[]
 	 */
-	protected $identifiers_pointers = array();
-
-	/**
-	 * @return System_Signals
-	 */
-	public static function getInstance(){
-		if(!static::$instance){
-			static::$instance = new static();
-		}
-		return static::$instance;
-	}
+	protected static $identifiers_pointers = array();
 
 	/**
 	 * @param string $signal_name
 	 * @param callable $signal_handler Callback like function(System_Signals_Signal $signal), if returns FALSE, further signal propagation will be stopped
 	 * @return string Subscription identifier
 	 */
-	public function subscribe($signal_name, callable $signal_handler){
-		if(!isset($this->identifiers_pointers[$signal_name])){
-			$this->identifiers_pointers[$signal_name] = array();
+	public static function subscribe($signal_name, callable $signal_handler){
+		if(!isset(static::$identifiers_pointers[$signal_name])){
+			static::$identifiers_pointers[$signal_name] = array();
 		}
 
 		$subscription_identifier = uniqid("{$signal_name}:");
-		$this->subscriptions[$subscription_identifier] = $signal_handler;
-		$this->identifiers_pointers[$signal_name][$subscription_identifier] = $subscription_identifier;
+		static::$subscriptions[$subscription_identifier] = $signal_handler;
+		static::$identifiers_pointers[$signal_name][$subscription_identifier] = $subscription_identifier;
 
 		return $subscription_identifier;
 	}
@@ -50,15 +34,15 @@ class System_Signals extends Object {
 	 * @param string $subscription_identifier
 	 * @return bool
 	 */
-	public function unsubscribe($subscription_identifier){
-		if(!isset($this->subscriptions[$subscription_identifier])){
+	public static function unsubscribe($subscription_identifier){
+		if(!isset(static::$subscriptions[$subscription_identifier])){
 			return false;
 		}
 
-		unset($this->subscriptions[$subscription_identifier]);
+		unset(static::$subscriptions[$subscription_identifier]);
 
 		list($signal_name) = explode(":", $subscription_identifier);
-		unset($this->identifiers_pointers[$signal_name][$subscription_identifier]);
+		unset(static::$identifiers_pointers[$signal_name][$subscription_identifier]);
 
 		return true;
 	}
@@ -68,15 +52,15 @@ class System_Signals extends Object {
 	 * @return int How many callbacks it passed
 	 * @throws System_Signals_Exception
 	 */
-	public function publish(System_Signals_Signal $signal){
+	public static function publish(System_Signals_Signal $signal){
 		$signal_name = $signal->getSignalName();
-		if(!isset($this->identifiers_pointers[$signal_name])){
+		if(!isset(static::$identifiers_pointers[$signal_name])){
 			return 0;
 		}
 
 		$passed = 0;
-		foreach($this->identifiers_pointers[$signal_name] as $subscription_identifier){
-			$callback = $this->subscriptions[$subscription_identifier];
+		foreach(static::$identifiers_pointers[$signal_name] as $subscription_identifier){
+			$callback = static::$subscriptions[$subscription_identifier];
 			if(!is_callable($callback)){
 				continue;
 			}

@@ -3,6 +3,23 @@ namespace Et;
 class Data {
 
 	/**
+	 * @param mixed $locale
+	 * @return Locales_Locale
+	 */
+	public static function getLocale($locale){
+		return Locales::getLocale($locale);
+	}
+
+	/**
+	 * @param $date
+	 * @param null $timezone
+	 * @return Locales_Date
+	 */
+	public static function getDate($date, $timezone = null){
+		return Locales_Date::getInstance($date, $timezone);
+	}
+
+	/**
 	 * @param bool $deep_object_clone [optional]
 	 * @return static
 	 */
