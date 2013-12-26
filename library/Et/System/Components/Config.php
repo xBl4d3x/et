@@ -5,7 +5,7 @@ class System_Components_Config extends Config {
 	/**
 	 * @var string
 	 */
-	protected static $_environment_config_section = "/system/components";
+	protected static $_application_config_section = "/system/components";
 
 	/**
 	 * Definition of config properties

@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('DB_Query_Column');
 class DB_Query_Select_Column extends DB_Query_Column {
 
 	/**
@@ -37,24 +36,4 @@ class DB_Query_Select_Column extends DB_Query_Column {
 		$this->select_as = $select_as;
 	}
 
-	/**
-	 * @param DB_Adapter_Abstract $db
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db){
-		$output = parent::toSQL($db);
-		$select_as = $this->getSelectAs();
-		if($select_as){
-			$output .= " AS {$db->quoteColumnName($select_as)}";
-		}
-
-		return $output;
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		return "{$this->getTableName()}.{$this->getColumnName()}" . ($this->getSelectAs() ? " AS {$this->getSelectAs()}" : "");
-	}
 }

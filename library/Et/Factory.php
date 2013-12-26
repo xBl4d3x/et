@@ -19,7 +19,7 @@ class Factory {
 
 	public static function initialize(){
 		et_require("Application");
-		$class_override_map = Application::getEnvironment()->getSectionData(static::ENVIRONMENT_CONFIG_SECTION);
+		$class_override_map = Application::getConfig()->getSectionData(static::ENVIRONMENT_CONFIG_SECTION);
 		foreach($class_override_map as $k => $v){
 			if(!isset(static::$class_override_map[$k])){
 				static::$class_override_map[$k] = (string)$v;

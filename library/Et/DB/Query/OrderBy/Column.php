@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_OrderBy_Column extends DB_Query_Column {
 
 	/**
@@ -35,20 +34,5 @@ class DB_Query_OrderBy_Column extends DB_Query_Column {
 	public function setOrderHow($order_how) {
 		DB_Query::checkOrderHow($order_how);
 		$this->order_how = $order_how;
-	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null){
-		return parent::toSQL($db) . " {$this->getOrderHow()}";
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		return parent::__toString() . " {$this->getOrderHow()}";
 	}
 }

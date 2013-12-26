@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Expression extends Object {
 	
 	/**

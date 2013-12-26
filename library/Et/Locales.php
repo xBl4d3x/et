@@ -540,5 +540,39 @@ class Locales extends Object {
 		return static::getTimezone(\date_default_timezone_get());
 	}
 
+	/**
+	 * @param null|string|int|\DateTime $date [optional]
+	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
+	 * @return \Et\Locales_Date
+	 */
+	public static function getDate($date, $timezone = null){
+		return new Locales_Date($date, $timezone);
+	}
+
+	/**
+	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
+	 * @return Locales_Date
+	 */
+	public static function getDateToday($timezone = null){
+		return new Locales_Date("today", $timezone);
+	}
+
+	/**
+	 * @param null|string|int|\DateTime $datetime [optional]
+	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
+	 * @return \Et\Locales_DateTime
+	 */
+	public static function getDateTime($datetime, $timezone = null){
+		return new Locales_DateTime($datetime, $timezone);
+	}
+
+	/**
+	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
+	 * @return \Et\Locales_DateTime
+	 */
+	public static function getDateTimeNow($timezone = null){
+		return new Locales_DateTime("now", $timezone);
+	}
+
 
 }

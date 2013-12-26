@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Select_Expression extends Object {
 
 	/**
@@ -52,27 +51,5 @@ class DB_Query_Select_Expression extends Object {
 	 */
 	function getExpression(){
 		return $this->expression;
-	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db){
-		$output = (string)$this->getExpression();
-		$select_as = $this->getSelectAs();
-
-		if($select_as){
-			$output .= " AS {$db->quoteColumnName($select_as)}";
-		}
-
-		return $output;
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		return (string)$this->getExpression() . ($this->getSelectAs() ? " AS {$this->getSelectAs()}" : "");
 	}
 }

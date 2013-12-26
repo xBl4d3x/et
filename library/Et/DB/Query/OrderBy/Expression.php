@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_OrderBy_Expression extends Object {
 
 
@@ -54,17 +53,4 @@ class DB_Query_OrderBy_Expression extends Object {
 		return $this->expression;
 	}
 
-	/**
-	 * @return string
-	 */
-	function toSQL(){
-		return  (string)$this->getExpression() . " {$this->getOrderHow()}";
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		return "{$this->getExpression()} {$this->getOrderHow()}";
-	}
 }

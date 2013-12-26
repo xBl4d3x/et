@@ -20,6 +20,16 @@ class DB_Query extends Object {
 	protected $main_table_name;
 
 	/**
+	 * @var bool
+	 */
+	protected $check_relations_before_build = true;
+
+	/**
+	 * @var bool
+	 */
+	protected $allow_single_table_build_simplification = true;
+
+	/**
 	 * @var string
 	 */
 	protected $default_join_type = self::JOIN_TYPE_LEFT;
@@ -218,7 +228,7 @@ class DB_Query extends Object {
 	function whereKeyEquals(DB_Table_Key $key, array $other_columns_values = array()){
 		if(!$key->hasAllColumnValues()){
 			throw new DB_Query_Exception(
-				"Cannot compare key with no values defined",
+				"Cannot compare key with no or not all values defined",
 				DB_Query_Exception::CODE_INVALID_EXPRESSION
 			);
 		}
@@ -420,6 +430,17 @@ class DB_Query extends Object {
 	}
 
 	/**
+	 * @param int $page
+	 * @param int $items_per_page
+	 * @return DB_Query|static
+	 */
+	function setPage($page, $items_per_page){
+		$page = max(1, (int)$page);
+		$items_per_page = max(1, (int)$items_per_page);
+		return $this->limit($items_per_page, ($page - 1) * $items_per_page);
+	}
+
+	/**
 	 * @param int|null $limit
 	 * @return static|DB_Query
 	 */
@@ -574,8 +595,6 @@ class DB_Query extends Object {
 			return;
 		}
 
-
-
 		if(!$this->relations || $this->relations->isEmpty()){
 			throw new DB_Query_Exception(
 				"No relations defined, cannot resolve relations with following tables: " . implode(", ", $unresolved_tables),
@@ -599,48 +618,38 @@ class DB_Query extends Object {
 
 	}
 
-	function __toString(){
-
-		$this->checkRelations();
-
-		$output = "SELECT\n";
-
-		if(!$this->select || $this->select->isEmpty()){
-			$output .= "\t*\n";
-		} else {
-			$output .= "\t" . str_replace("\n", "\n\t", (string)$this->select) . "\n";
-		}
-
-		$output .= "FROM\n\t{$this->getMainTableName()}";
-
-		if($this->relations && !$this->relations->isEmpty()){
-			$output .= "\n\t" . str_replace("\n", "\n\t", (string)$this->relations);
-		}
-
-		if($this->where && !$this->where->isEmpty()){
-			$output .= "\nWHERE\n\t" . str_replace("\n", "\n\t", (string)$this->where);
-		}
-
-		if($this->group_by && !$this->group_by->isEmpty()){
-			$output .= "\nGROUP BY\n\t" . str_replace("\n", "\n\t", (string)$this->group_by);
-		}
-
-		if($this->having && !$this->having->isEmpty()){
-			$output .= "\nHAVING\n\t" . str_replace("\n", "\n\t", (string)$this->having);
-		}
-
-		if($this->order_by && !$this->order_by->isEmpty()){
-			$output .= "\nORDER BY\n\t" . str_replace("\n", "\n\t", (string)$this->order_by);
-		}
-
-		if($this->limit !== null){
-			$output .= "\nLIMIT {$this->limit}";
-		}
-
-		if($this->offset !== null){
-			$output .= "\nOFFSET {$this->offset}";
-		}
-
-		return $output;
+	/**
+	 * Check if all tables have relations before trying to build query
+	 *
+	 * @param boolean $check_relations_before_build
+	 */
+	public function setCheckRelationsBeforeBuild($check_relations_before_build) {
+		$this->check_relations_before_build = (bool)$check_relations_before_build;
 	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getCheckRelationsBeforeBuild() {
+		return $this->check_relations_before_build;
+	}
+
+	/**
+	 * Allow to remove main table name from built query when only 1 is present in query?
+	 *
+	 * @param boolean $allow_build_simplification
+	 */
+	public function setAllowSingleTableBuildSimplification($allow_build_simplification) {
+		$this->allow_single_table_build_simplification = (bool)$allow_build_simplification;
+	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getAllowSingleTableBuildSimplification() {
+		return $this->allow_single_table_build_simplification;
+	}
+
+
+
 }

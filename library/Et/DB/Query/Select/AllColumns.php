@@ -21,33 +21,9 @@ class DB_Query_Select_AllColumns extends Object {
 	}
 
 	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db){
-
-		if(!$this->getTableName()){
-			return "*";
-		}
-
-		return $db->quoteTableName($this->getTableName()) . ".*";
-	}
-
-	/**
 	 * @return null|string
 	 */
 	function getTableName(){
 		return $this->table_name;
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		if($this->getTableName()){
-			return $this->getTableName() . ".*";
-		} else {
-			return "*";
-		}
 	}
 }

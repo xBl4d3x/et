@@ -9,7 +9,7 @@ class Session_Config extends Config {
 	/**
 	 * @var string
 	 */
-	protected static $_environment_config_section = "session";
+	protected static $_application_config_section = "session";
 
 	/**
 	 * Definition of config properties

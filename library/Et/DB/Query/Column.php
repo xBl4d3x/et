@@ -16,12 +16,4 @@ class DB_Query_Column extends DB_Table_Column {
 
 		$query->addTableToQuery($table_name);
 	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db){
-		return $db->quoteColumnName("{$this->getTableName()}.{$this->getColumnName()}");
-	}
 }

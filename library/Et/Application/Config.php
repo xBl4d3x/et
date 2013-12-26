@@ -1,7 +1,7 @@
 <?php
 namespace Et;
 et_require("Data_Array");
-class Application_Environment extends Object {
+class Application_Config extends Object {
 
 	/**
 	 * @var string
@@ -49,7 +49,7 @@ class Application_Environment extends Object {
 	 * @return \Et\Data_Array
 	 */
 	protected function getConfigSectionsFromFile(){
-		$fp = ET_ENVIRONMENTS_PATH . $this->getName() . ".php";
+		$fp = ET_CONFIGS_PATH . $this->getName() . ".php";
 		try {
 
 			$config_data = new Data_Array();

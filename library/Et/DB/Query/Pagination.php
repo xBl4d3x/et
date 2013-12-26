@@ -8,8 +8,8 @@ class DB_Query_Pagination extends Data_Pagination_Abstract {
 	const FETCH_ROWS = "fetch_rows";
 	const FETCH_ROWS_ASSOCIATIVE = "fetch_rows_associative";
 
-	const ORDER_ASC = DB_Query::ORDER_ASC;
-	const ORDER_DESC = DB_Query::ORDER_DESC;
+	const SORT_ASC = DB_Query::ORDER_ASC;
+	const SORT_DESC = DB_Query::ORDER_DESC;
 
 
 	/**
@@ -152,7 +152,7 @@ class DB_Query_Pagination extends Data_Pagination_Abstract {
 
 		switch($fetch_type){
 			case self::FETCH_COLUMN:
-				return $db->fetchColumnValues($query);
+				return $db->fetchColumn($query);
 				break;
 			case self::FETCH_PAIRS:
 				return $db->fetchPairs($query);
@@ -171,7 +171,7 @@ class DB_Query_Pagination extends Data_Pagination_Abstract {
 	 */
 	protected function prepareFetchQuery($page){
 		$offset = $this->calculateOffsetFrom($page, $this->getItemsPerPage(), $this->getItemsCount());
-		$order_by = $this->getOrderBy(true);
+		$order_by = $this->getSortBy(true);
 
 		$fetch_query = $this->getQuery()->cloneInstance()->setDB($this->getDB());
 		$fetch_query->getOrderBy()->addOrderByColumns($order_by);

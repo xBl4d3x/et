@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Where_ExpressionCompare extends Object {
 
 	use DB_Query_Where_CompareTrait;
@@ -37,29 +36,4 @@ class DB_Query_Where_ExpressionCompare extends Object {
 	function getExpression(){
 		return $this->expression;
 	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null){
-		if($this->compare_operator !== null){
-			return (string)$this->getExpression() . " " . $this->getComparePartAsSQL($db);
-		} else {
-			return (string)$this->getExpression();
-		}
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		if($this->compare_operator !== null){
-			return (string)$this->getExpression() . " " . $this->getComparePartAsString();
-		} else {
-			return (string)$this->getExpression();
-		}
-
-	}
-
 }

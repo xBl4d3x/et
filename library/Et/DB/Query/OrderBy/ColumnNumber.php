@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_OrderBy_ColumnNumber extends Object {
 
 	/**
@@ -44,21 +43,5 @@ class DB_Query_OrderBy_ColumnNumber extends Object {
 	 */
 	public function getColumnNumber() {
 		return $this->column_number;
-	}
-
-
-
-	/**
-	 * @return string
-	 */
-	function toSQL(){
-		return "{$this->getColumnNumber()} {$this->getOrderHow()}";
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		return "{$this->getColumnNumber()} {$this->getOrderHow()}";
 	}
 }

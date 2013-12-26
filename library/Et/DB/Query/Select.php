@@ -1,10 +1,9 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Select extends Object implements \Iterator,\Countable {
 
 	/**
-	 * @var DB_Query_Select_AllColumns[]|DB_Query_Select_Column[]|DB_Query_Select_Count[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
+	 * @var DB_Query_Select_AllColumns[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
 	 */
 	protected $expressions = array();
 
@@ -87,7 +86,7 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 			$expression = trim($expression);
 
 			// column
-			if(preg_match('~^\w+(\.\w+)?$~', $expression)){
+			if(preg_match('~^\w+(?:\.\w+)?$~', $expression)){
 				$this->addColumn($expression, null, $select_as);
 				continue;
 			}
@@ -104,14 +103,9 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 			}
 						
 			// COUNT
-			if(preg_match('~COUNT\(([\w\*\.]+)\)~is', $expression, $m)){
+			if(preg_match('~COUNT\((\*|\w+(?:\.\w+)?)\)~is', $expression, $m)){
 				list(, $expression) = $m;
-				if(strpos($expression, ".") !== false){
-					list($table_name, $column) = explode(".", $expression, 2);
-					$this->addCount($column, $table_name, $select_as);
-				} else {
-					$this->addCount($expression, null, $select_as);
-				}
+				$this->addCount($expression, null, $select_as);
 				continue;
 			}
 
@@ -126,7 +120,7 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 	}
 
 	/**
-	 * @return DB_Query_OrderBy_Column[]|DB_Query_OrderBy_ColumnNumber[]|DB_Query_OrderBy_Expression[]
+	 * @return DB_Query_Select_AllColumns[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
 	 */
 	function getExpressions(){
 		return $this->expressions;
@@ -141,6 +135,18 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 	function addColumn($column_name, $table_name = null, $select_as = null){
 		$column = new DB_Query_Select_Column($this->getQuery(), $column_name, $table_name, $select_as);
 		$this->expressions[] = $column;
+		return $this;
+	}
+
+
+	/**
+	 * @param string $function_name
+	 * @param array|DB_Table_Column[]|DB_Expression[]|DB_Query[] $function_arguments [optional]
+	 * @param null|string $select_as
+	 * @return static
+	 */
+	function addFunction($function_name, array $function_arguments = array(), $select_as = null){
+		$this->expressions[] = new DB_Query_Select_Function($this->getQuery(), $function_name, $function_arguments, $select_as);
 		return $this;
 	}
 
@@ -162,9 +168,11 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 	 * @param null|string $select_as [optional]
 	 * @return static
 	 */
-	function addCount($column_name = DB_Query_Select_Count::COUNT_ALL, $table_name = null, $select_as = null){
-		$column = new DB_Query_Select_Count($this->getQuery(), $column_name, $table_name, $select_as);
-		$this->expressions[] = $column;
+	function addCount($column_name = "*", $table_name = null, $select_as = null){
+		if($column_name != "*"){
+			$column_name = $this->query->column($column_name, $table_name);
+		}
+		$this->expressions[] = new DB_Query_Select_Function_COUNT($this->getQuery(), $column_name, $select_as);
 		return $this;
 	}
 

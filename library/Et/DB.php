@@ -97,6 +97,33 @@ class DB extends Object {
 	}
 
 	/**
+	 * @param string $main_table_name
+	 * @param array $select_expressions [optional]
+	 * @param array $where_expressions [optional]
+	 * @param array $order_by [optional]
+	 * @param null|int $limit [optional]
+	 * @param null|int $offset [optional]
+	 * @return static|DB_Query
+	 */
+	public static function query($main_table_name,
+	                               array $select_expressions = array(),
+	                               array $where_expressions = array(),
+	                               array $order_by = array(),
+	                               $limit = null,
+	                               $offset = null
+
+	){
+		return DB_Query::getInstance(
+			$main_table_name,
+			$select_expressions,
+			$where_expressions,
+			$order_by,
+			$limit,
+			$offset
+		);
+	}
+
+	/**
 	 * @param string $column_name
 	 * @throws DB_Exception
 	 */

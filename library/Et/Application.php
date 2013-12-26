@@ -4,9 +4,9 @@ et_require('Object');
 class Application extends Object {
 
 	/**
-	 * @var Application_Environment
+	 * @var Application_Config
 	 */
-	protected static $environment;
+	protected static $config;
 
 	/**
 	 * @var array
@@ -44,38 +44,38 @@ class Application extends Object {
 	protected static $user_timezone;
 
 	/**
-	 * @param string|Application_Environment|null $environment [optional] NULL = ET_APPLICATION_ENVIRONMENT constant content
+	 * @param string|Application_Config|null $environment [optional] NULL = ET_APPLICATION_ENVIRONMENT constant content
 	 */
 	public static function initialize($environment = null){
 		if(!$environment){
 			$environment = ET_APPLICATION_ENVIRONMENT;
 		}
 
-		et_require("Application_Environment");
-		if(!$environment instanceof Application_Environment){
-			$environment = new Application_Environment((string)$environment);
+		et_require("Application_Config");
+		if(!$environment instanceof Application_Config){
+			$environment = new Application_Config((string)$environment);
 		}
 
-		static::$environment = $environment;
+		static::$config = $environment;
 		register_shutdown_function(array(get_called_class(), "end"));
 
 	}
 
 	/**
-	 * @return Application_Environment
+	 * @return Application_Config
 	 */
-	public static function getEnvironment(){
-		if(!static::$environment){
+	public static function getConfig(){
+		if(!static::$config){
 			static::initialize();
 		}
-		return static::$environment;
+		return static::$config;
 	}
 
 	/**
 	 * @return string
 	 */
 	public static function getEnvironmentName(){
-		return static::getEnvironment()->getName();
+		return static::getConfig()->getName();
 	}
 
 	/**

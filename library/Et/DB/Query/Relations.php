@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Relations extends Object implements \Iterator,\Countable {
 
 	/**
@@ -109,42 +108,6 @@ class DB_Query_Relations extends Object implements \Iterator,\Countable {
 	 */
 	function isEmpty(){
 		return !$this->relations;
-	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @param int $offset [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null, $offset = 0){
-		if($this->isEmpty()){
-			return "";
-		}
-
-		if(!$db){
-			$db = $this->getQuery()->getDB();
-		}
-
-		$padding = str_repeat("\t", $offset);
-		$output = $padding;
-		foreach($this->relations as $relation){
-			$output .= str_replace("\n", "\n{$padding}", $relation->toSQL($db, $offset + 1)) . "\n";
-		}
-		return rtrim($output);
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		if($this->isEmpty()){
-			return "";
-		}
-		$output = array();
-		foreach($this->relations as $relation){
-			$output[] = (string)$relation;
-		}
-		return implode("\n", $output);
 	}
 
 	/**

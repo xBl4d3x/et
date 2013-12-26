@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_GroupBy extends Object implements \Iterator,\Countable {
 
 	/**

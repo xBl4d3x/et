@@ -9,26 +9,26 @@ class Locales_Date extends Locales_DateTime {
 	const FORMAT_MYSQL_SHORT = 'Ymd';
 
 	/**
-	 * @param null|string|\DateTime $datetime [optional]
-	 * @param null|string|\DateTimeZone $timezone [optional]
+	 * @param null|string|int|\DateTime $date [optional]
+	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
 	 *
 	 * @throws Locales_Exception
 	 */
-	function __construct($datetime = null, $timezone = null){
-		if(!$datetime){
-			$datetime = "today";
+	function __construct($date = null, $timezone = null){
+		if(!$date){
+			$date = "today";
 		}
-		parent::__construct($datetime, $timezone);
+		parent::__construct($date, $timezone);
 		$this->datetime->setTime(0 ,0, 0);
 	}
 
 	/**
-	 * @param null|string|int|\DateTime $datetime [optional]
+	 * @param null|string|int|\DateTime $date [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
 	 * @return \Et\Locales_Date
 	 */
-	public static function getInstance($datetime = null, $timezone = null){
-		return new static($datetime, $timezone);
+	public static function getInstance($date = null, $timezone = null){
+		return new static($date, $timezone);
 	}
 
 

@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_OrderBy extends Object implements \Iterator,\Countable {
 
 	/**
@@ -144,40 +143,6 @@ class DB_Query_OrderBy extends Object implements \Iterator,\Countable {
 	 */
 	function getOrderByExpressions(){
 		return $this->order_by_expressions;
-	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @param int $offset [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null, $offset = 0){
-		if($this->isEmpty()){
-			return "";
-		}
-		$expressions = $this->getOrderByExpressions();
-		$padding = str_repeat("\t", $offset);
-		$output = array();
-
-		foreach($expressions as $expression){
-			$output[] = $expression->toSQL($db);
-		}
-
-		return $padding . implode(",\n{$padding}", $output);
-	}
-
-	function __toString(){
-		if($this->isEmpty()){
-			return "";
-		}
-		$expressions = $this->getOrderByExpressions();
-		$output = array();
-
-		foreach($expressions as $expression){
-			$output[] = (string)$expression;
-		}
-
-		return implode(",\n", $output);
 	}
 
 

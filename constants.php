@@ -18,7 +18,7 @@ define("ET_PUBLIC_DATA_PATH", "{$data_path}public/");
 define("ET_SYSTEM_DATA_PATH", "{$data_path}system/");
 define("ET_TEMPORARY_DATA_PATH", "{$data_path}temporary/");
 
-define("ET_ENVIRONMENTS_PATH", "{$base_path}environments/");
+define("ET_CONFIGS_PATH", "{$base_path}configs/");
 define("ET_APPLICATIONS_PATH", "{$base_path}applications/");
 define("ET_ERROR_PAGES_PATH", "{$base_path}error_pages/");
 define("ET_LIBRARY_PATH", "{$base_path}library/");

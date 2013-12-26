@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Relations_SimpleRelation extends Object {
 
 	/**
@@ -101,38 +100,4 @@ class DB_Query_Relations_SimpleRelation extends Object {
 	function getQuery(){
 		return $this->query;
 	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null){
-		if(!$db){
-			$db = $this->getQuery()->getDB();
-		}
-		$output = "{$this->getJoinType()} JOIN {$db->quoteTableName($this->getRelatedTableName())} ON (\n";
-		$joins = array();
-		foreach($this->join_on_columns as $col1 => $col2){
-			$joins[] = "{$db->quoteColumnName($col1)} = {$db->quoteColumnName($col2)}";
-		}
-		$output .= "\t" . implode(" AND\n\t", $joins) . "\n";
-		$output .= ")";
-		return $output;
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		$output = "{$this->getJoinType()} JOIN {$this->getRelatedTableName()} ON (\n";
-		$joins = array();
-		foreach($this->join_on_columns as $col1 => $col2){
-			$joins[] = "{$col1} = {$col2}";
-		}
-		$output .= "\t" . implode(" AND\n\t", $joins) . "\n";
-		$output .= ")";
-		return $output;
-	}
-
-
 }

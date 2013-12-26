@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Relations_ComplexRelation extends DB_Query_Where {
 
 	/**
@@ -68,33 +67,4 @@ class DB_Query_Relations_ComplexRelation extends DB_Query_Where {
 	public function getRelatedTableName() {
 		return $this->related_table_name;
 	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @param int $offset [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null, $offset = 0){
-		if(!$db){
-			$db = $this->getQuery()->getDB();
-		}
-		$padding = str_repeat("\t", $offset);
-		$output = "{$padding}{$this->getJoinType()} JOIN {$db->quoteTableName($this->getRelatedTableName())} ON (\n";
-		$output .= parent::toSQL($db, $offset + 1) . "\n";
-		$output .= "{$padding})";
-		return $output;
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		$output = "{$this->getJoinType()} JOIN {$this->getRelatedTableName()} ON (\n\t";
-
-		$output .= str_replace("\n", "\n\t", parent::__toString()) . "\n";
-		$output .= ")";
-		return $output;
-	}
-
-
 }

@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require_class('Object');
 class DB_Query_Where extends Object implements \Countable,\Iterator {
 	
 	const OP_AND = "AND";
@@ -312,81 +311,6 @@ class DB_Query_Where extends Object implements \Countable,\Iterator {
 	 */
 	function getExpressionsCount(){
 		return count($this->expressions);
-	}
-
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @param int $offset [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null, $offset = 0){
-		if($this->isEmpty()){
-			return "";
-		}
-		
-		$expressions = $this->getExpressions();
-		$padding = str_repeat("\t", $offset);
-		$output = array();
-		$last_idx = -1;
-
-		foreach($expressions as $expression){
-			if(is_scalar($expression)){
-				if($last_idx == -1){
-					continue;
-				}
-				$output[$last_idx] .= " {$expression}";
-				continue;
-			}
-			
-			if($expression instanceof DB_Query_Where){
-				$output[] = "(";
-				$output[] = $expression->toSQL($db, $offset + 1);
-				$output[] = ")";
-				$last_idx = count($output) - 1;
-				continue;
-			}
-			
-			$output[] = $expression->toSQL($db);
-			$last_idx++;
-		}
-
-		return $padding . implode("\n{$padding}", $output);
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		if($this->isEmpty()){
-			return "";
-		}
-
-		$expressions = $this->getExpressions();
-		$output = array();
-		$last_idx = -1;
-
-		foreach($expressions as $expression){
-			if(is_scalar($expression)){
-				if($last_idx == -1){
-					continue;
-				}
-				$output[$last_idx] .= " {$expression}";
-				continue;
-			}
-
-			if($expression instanceof DB_Query_Where){
-				$output[] = "(";
-				$output[] = str_replace("\n", "\n\t", (string)$expression);
-				$output[] = ")";
-				$last_idx = count($output) - 1;
-				continue;
-			}
-
-			$output[] = (string)$expression;
-			$last_idx++;
-		}
-
-		return implode("\n", $output);
 	}
 
 

@@ -7,7 +7,7 @@ class DB_Config extends Config {
 	/**
 	 * @var string
 	 */
-	protected static $_environment_config_section = "database";
+	protected static $_application_config_section = "database";
 
 	/**
 	 * @var array
