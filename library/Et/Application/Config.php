@@ -49,7 +49,7 @@ class Application_Config extends Object {
 	 * @return \Et\Data_Array
 	 */
 	protected function getConfigSectionsFromFile(){
-		$fp = ET_CONFIGS_PATH . $this->getName() . ".php";
+		$fp = ET_CONFIGS_PATH . "config_{$this->getName()}.php";
 		try {
 
 			$config_data = new Data_Array();
