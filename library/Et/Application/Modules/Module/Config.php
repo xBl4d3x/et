@@ -31,7 +31,7 @@ abstract class Application_Modules_Module_Config extends Config {
 	 * @return array
 	 */
 	protected function loadOptionsFromConfigFile(){
-		$env = Application::getEnvironmentName();
+		$env = System::getEnvironmentName();
 		$module_dir = $this->_module_metadata->getModuleDirectory();
 		$fp = $module_dir . "config/config_{$env}.php";
 		if(!file_exists($fp)){

@@ -46,7 +46,7 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 	}
 
 	/**
-	 * @return static
+	 * @return static|DB_Query_Select
 	 */
 	function removeExpressions(){
 		$this->expressions = array();

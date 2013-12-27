@@ -3,9 +3,47 @@ namespace Et;
 class System {
 
 	/**
+	 * @var System_Config
+	 */
+	protected static $config;
+
+	/**
 	 * @var System_File_MimeType_Detector
 	 */
 	protected static $mime_type_detector;
+
+	/**
+	 * @param string|System_Config|null $system_environment [optional] NULL = ET_SYSTEM_ENVIRONMENT constant content
+	 */
+	public static function initialize($system_environment = null){
+		if(!$system_environment){
+			$system_environment = ET_SYSTEM_ENVIRONMENT;
+		}
+
+		et_require("System_Config");
+		if(!$system_environment instanceof System_Config){
+			$system_environment = new System_Config((string)$system_environment);
+		}
+
+		static::$config = $system_environment;
+	}
+
+	/**
+	 * @return System_Config
+	 */
+	public static function getConfig(){
+		if(!static::$config){
+			static::initialize();
+		}
+		return static::$config;
+	}
+
+	/**
+	 * @return string
+	 */
+	public static function getEnvironmentName(){
+		return static::getConfig()->getName();
+	}
 
 	/**
 	 * @param System_File_MimeType_Detector $mime_type_detector

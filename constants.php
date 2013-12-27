@@ -59,7 +59,7 @@ if(!defined("ET_DEFAULT_TIMEZONE")){
 }
 
 // current platform environment - corresponds to [root]/environments/[some_environment].php
-defined("ET_APPLICATION_ENVIRONMENT") || define("ET_APPLICATION_ENVIRONMENT", "default");
+defined("ET_SYSTEM_ENVIRONMENT") || define("ET_SYSTEM_ENVIRONMENT", "default");
 
 // default application ID - points to [root]/applications/[application_ID]
 defined("ET_DEFAULT_APPLICATION_ID") || define("ET_DEFAULT_APPLICATION_ID", "default");

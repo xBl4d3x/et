@@ -1,103 +1,87 @@
 <?php
 namespace Et;
-et_require("Data_Array");
-class Application_Config extends Object {
+abstract class Application_Config extends Config {
 
 	/**
-	 * @var string
+	 * @var Application_Metadata
 	 */
-	protected $name;
+	protected $_application_metadata;
 
 	/**
-	 * @var Data_Array
+	 * @var System_File
 	 */
-	protected $config_sections;
+	protected $_config_file;
 
 	/**
-	 * @param string $name
-	 * @param \Et\Data_Array $config_sections [optional]
-	 */
-	function __construct($name, Data_Array $config_sections = null){
-
-		$this->assert()->isVariableName($name);
-		$this->name = $name;
-		if(!$config_sections){
-			$config_sections = $this->getConfigSectionsFromFile();
-		}
-
-		$this->config_sections = $config_sections;
-
-	}
-
-	/**
-	 * @return string
-	 */
-	function getName(){
-		return $this->name;
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		return $this->getName();
-	}
-
-
-	/**
-	 * @throws Application_Exception
-	 * @return \Et\Data_Array
-	 */
-	protected function getConfigSectionsFromFile(){
-		$fp = ET_CONFIGS_PATH . "config_{$this->getName()}.php";
-		try {
-
-			$config_data = new Data_Array();
-			et_require("Data_Array_Source_File");
-			$config_source = new Data_Array_Source_File($fp, Data_Array_Source_File::FORMAT_PHP);
-			$config_data->loadFromSource($config_source);
-			return $config_data;
-
-		} catch(\Exception $e){
-
-			throw new Application_Exception(
-				"Failed to load environment config sections from '{$fp}' - {$e->getMessage()}",
-				Application_Exception::CODE_INVALID_CONFIG_FILE,
-				null,
-				$e
-			);
-
-		}
-	}
-
-	/**
-	 * @return Data_Array
-	 */
-	public function getConfigSections() {
-		return $this->config_sections;
-	}
-
-
-	/**
-	 * @param string $section_path
-	 * @param array $default_value [optional]
+	 * Definition of config properties
 	 *
-	 * @return array
-	 * @throws Application_Exception
+	 * @var array
 	 */
-	function getSectionData($section_path, array $default_value = array()){
-		$section_path = (string)$section_path;
-		$section = $this->config_sections->getRawValue($section_path, $default_value);
-		if(!is_array($section)){
-			throw new Application_Exception(
-				"Application config section '{$section_path}' should be array, not " .gettype($section),
-				Application_Exception::CODE_INVALID_SECTION_DATA,
-				array(
-				     "section data" => $section
-				)
-			);
-		}
-		return $section;
+	protected static $_definition = array(
+		"base_URLs" => [
+			self::DEF_TYPE => self::TYPE_ARRAY,
+			self::DEF_ARRAY_VALUE_TYPE => self::TYPE_STRING
+		]
+	);
+
+
+	/**
+	 * @var array
+	 */
+	protected $base_URLs;
+
+	/**
+	 * @var array
+	 */
+	protected $base_SSL_URLs = array();
+
+	/**
+	 * @param Application_Metadata $application_metadata
+	 */
+	function __construct(Application_Metadata $application_metadata){
+		$this->_application_metadata = $application_metadata;
+		$this->_application_name = $application_metadata->getApplicationID();
+		$options = $this->loadOptionsFromConfigFile();
+		parent::__construct($options);
 	}
+
+	/**
+	 * @return array
+	 */
+	protected function loadOptionsFromConfigFile(){
+		$env = System::getEnvironmentName();
+		$application_dir = $this->_application_metadata->getApplicationDirectory();
+		$fp = $application_dir . "config/config_{$env}.php";
+		if(!file_exists($fp)){
+			$fp = $application_dir . "config/config.php";
+			if(!file_exists($fp)){
+				return array();
+			}
+		}
+		$this->_config_file = System::getFile($fp);
+		return $this->_config_file->includeArrayContent();
+	}
+
+	/**
+	 * @return System_File|null
+	 */
+	public function getConfigFile() {
+		return $this->_config_file;
+	}
+
+	/**
+	 * @return Application_Metadata
+	 */
+	public function getApplicationMetadata() {
+		return $this->_application_metadata;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getApplicationName() {
+		return $this->_application_metadata->getApplicationName();
+	}
+
 
 }

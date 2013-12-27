@@ -294,7 +294,7 @@ class DB_Query extends Object {
 	 * @param null|string $select_as [optional]
 	 * @return static|DB_Query
 	 */
-	function selectCount($column_name = DB_Query_Select_Count::COUNT_ALL, $table_name = null, $select_as = null){
+	function selectCount($column_name = "*", $table_name = null, $select_as = null){
 		$this->getSelect()->removeExpressions()->addCount($column_name, $table_name, $select_as);
 		return $this;
 	}

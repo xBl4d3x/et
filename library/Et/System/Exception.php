@@ -26,6 +26,9 @@ class System_Exception extends Exception {
 	const CODE_PRINT_FILE_FAILED = 200;
 	const CODE_MOVE_FAILED = 210;
 	const CODE_COPY_FAILED = 220;
+	const CODE_INVALID_CONFIG_FILE = 230;
+	const CODE_INVALID_SECTION_DATA = 240;
+	const CODE_INVALID_ENVIRONMENT = 250;
 
 	/**
 	 * Exception error codes human readable labels
@@ -54,7 +57,10 @@ class System_Exception extends Exception {
 		self::CODE_DOWNLOAD_FAILED        => "Download failed",
 		self::CODE_PRINT_FILE_FAILED      => "Print file failed",
 		self::CODE_MOVE_FAILED            => "Move failed",
-		self::CODE_COPY_FAILED            => "Copy failed"
+		self::CODE_COPY_FAILED            => "Copy failed",
+		self::CODE_INVALID_CONFIG_FILE => "Invalid config file",
+		self::CODE_INVALID_SECTION_DATA => "Invalid config section data",
+		self::CODE_INVALID_ENVIRONMENT => "Invalid environment"
 	);
 
 }

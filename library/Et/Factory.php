@@ -18,8 +18,8 @@ class Factory {
 	protected static $class_override_check_cache = array();
 
 	public static function initialize(){
-		et_require("Application");
-		$class_override_map = Application::getConfig()->getSectionData(static::ENVIRONMENT_CONFIG_SECTION);
+		et_require("System");
+		$class_override_map = System::getConfig()->getSectionData(static::ENVIRONMENT_CONFIG_SECTION);
 		foreach($class_override_map as $k => $v){
 			if(!isset(static::$class_override_map[$k])){
 				static::$class_override_map[$k] = (string)$v;

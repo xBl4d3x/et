@@ -50,7 +50,7 @@ Factory::initialize();
 et_require("Debug_Profiler");
 
 // =========================================================================================
-// Application
+// System
 // =========================================================================================
-et_require("Application");
+et_require("System");
 Debug_Profiler::milestone("Init complete");

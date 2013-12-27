@@ -48,6 +48,11 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	protected $tags = array();
 
 	/**
+	 * @var array
+	 */
+	protected $localized_names = array();
+
+	/**
 	 * @var int
 	 */
 	protected $version;
@@ -94,6 +99,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 			$this->version = $metadata->getInt("version");
 			$this->signal_handlers = $metadata->getRawValue("signal_handlers", array());
 			$this->factory_class_map = $metadata->getRawValue("factory_class_map", array());
+			$this->localized_names = $metadata->getRawValue("localized_names", array());
 
 			$assert = $this->assert();
 			$assert->isNotEmpty($this->vendor, "vendor not specified");
@@ -101,6 +107,9 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 			$assert->isArray($this->tags, "tags must be an array");
 			$assert->isArray($this->signal_handlers, "signal handlers must be an array");
 			$assert->isArray($this->factory_class_map, "factory class map must be an array");
+			$assert->isArray($this->localized_names, "localized names must be an array");
+
+			$this->tags = array_combine(array_values($this->tags), array_values($this->tags));
 
 		} catch(Exception $e){
 
@@ -268,6 +277,76 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	 * @return bool
 	 */
 	public function getModuleExists(){
-		return class_exists("Et\\{$this->getModuleID()}\\Main");
+		return class_exists("EtM\\{$this->getModuleID()}\\Main");
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getLocalizedNames() {
+		return $this->localized_names;
+	}
+
+	/**
+	 * @param null|string|Locales_Locale $locale
+	 * @return string
+	 */
+	public function getLocalizedName($locale = null){
+		$locale = Locales::getLocale($locale);
+		return isset($this->localized_names[(string)$locale])
+				? $this->localized_names[(string)$locale]
+				: $this->getModuleName();
+	}
+
+	/**
+	 * @param array $tags
+	 * @return bool
+	 */
+	function hasAnyTag(array $tags){
+		foreach($tags as $tag){
+			if(isset($this->tags[$tag])){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param array $tags
+	 * @return bool
+	 */
+	function hasAllTags(array $tags){
+		foreach($tags as $tag){
+			if(!isset($this->tags[$tag])){
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * @param array $tags
+	 * @return bool
+	 */
+	function hasNotAnyTag(array $tags){
+		foreach($tags as $tag){
+			if(!isset($this->tags[$tag])){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param array $tags
+	 * @return bool
+	 */
+	function hasNotAllTags(array $tags){
+		foreach($tags as $tag){
+			if(isset($this->tags[$tag])){
+				return false;
+			}
+		}
+		return true;
 	}
 }

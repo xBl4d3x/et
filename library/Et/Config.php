@@ -71,7 +71,7 @@ abstract class Config extends Object {
 	 *
 	 * @var string
 	 */
-	protected static $_application_config_section;
+	protected static $_system_config_section;
 
 	/**
 	 * Definition of config properties
@@ -584,7 +584,7 @@ abstract class Config extends Object {
 	 */
 	public static function getFromEnvironmentConfig($custom_application_config_section = null){
 		if(!$custom_application_config_section){
-			$custom_application_config_section = static::$_application_config_section;
+			$custom_application_config_section = static::$_system_config_section;
 		}
 		
 		if(!$custom_application_config_section){
@@ -594,7 +594,7 @@ abstract class Config extends Object {
 			);
 		}
 		
-		$data = Application::getConfig()->getSectionData($custom_application_config_section);
+		$data = System::getConfig()->getSectionData($custom_application_config_section);
 		return new static($data);
 	}
 

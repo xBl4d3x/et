@@ -366,4 +366,112 @@ class Application_Modules extends Object {
 		}
 	}
 
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return array
+	 */
+	public static function getModuleIDsHavingAnyTag(array $tags, $enabled_only = true){
+		return array_keys(static::getModulesMetadataHavingAnyTag($tags, $enabled_only));
+	}
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return Application_Modules_Module_Metadata[]
+	 */
+	public static function getModulesMetadataHavingAnyTag(array $tags, $enabled_only = true){
+		$output = array();
+		foreach(static::$modules_metadata as $ID => $metadata){
+			if(!$metadata->isEnabled() && $enabled_only){
+				continue;
+			}
+			if($metadata->hasAnyTag($tags)){
+				$output[$ID] = $metadata;
+			}
+		}
+		return $output;
+	}
+
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return array
+	 */
+	public static function getModuleIDsHavingAllTags(array $tags, $enabled_only = true){
+		return array_keys(static::getModulesMetadataHavingAllTags($tags, $enabled_only));
+	}
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return Application_Modules_Module_Metadata[]
+	 */
+	public static function getModulesMetadataHavingAllTags(array $tags, $enabled_only = true){
+		$output = array();
+		foreach(static::$modules_metadata as $ID => $metadata){
+			if(!$metadata->isEnabled() && $enabled_only){
+				continue;
+			}
+			if($metadata->hasAllTags($tags)){
+				$output[$ID] = $metadata;
+			}
+		}
+		return $output;
+	}
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return array
+	 */
+	public static function getModuleIDsNotHavingAnyTag(array $tags, $enabled_only = true){
+		return array_keys(static::getModulesMetadataNotHavingAnyTag($tags, $enabled_only));
+	}
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return Application_Modules_Module_Metadata[]
+	 */
+	public static function getModulesMetadataNotHavingAnyTag(array $tags, $enabled_only = true){
+		$output = array();
+		foreach(static::$modules_metadata as $ID => $metadata){
+			if(!$metadata->isEnabled() && $enabled_only){
+				continue;
+			}
+			if($metadata->hasNotAnyTag($tags)){
+				$output[$ID] = $metadata;
+			}
+		}
+		return $output;
+	}
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return array
+	 */
+	public static function getModuleIDsNotHavingAllTags(array $tags, $enabled_only = true){
+		return array_keys(static::getModulesMetadataNotHavingAllTags($tags, $enabled_only));
+	}
+
+	/**
+	 * @param array $tags
+	 * @param bool $enabled_only [optional]
+	 * @return Application_Modules_Module_Metadata[]
+	 */
+	public static function getModulesMetadataNotHavingAllTags(array $tags, $enabled_only = true){
+		$output = array();
+		foreach(static::$modules_metadata as $ID => $metadata){
+			if(!$metadata->isEnabled() && $enabled_only){
+				continue;
+			}
+			if($metadata->hasNotAllTags($tags)){
+				$output[$ID] = $metadata;
+			}
+		}
+		return $output;
+	}
 }
