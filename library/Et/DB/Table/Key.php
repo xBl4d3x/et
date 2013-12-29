@@ -2,7 +2,7 @@
 namespace Et;
 class DB_Table_Key extends Object implements \Countable,\ArrayAccess,\Iterator {
 
-	const DEFAULT_KEY_PARTS_DELIMITER = "#";
+	const DEFAULT_KEY_PARTS_DELIMITER = "|";
 
 	const TYPE_SCALAR = "Scalar";
 	const TYPE_INT = "Int";

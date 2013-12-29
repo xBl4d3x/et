@@ -5,9 +5,8 @@ require(__DIR__ . "/init.php");
 
 System::initialize();
 Http_Request::initialize();
-
-$db=DB::get();
-var_dump($db->fetchRowsCount(DB::query("dim_channels", array("name", "created_when", "is_private_channel"), [], [], 1)));
+$transliterator = \Transliterator::create("Any-Latin; NFD; [:Nonspacing Mark:] Remove; NFC; [:Punctuation:] Remove; Lower();");
+var_dump($transliterator->transliterate("Ελληνικά νέα"));
 
 echo "ET RUNNING [" . Debug::getDuration() . "s]";
 
