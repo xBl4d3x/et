@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Entity_Key_Generator_Exception extends Exception {
+class Entity_ID_Generator_Exception extends Exception {
 
 	const CODE_FAILED_TO_GENERATE_ID = 10;
 

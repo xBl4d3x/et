@@ -1,7 +1,10 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: xbl4d3x
- * Date: 12/28/13
- * Time: 4:59 PM
- */ 
+namespace Et;
+abstract class Entity_Part_Single extends Entity_Part_Abstract {
+
+
+	public static function getByParentEntityID($parent_ID){
+
+	}
+
+}

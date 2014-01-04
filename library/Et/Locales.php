@@ -3,6 +3,9 @@ namespace Et;
 et_require("Object");
 class Locales extends Object {
 
+	const APPLICATION_LOCALE = "_application_";
+	const USER_LOCALE = "_user_";
+
 	/**
 	 * @var array
 	 */

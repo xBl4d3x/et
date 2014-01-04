@@ -12,7 +12,7 @@ abstract class Data_Validator_Abstract extends Object {
 	const ERR_TOO_LONG = "too_long";
 
 
-	const DEF_ALLOW_EMPTY_VALUE = Data_Validator::DEF_ALLOW_EMPTY_VALUE;
+	const DEF_REQUIRED = Data_Validator::DEF_REQUIRED;
 	const DEF_ALLOWED_VALUES = Data_Validator::DEF_ALLOWED_VALUES;
 	const DEF_VALIDATION_PATTERN = Data_Validator::DEF_VALIDATION_PATTERN;
 	const DEF_VALIDATION_CALLBACK = Data_Validator::DEF_VALIDATION_CALLBACK;
@@ -122,7 +122,7 @@ abstract class Data_Validator_Abstract extends Object {
 				$this->setErrorMessages($value);
 				break;
 
-			case self::DEF_ALLOW_EMPTY_VALUE:
+			case self::DEF_REQUIRED:
 				$this->setAllowEmptyValue($value);
 				break;
 

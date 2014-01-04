@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Entity_Key_Generator_Default extends Entity_Key_Generator_Abstract {
+class Entity_ID_Generator_Default extends Entity_ID_Generator_Abstract {
 
 	/**
 	 * @var int
@@ -49,7 +49,7 @@ class Entity_Key_Generator_Default extends Entity_Key_Generator_Abstract {
 
 	/**
 	 * @param string|Entity_Abstract $entity_class
-	 * @throws Entity_Key_Generator_Exception
+	 * @throws Entity_ID_Generator_Exception
 	 * @return int
 	 */
 	protected function _generateNumericID($entity_class) {
@@ -62,9 +62,9 @@ class Entity_Key_Generator_Default extends Entity_Key_Generator_Abstract {
 
 		$fp = @fopen($fn, "r+");
 		if(!$fp){
-			throw new Entity_Key_Generator_Exception(
+			throw new Entity_ID_Generator_Exception(
 				"Failed to open file '{$fn}' with last ID for entity '{$entity_class}'",
-				Entity_Key_Generator_Exception::CODE_FAILED_TO_GENERATE_ID
+				Entity_ID_Generator_Exception::CODE_FAILED_TO_GENERATE_ID
 			);
 		}
 
@@ -77,9 +77,9 @@ class Entity_Key_Generator_Default extends Entity_Key_Generator_Abstract {
 				$ID = (int)fgets($fp) + 1;
 				@fseek($fp, 0);
 				if(!@fputs($fp, (string)$ID)){
-					throw new Entity_Key_Generator_Exception(
+					throw new Entity_ID_Generator_Exception(
 						"Failed write entity '{$entity_class}' counter value to '{$fn}'",
-						Entity_Key_Generator_Exception::CODE_FAILED_TO_GENERATE_ID
+						Entity_ID_Generator_Exception::CODE_FAILED_TO_GENERATE_ID
 					);
 				}
 				@flock($fp, LOCK_UN);
@@ -93,9 +93,9 @@ class Entity_Key_Generator_Default extends Entity_Key_Generator_Abstract {
 
 		@fclose($fp);
 
-		throw new Entity_Key_Generator_Exception(
+		throw new Entity_ID_Generator_Exception(
 			"Failed to generate ID for entity '{$entity_class}' in {$this->max_lock_retry} retries",
-			Entity_Key_Generator_Exception::CODE_FAILED_TO_GENERATE_ID
+			Entity_ID_Generator_Exception::CODE_FAILED_TO_GENERATE_ID
 		);
 
 	}

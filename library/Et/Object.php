@@ -29,7 +29,7 @@ abstract class Object {
 	 * @return string
 	 */
 	public static function getClassID(){
-		return strtolower(static::getClassNameWithoutNamespace());
+		return strtolower(str_replace("\\", "_", static::class));
 	}
 
 	/**
