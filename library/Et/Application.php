@@ -73,7 +73,7 @@ class Application extends Object {
 			return;
 		}
 
-		Loader::registerLoader(new Application_Loader());
+		ClassLoader::registerLoader(new Application_Loader());
 
 		$applications_dir = System::getDir(ET_APPLICATIONS_PATH);
 		$application_IDs = $applications_dir->listDirNames(

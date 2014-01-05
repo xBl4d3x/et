@@ -43,7 +43,7 @@ class DB_Table_Definition extends Object implements \Iterator,\Countable,\ArrayA
 	 * @param string $comment [optional]
 	 */
 	function __construct($table_name, array $columns, $comment = ""){
-		$this->assert()->isArrayOfInstances($columns, 'Et\DB_Table_Column_Definition');
+		Debug_Assert::isArrayOfInstances($columns, 'Et\DB_Table_Column_Definition');
 		DB::checkTableName($table_name);
 		$this->table_name = $table_name;
 		foreach($columns as $column_definition){

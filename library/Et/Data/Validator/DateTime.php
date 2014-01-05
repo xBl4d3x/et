@@ -76,7 +76,7 @@ class Data_Validator_DateTime extends Data_Validator_Abstract {
 	 */
 	protected function validateValueType(&$value, &$error_code = null, &$error_message = null){
 		if($value instanceof Locales_Date){
-			$value = Locales_DateTime::getInstanceFromTimestamp($value->getTimestamp());
+			$value = Locales_DateTime::getInstance($value->getTimestamp());
 			return true;
 		}
 
@@ -140,7 +140,7 @@ class Data_Validator_DateTime extends Data_Validator_Abstract {
 	 */
 	function formatValue($value) {
 		if($value instanceof Locales_Date){
-			return Locales_DateTime::getInstanceFromTimestamp($value->getTimestamp());
+			return Locales_DateTime::getInstance($value->getTimestamp());
 		}
 
 		if($value instanceof Locales_DateTime){
@@ -151,11 +151,7 @@ class Data_Validator_DateTime extends Data_Validator_Abstract {
 			return null;
 		}
 
-		if(is_numeric($value)){
-			return Locales_DateTime::getInstanceFromTimestamp($value);
-		} else {
-			return Locales_DateTime::getInstance($value);
-		}
+		return Locales_DateTime::getInstance($value);
 	}
 
 	/**

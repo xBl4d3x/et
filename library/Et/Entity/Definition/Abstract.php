@@ -36,7 +36,7 @@ abstract class Entity_Definition_Abstract extends System_Components_Component im
 		$entity_class_name = Entity::resolveEntityClassName($entity_class_name);
 		$this->entity_class_name = $entity_class_name;
 		$this->entity_name = $entity_class_name::getEntityName();
-		$this->assert()->isArrayOfInstances($properties, "Et\\Entity_Property_Abstract");
+		Debug_Assert::isArrayOfInstances($properties, "Et\\Entity_Property_Abstract");
 		$this->properties = $properties;
 
 		parent::__construct(

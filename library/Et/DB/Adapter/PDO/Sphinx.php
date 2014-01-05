@@ -63,7 +63,7 @@ class DB_Adapter_PDO_Sphinx extends DB_Adapter_PDO_MySQL {
 	 * @return string
 	 */
 	function quoteTableName($table_name){
-		$this->assert()->isVariableName($table_name);
+		Debug_Assert::isVariableName($table_name);
 		return $table_name;
 	}
 
@@ -74,7 +74,7 @@ class DB_Adapter_PDO_Sphinx extends DB_Adapter_PDO_MySQL {
 	 * @return string
 	 */
 	function quoteColumnName($column_name){
-		$this->assert()->isStringMatching($column_name, '^\w+(?:\.\w+)?$');
+		Debug_Assert::isStringMatching($column_name, '^\w+(?:\.\w+)?$');
 		return $column_name;
 	}
 
@@ -197,5 +197,12 @@ class DB_Adapter_PDO_Sphinx extends DB_Adapter_PDO_MySQL {
 	 */
 	function fetchMatchingValue($index_name, $search_expression, DB_Query $query = null){
 		return $this->fetchValue($this->prepareFetchMatchingQuery($index_name, $search_expression, $query));
+	}
+
+	/**
+	 * @throws DB_Exception
+	 */
+	public function getDatabaseType() {
+		return self::DB_TYPE_SPHINX;
 	}
 }

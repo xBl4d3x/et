@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-et_require('Debug_Error_Handler_Abstract');
+et_require("Debug_Error_Handler_Abstract");
 class Debug_Error_Handler_Display extends Debug_Error_Handler_Abstract {
 
 	/**
@@ -54,8 +54,8 @@ class Debug_Error_Handler_Display extends Debug_Error_Handler_Abstract {
 
 	public function displayScripts(){
 		?>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
+		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 		<?php
 	}
 
@@ -85,6 +85,6 @@ class Debug_Error_Handler_Display extends Debug_Error_Handler_Abstract {
 			header("Content-type:text/plain;charset=utf-8");
 		}
 
-		echo "\n" . $this->formatErrorToText($e);
+		echo "\n" . $this->getErrorAsText($e);
 	}
 }

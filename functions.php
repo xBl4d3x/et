@@ -16,7 +16,7 @@ function et_require($class_name){
 /**
  * @param null|string $path [optional]
  * @param null|mixed $default_value [optional]
- * @return Http_Request_Data_GET|mixed
+ * @return \Et\Http_Request_Data_GET|mixed
  */
 function GET($path = null, $default_value = null){
 	return Et\Http_Request::GET($path, $default_value);
@@ -25,7 +25,7 @@ function GET($path = null, $default_value = null){
 /**
  * @param null|string $path [optional]
  * @param null|mixed $default_value [optional]
- * @return Http_Request_Data_POST|mixed
+ * @return \Et\Http_Request_Data_POST|mixed
  */
 function POST($path = null, $default_value = null){
 	return Et\Http_Request::POST($path, $default_value);
@@ -34,7 +34,7 @@ function POST($path = null, $default_value = null){
 /**
  * @param null|string $path [optional]
  * @param null|mixed $default_value [optional]
- * @return Http_Request_Data_SERVER|mixed
+ * @return \Et\Http_Request_Data_SERVER|mixed
  */
 function SERVER($path = null, $default_value = null){
 	return Et\Http_Request::SERVER($path, $default_value);

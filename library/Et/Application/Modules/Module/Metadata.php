@@ -73,14 +73,14 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	 */
 	function __construct($module_ID){
 		Application_Modules::checkModuleIDFormat($module_ID);
-		$this->name = $module_ID;
+		$this->title = $module_ID;
 		$this->loadMetadata();
-		parent::__construct($module_ID, $this->getName(), $this->getDescription());
+		parent::__construct($module_ID, $this->getTitle(), $this->getDescription());
 	}
 
 	function reload(){
 		$this->loadMetadata();
-		$this->changed = true;
+		$this->_changed = true;
 	}
 
 
@@ -93,7 +93,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 			$metadata = new Data_Array($this->getMetadataFile()->includeArrayContent());
 
 			$this->vendor = trim($metadata->getString("vendor"));
-			$this->name = trim($metadata->getString("name"));
+			$this->title = trim($metadata->getString("name"));
 			$this->description = trim($metadata->getString("description"));
 			$this->tags = $metadata->getRawValue("tags", array());
 			$this->version = $metadata->getInt("version");
@@ -103,7 +103,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 
 			$assert = $this->assert();
 			$assert->isNotEmpty($this->vendor, "vendor not specified");
-			$assert->isNotEmpty($this->name, "module name not specified");
+			$assert->isNotEmpty($this->title, "module name not specified");
 			$assert->isArray($this->tags, "tags must be an array");
 			$assert->isArray($this->signal_handlers, "signal handlers must be an array");
 			$assert->isArray($this->factory_class_map, "factory class map must be an array");
@@ -185,7 +185,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 		$config_class = "EtM\\{$this->getModuleID()}\\Config";
 		if(!class_exists($config_class) || !is_subclass_of($config_class, 'Et\Application_Modules_Module_Config', true)){
 			throw new Application_Modules_Exception(
-				"Configuration class '{$config_class}' for module {$this->getID()} ({$this->getName()}) not found or is not subclass of Et\\Application_Modules_Module_Config",
+				"Configuration class '{$config_class}' for module {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\Application_Modules_Module_Config",
 				Application_Modules_Exception::CODE_INVALID_CONFIG
 			);
 		}
@@ -206,7 +206,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 		$installer_class = "EtM\\{$this->getModuleID()}\\Installer";
 		if(!class_exists($installer_class) || !is_subclass_of($installer_class, 'Et\Application_Modules_Module_Installer', true)){
 			throw new Application_Modules_Exception(
-				"Installer class '{$installer_class}' for module {$this->getID()} ({$this->getName()}) not found or is not subclass of Et\\Application_Modules_Module_Installer",
+				"Installer class '{$installer_class}' for module {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\Application_Modules_Module_Installer",
 				Application_Modules_Exception::CODE_INVALID_CONFIG
 			);
 		}
@@ -226,7 +226,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	 * @return string
 	 */
 	public function getModuleName(){
-		return $this->getName();
+		return $this->getTitle();
 	}
 
 	/**

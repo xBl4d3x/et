@@ -1,72 +1,86 @@
 <?php
 namespace Et;
+
 class Debug_Error_Handler {
 
 	const ERROR_REPORTING_LEVEL = E_ALL;
 
 	/**
-	 * @var Debug_Error_Handler_Display
+	 * @var \Et\Debug_Error_Handler_Display
 	 */
-	protected static $display_handler;
+	protected $display_handler;
 
 
 	/**
-	 * @var Debug_Error_Handler_Logger
+	 * @var \Et\Debug_Error_Handler_Logger
 	 */
-	protected static $logging_handler;
+	protected $logging_handler;
 
 
 	/**
-	 * @var Debug_Error_Handler_Abstract[]
+	 * @var \Et\Debug_Error_Handler_Abstract[]
 	 */
-	protected static $custom_handlers = array();
+	protected $custom_handlers = array();
 
 	/**
 	 * @var string
 	 */
-	protected static $error_pages_dir = ET_ERROR_PAGES_PATH;
+	protected $error_pages_dir = ET_ERROR_PAGES_PATH;
 
 	/**
 	 * IDs of handled errors
 	 *
 	 * @var array
 	 */
-	protected static $handled_errors_IDs = array();
+	protected $handled_errors_IDs = array();
 
 	/**
 	 * Is error handler enabled?
 	 *
 	 * @var bool
 	 */
-	protected static $enabled = false;
+	protected $enabled = false;
 
 	/**
 	 * @var bool
 	 */
-	protected static $initialized = false;
+	protected $registered = false;
+
 
 	/**
 	 * When strict mode is enabled (strict mode level is not 0), throw exception when error matches gives error reporting level
 	 *
 	 * @var int
 	 */
-	protected static $strict_mode_level;
+	protected $strict_mode_level;
 
-	/**
-	 * Initialize error handler
-	 */
-	public static function initialize(){
-		if(static::$initialized){
-			return;
-		}
-
-		static::$initialized = true;
-
-		error_reporting(static::ERROR_REPORTING_LEVEL);
-
+	function __construct(){
 		if(!ini_get("date.timezone")){
 			date_default_timezone_set(ET_DEFAULT_TIMEZONE);
 		}
+
+		$this->strict_mode_level = $this->getDefaultStrictModeLevel();
+	}
+
+
+
+	/**
+	 * @param int $error_reporting
+	 *
+	 * @return int Last error reporting level
+	 */
+	public function setErrorReportingLevel($error_reporting){
+		return error_reporting($error_reporting);
+	}
+
+	/**
+	 * @return int
+	 */
+	public function getErrorReportingLevel(){
+		return error_reporting();
+	}
+
+	protected function initPHPLogs(){
 
 		$php_errors_dir = ET_LOGS_PATH . "php_error_log/";
 		if(!file_exists($php_errors_dir)){
@@ -86,70 +100,70 @@ class Debug_Error_Handler {
 			@ini_set("error_log", $error_log_file);
 		}
 
+	}
 
-		static::getLoggingHandler();
-		$display_handler = static::getDisplayHandler();
+	/**
+	 * @return bool
+	 */
+	function isRegistered(){
+		return $this->registered;
+	}
 
+	function register(){
 
-		if(!ET_DEBUG_MODE){
-			$display_handler->disable();
+		if($this->registered){
+			return;
 		}
 
-		if(PHP_SAPI == "cli"){
-			$display_handler->setDisplayHTML(false);
+		error_reporting(static::ERROR_REPORTING_LEVEL);
+		$this->initPHPLogs();
+
+		if(!$this->logging_handler){
+			et_require("Debug_Error_Handler_Logger");
+			$this->logging_handler = new Debug_Error_Handler_Logger();
 		}
 
-		$class = get_called_class();
-		set_error_handler(array($class, "handleError"));
-		set_exception_handler(array($class, "handleException"));
-		register_shutdown_function(array($class, "handleShutdownError"));
+		if(!$this->display_handler){
+			et_require("Debug_Error_Handler_Display");
+			$this->display_handler = new Debug_Error_Handler_Display();
+		}
+
+		$this->logging_handler->enable();
+		if(ET_DEBUG_MODE){
+			$this->display_handler->enable();
+		} else {
+			$this->display_handler->disable();
+		}
+
+		$this->display_handler->setDisplayHTML(false);
+
+
+		set_error_handler(array($this, "handlePHPError"));
+		set_exception_handler(array($this, "handleException"));
+		register_shutdown_function(array($this, "handleShutdownError"));
 
 		@ini_set("display_errors", "off");
-	}
+		$this->registered = true;
 
-
-
-
-
-	/**
-	 * @param int $error_reporting
-	 *
-	 * @return int Last error reporting level
-	 */
-	public static function setErrorReportingLevel($error_reporting){
-		return error_reporting($error_reporting);
-	}
-
-	/**
-	 * @return int
-	 */
-	public static function getErrorReportingLevel(){
-		return error_reporting();
 	}
 
 	/**
 	 * Enable error handler
 	 */
-	public static function enable(){
-		if(static::$enabled){
-			return;
+	public function enable(){
+
+		if(!$this->registered){
+			$this->register();
 		}
 
-		if(!static::$initialized){
-			static::initialize();
-		}
-
-		static::$enabled = true;
+		$this->enabled = true;
 	}
 
 	/**
 	 * Disable error handler
 	 */
-	public static function disable(){
-		if(!static::$enabled){
-			return;
-		}
-		static::$enabled = false;
+	public function disable(){
+		$this->enabled = false;
 	}
 
 	/**
@@ -157,8 +171,8 @@ class Debug_Error_Handler {
 	 *
 	 * @return bool
 	 */
-	public static function isEnabled(){
-		return static::$enabled;
+	public function isEnabled(){
+		return $this->enabled;
 	}
 
 	/**
@@ -166,7 +180,7 @@ class Debug_Error_Handler {
 	 *
 	 * @return int
 	 */
-	public static function getDefaultStrictModeLevel() {
+	public function getDefaultStrictModeLevel() {
 		return E_ALL &
 		       ~E_NOTICE &
 		       ~E_USER_NOTICE &
@@ -178,15 +192,15 @@ class Debug_Error_Handler {
 	/**
 	 * @return bool
 	 */
-	public static function isStrictModeEnabled(){
-		return static::getStrictModeLevel() > 0;
+	public function isStrictModeEnabled(){
+		return $this->getStrictModeLevel() > 0;
 	}
 
 	/**
 	 * @return int Original level
 	 */
-	public static function disableStrictMode(){
-		return static::setStrictModeLevel(0);
+	public function disableStrictMode(){
+		return $this->setStrictModeLevel(0);
 	}
 
 
@@ -195,11 +209,11 @@ class Debug_Error_Handler {
 	 *
 	 * @return int
 	 */
-	public static function enableStrictMode($strict_mode_level = null){
+	public function enableStrictMode($strict_mode_level = null){
 		if($strict_mode_level === null){
-			$strict_mode_level = static::getDefaultStrictModeLevel();
+			$strict_mode_level = $this->getDefaultStrictModeLevel();
 		}
-		return static::setStrictModeLevel($strict_mode_level);
+		return $this->setStrictModeLevel($strict_mode_level);
 	}
 
 	/**
@@ -207,20 +221,20 @@ class Debug_Error_Handler {
 	 *
 	 * @return int Old strict mode level
 	 */
-	public static function setStrictModeLevel($strict_mode_level) {
-		$last_level = static::getStrictModeLevel();
-		static::$strict_mode_level = max(0, (int)$strict_mode_level);
+	public function setStrictModeLevel($strict_mode_level) {
+		$last_level = $this->getStrictModeLevel();
+		$this->strict_mode_level = max(0, (int)$strict_mode_level);
 		return $last_level;
 	}
 
 	/**
 	 * @return int
 	 */
-	public static function getStrictModeLevel() {
-		if(static::$strict_mode_level === null){
-			static::$strict_mode_level = static::getDefaultStrictModeLevel();
+	public function getStrictModeLevel() {
+		if($this->strict_mode_level === null){
+			$this->strict_mode_level = $this->getDefaultStrictModeLevel();
 		}
-		return static::$strict_mode_level;
+		return $this->strict_mode_level;
 	}
 
 
@@ -231,15 +245,15 @@ class Debug_Error_Handler {
 	 *
 	 * @return bool
 	 */
-	public static function isCLI(){
+	public function isCLI(){
 		return PHP_SAPI == "cli";
 	}
 
 	/**
 	 * Sends 500 Internal Server Error header
 	 */
-	public static function sendErrorHeader(){
-		if(!static::isCLI() && !@headers_sent()){
+	public function sendErrorHeader(){
+		if(!$this->isCLI() && !@headers_sent()){
 			@header("HTTP/1.1 500 Internal Server Error");
 		}
 	}
@@ -249,23 +263,38 @@ class Debug_Error_Handler {
 	 *
 	 * @return bool
 	 */
-	public static function isErrorReportingDisabled(){
-		return static::getErrorReportingLevel() == 0;
+	public function isErrorReportingDisabled(){
+		return $this->getErrorReportingLevel() == 0;
 	}
 
 	/**
 	 * @param Debug_Error $error
 	 */
-	public static function handleErrorInstance(Debug_Error $error){
-		$is_fatal = $error->isFatal();
-		if($is_fatal){
-			static::sendErrorHeader();
+	public function handleError(Debug_Error $error){
+
+		if(!$this->isEnabled()){
+			return;
 		}
 
-		static::getLoggingHandler()->handleError($error);
-		static::getDisplayHandler()->handleError($error);
+		$is_fatal = $error->isFatal();
+		if($is_fatal){
+			$this->sendErrorHeader();
+		}
 
-		foreach(static::$custom_handlers as $handler){
+		$logging_handler = $this->getLoggingHandler();
+		if($logging_handler && $logging_handler->isEnabled()){
+			$logging_handler->handleError($error);
+		}
+
+		$display_handler = $this->getDisplayHandler();
+		if($display_handler && $display_handler->isEnabled()){
+			$display_handler->handleError($error);
+		}
+
+		foreach($this->custom_handlers as $handler){
+			if(!$handler->isEnabled()){
+				continue;
+			}
 			$handler->handleError($error);
 		}
 
@@ -280,15 +309,15 @@ class Debug_Error_Handler {
 			return;
 		}
 
-		if(static::isCLI()){
+		if($this->isCLI()){
 			echo "FATAL ERROR OCCURRED, see error logs for detail";
 			exit(1);
 		}
 
 		@ob_end_clean();
 
-		$error_page_location = static::getErrorPagePath();
-		if(!$error_page_location){
+		$error_page_location = $this->getErrorPagePath();
+		if(!$error_page_location || !file_exists($error_page_location)){
 			echo "FATAL ERROR OCCURRED, see error logs for detail";
 			exit(1);
 		}
@@ -302,10 +331,10 @@ class Debug_Error_Handler {
 	/**
 	 * Handles errors which occurred during shutdown stage
 	 */
-	public static function handleShutdownError(){
+	public function handleShutdownError(){
 
 		$last_error = error_get_last();
-		if(!$last_error || !is_array($last_error) || !static::$enabled){
+		if(!$last_error || !is_array($last_error) || !$this->isEnabled()){
 			return;
 		}
 
@@ -328,11 +357,8 @@ class Debug_Error_Handler {
 			return;
 		}
 
-		et_require('Debug_Error');
-		et_require('Exception_PHPError');
-
-
-		$exception = new Exception_PHPError(
+		et_require("Debug_PHPError");
+		$exception = new Debug_PHPError(
 			$error_string,
 			array(),
 			$error_number,
@@ -342,22 +368,23 @@ class Debug_Error_Handler {
 
 
 		// if error reporting disabled (i.e. @ before expression) and is not fatal error, ignore it
-		if(!(static::getErrorReportingLevel() & $error_number) && !$exception->isFatal()){
+		if(!($this->getErrorReportingLevel() & $error_number) && !$exception->isFatal()){
 			return;
 		}
 
 		// unique error ID to avoid loop-like errors to be displayed/logged many times
 		$error_ID = $exception->getErrorID();
-		if(isset(static::$handled_errors_IDs[$error_ID])){
+		if(isset($this->handled_errors_IDs[$error_ID])){
 			return;
 		}
 
-		static::$handled_errors_IDs[$error_ID] = $error_ID;
+		$this->handled_errors_IDs[$error_ID] = $error_ID;
 
+		et_require("Debug_Error");
 		$error = new Debug_Error($exception);
 		$error->setOccurredOnShutdown(true);
-		$error->setStrictModeEnabled(static::isStrictModeEnabled());
-		static::handleErrorInstance($error);
+		$error->setStrictModeEnabled($this->isStrictModeEnabled());
+		$this->handleError($error);
 	}
 
 
@@ -366,15 +393,15 @@ class Debug_Error_Handler {
 	 *
 	 * @return bool
 	 */
-	public static function handleException(\Exception $exception){
-		if(!static::$enabled){
+	public function handleException(\Exception $exception){
+		if(!$this->enabled){
 			return false;
 		}
 
-		et_require('Debug_Error');
+		et_require("Debug_Error");
 		$error = new Debug_Error($exception);
-		$error->setStrictModeEnabled(static::isStrictModeEnabled());
-		static::handleErrorInstance($error);
+		$error->setStrictModeEnabled($this->isStrictModeEnabled());
+		$this->handleError($error);
 
 		return true;
 	}
@@ -389,12 +416,12 @@ class Debug_Error_Handler {
 	 * @param int $line_number
 	 * @param array $error_context
 	 *
-	 * @throws Exception_PHPError
+	 * @throws \Et\Debug_PHPError
 	 * @return bool
 	 */
-	public static function handleError($error_number, $error_string, $script, $line_number, $error_context){
+	public function handlePHPError($error_number, $error_string, $script, $line_number, $error_context){
 
-		if(!static::$enabled){
+		if(!$this->enabled){
 			return false;
 		}
 
@@ -416,14 +443,12 @@ class Debug_Error_Handler {
 			return true;
 		}
 
-		et_require('Debug_Error');
-		et_require('Exception_PHPError');
-
 		if(!is_array($error_context)){
 			$error_context = array();
 		}
 
-		$exception = new Exception_PHPError(
+		et_require("Debug_PHPError");
+		$exception = new Debug_PHPError(
 			$error_string,
 			$error_context,
 			$error_number,
@@ -435,25 +460,26 @@ class Debug_Error_Handler {
 		$is_fatal = $exception->isFatal();
 
 		// if error reporting disabled (i.e. @ before expression) and is not fatal error, ignore it
-		if(!(static::getErrorReportingLevel() & $error_number) && !$is_fatal){
+		if(!($this->getErrorReportingLevel() & $error_number) && !$is_fatal){
 			return true;
 		}
 
-		if(static::getStrictModeLevel() & $error_number){
+		if($this->getStrictModeLevel() & $error_number){
 			throw $exception;
 		}
 
 		// unique error ID to avoid loop-like errors to be displayed/logged many times
 		$error_ID = $exception->getErrorID();
-		if(isset(static::$handled_errors_IDs[$error_ID])){
+		if(isset($this->handled_errors_IDs[$error_ID])){
 			return true;
 		}
 
-		static::$handled_errors_IDs[$error_ID] = $error_ID;
+		$this->handled_errors_IDs[$error_ID] = $error_ID;
 
+		et_require("Debug_Error");
 		$error = new Debug_Error($exception);
-		$error->setStrictModeEnabled(static::isStrictModeEnabled());
-		static::handleErrorInstance($error);
+		$error->setStrictModeEnabled($this->isStrictModeEnabled());
+		$this->handleError($error);
 
 		return true;
 	}
@@ -461,66 +487,53 @@ class Debug_Error_Handler {
 	/**
 	 * @param Debug_Error_Handler_Logger $logging_handler
 	 */
-	public static function setLoggingHandler(Debug_Error_Handler_Logger $logging_handler) {
-		static::$logging_handler = $logging_handler;
+	public function setLoggingHandler(Debug_Error_Handler_Logger $logging_handler) {
+		$this->logging_handler = $logging_handler;
 	}
 
 	/**
 	 * @return Debug_Error_Handler_Logger
 	 */
-	public static function getLoggingHandler() {
-		if(!static::$logging_handler){
-			et_require('Debug_Error_Handler_Logger');
-			static::$logging_handler = new Debug_Error_Handler_Logger();
-		}
-		return static::$logging_handler;
+	public function getLoggingHandler() {
+		return $this->logging_handler;
 	}
 
 	/**
 	 * @param Debug_Error_Handler_Display $display_handler
 	 */
-	public static function setDisplayHandler(Debug_Error_Handler_Display $display_handler) {
-		static::$display_handler = $display_handler;
+	public function setDisplayHandler(Debug_Error_Handler_Display $display_handler) {
+		$this->display_handler = $display_handler;
 	}
 
 	/**
 	 * @return Debug_Error_Handler_Display
 	 */
-	public static function getDisplayHandler() {
-		if(!static::$display_handler){
-			et_require('Debug_Error_Handler_Display');
-			static::$display_handler = new Debug_Error_Handler_Display();
-		}
-		return static::$display_handler;
+	public function getDisplayHandler() {
+		return $this->display_handler;
 	}
 
 	/**
-	 * @param Debug_Error_Handler_Abstract $handler
+	 * @param \Et\Debug_Error_Handler_Abstract $handler
 	 *
-	 * @return int
+	 * @return string
 	 */
-	public static function addCustomHandler(Debug_Error_Handler_Abstract $handler){
-		foreach(static::$custom_handlers as $k => $h){
-			if($h === $handler){
-				return $k;
-			}
+	public function addCustomHandler(Debug_Error_Handler_Abstract $handler){
+
+		$ID = get_class($handler) . ":" . spl_object_hash($handler);
+		if(!isset($this->custom_handlers[$ID])){
+			$this->custom_handlers[$ID] = $handler;
 		}
-		$keys = array_keys(static::$custom_handlers);
-		$next_key = $keys
-				  ? max($keys) + 1
-				  : 0;
-		static::$custom_handlers[$next_key] = $handler;
-		return $next_key;
+		return $ID;
 	}
 
 	/**
-	 * @param int $handler_ID
+	 * @param string $handler_ID
 	 *
 	 * @return bool
 	 */
-	public static function removeCustomHandler($handler_ID){
-		if(isset(static::$custom_handlers[$handler_ID])){
-			unset(static::$custom_handlers[$handler_ID]);
+	public function removeCustomHandler($handler_ID){
+		if(isset($this->custom_handlers[$handler_ID])){
+			unset($this->custom_handlers[$handler_ID]);
 			return true;
 		}
 		return false;
@@ -528,13 +541,13 @@ class Debug_Error_Handler {
 
 
 	/**
-	 * @param int $handler_ID
+	 * @param string $handler_ID
 	 *
-	 * @return bool|Debug_Error_Handler_Abstract
+	 * @return bool|\Et\Debug_Error_Handler_Abstract
 	 */
-	public static function getCustomHandler($handler_ID){
-		return isset(static::$custom_handlers[$handler_ID])
-				? static::$custom_handlers[$handler_ID]
+	public function getCustomHandler($handler_ID){
+		return isset($this->custom_handlers[$handler_ID])
+				? $this->custom_handlers[$handler_ID]
 				: false;
 	}
 
@@ -559,7 +572,7 @@ class Debug_Error_Handler {
 		for($i = $from_index; $i < $trace_count; $i++){
 			$row = $backtrace[$i];
 			if(!isset($row["file"])){
-				continue;
+				$row["file"] = "?";
 			}
 
 			if(count($output) >= $max_steps){
@@ -567,7 +580,7 @@ class Debug_Error_Handler {
 			}
 
 			$item = array(
-				"file" => System_Path::normalizeFilePath($row["file"]),
+				"file" => str_replace(array("\\", DIRECTORY_SEPARATOR), "/", $row["file"]),
 				"line" => isset($row["line"]) ? $row["line"] : 0,
 				"class" => isset($row["class"]) ? $row["class"] : null,
 				"object" => isset($row["object"]) ? $row["object"] : null,
@@ -595,15 +608,16 @@ class Debug_Error_Handler {
 	 * @param string $error_pages_dir
 	 *
 	 */
-	public static function setErrorPagesDir($error_pages_dir) {
-		static::$error_pages_dir = rtrim((string)$error_pages_dir, "\\/") . "/";
+	public function setErrorPagesDir($error_pages_dir) {
+		$error_pages_dir = str_replace(array("\\", DIRECTORY_SEPARATOR), "/", trim($error_pages_dir));
+		$this->error_pages_dir = rtrim($error_pages_dir, "/") . "/";
 	}
 
 	/**
 	 * @return string
 	 */
-	public static function getErrorPagesDir() {
-		return static::$error_pages_dir;
+	public function getErrorPagesDir() {
+		return $this->error_pages_dir;
 	}
 
 	/**
@@ -611,8 +625,8 @@ class Debug_Error_Handler {
 	 *
 	 * @return bool|string
 	 */
-	public static function getErrorPagePath($error_code = 500){
-		$error_pages_dir = static::getErrorPagesDir();
+	public function getErrorPagePath($error_code = 500){
+		$error_pages_dir = $this->getErrorPagesDir();
 		$page_path = $error_pages_dir . $error_code . ".phtml";
 		if(file_exists($page_path)){
 			return $page_path;

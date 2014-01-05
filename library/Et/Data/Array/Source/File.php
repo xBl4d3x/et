@@ -32,7 +32,7 @@ class Data_Array_Source_File extends Data_Array_Source_Abstract {
 	 * @param string $data_format
 	 */
 	public function setDataFormat($data_format) {
-		$this->assert()->isInArray($data_format, array(
+		Debug_Assert::arrayContains($data_format, array(
 			static::FORMAT_JSON,
 			static::FORMAT_PHP,
 			static::FORMAT_SERIALIZED

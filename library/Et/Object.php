@@ -1,22 +1,9 @@
 <?php
 namespace Et;
-et_require('Debug_Assert_Trait');
-et_require('Debug_Trait');
-
 /**
  * Base object
  */
 abstract class Object {
-
-	/**
-	 * Provides ::assert() method for simple assertions support
-	 */
-	use Debug_Assert_Trait;
-
-	/**
-	 * Provides ::___debug___*() methods
-	 */
-	use Debug_Trait;
 
 	/**
 	 * @return string
@@ -165,7 +152,7 @@ abstract class Object {
 	/**
 	 * Create instance of object without calling constructor
 	 *
-	 * @return Object
+	 * @return Object|static
 	 */
 	public static function getInstanceWithoutConstructor(){
 		$reflection = new \ReflectionClass(static::class);

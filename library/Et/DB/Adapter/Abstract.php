@@ -2,6 +2,11 @@
 namespace Et;
 abstract class DB_Adapter_Abstract extends Object {
 
+	const DB_TYPE_MYSQL = "mysql";
+	const DB_TYPE_SQLITE = "sqlite";
+	const DB_TYPE_SPHINX = "sphinx";
+	const DB_TYPE_CASSANDRA = "cassandra";
+
 	/**
 	 * @var DB_Adapter_Config_Abstract
 	 */
@@ -64,6 +69,10 @@ abstract class DB_Adapter_Abstract extends Object {
 	}
 
 
+	/**
+	 * @throws DB_Exception
+	 */
+	abstract public function getDatabaseType();
 
 	/**
 	 * @param \Et\DB_Profiler $profiler
@@ -414,7 +423,7 @@ abstract class DB_Adapter_Abstract extends Object {
 	 */
 	function quoteTableName($table_name){
 		$table_name = (string)$table_name;
-		$this->assert()->isVariableName($table_name);
+		Debug_Assert::isVariableName($table_name);
 		return $table_name;
 	}
 
@@ -425,7 +434,7 @@ abstract class DB_Adapter_Abstract extends Object {
 	 */
 	function quoteColumnName($column_name){
 		$column_name = (string)$column_name;
-		$this->assert()->isStringMatching($column_name, '^\w+(\.\w+)?$');
+		Debug_Assert::isStringMatching($column_name, '^\w+(\.\w+)?$');
 		return $column_name;
 	}
 
@@ -692,7 +701,7 @@ abstract class DB_Adapter_Abstract extends Object {
 		if(!$keys){
 			return array();
 		}
-		$this->assert()->isArrayOfInstances($keys, "Et\\DB_Table_Key");
+		Debug_Assert::isArrayOfInstances($keys, "Et\\DB_Table_Key");
 
 		$sets = array();
 
@@ -958,7 +967,7 @@ abstract class DB_Adapter_Abstract extends Object {
 		}
 
 		if($max_rows_per_query !== null){
-			self::assert()->isGreaterOrEqualThan($max_rows_per_query, 1);
+			Debug_Assert::isGreaterOrEqualThan($max_rows_per_query, 1);
 		}
 
 		$columns = null;

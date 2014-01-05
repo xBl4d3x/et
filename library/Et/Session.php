@@ -86,9 +86,9 @@ class Session extends Object {
 		if(!static::getSessionStarted()){
 			try {
 				if(!session_start()){
-					Exception_PHPError::triggerError("session_start() returned FALSE");
+					Debug_PHPError::triggerError("session_start() returned FALSE");
 				}
-			} catch(Exception_PHPError $e){
+			} catch(Debug_PHPError $e){
 				throw new Session_Exception(
 					"Failed to start session - {$e->getMessage()}",
 					Session_Exception::CODE_SESSION_START_FAILED

@@ -70,7 +70,7 @@ class Http_Request_URL extends Object {
 	 */
 	protected function parseURL($URL){
 		$URL = trim($URL);
-		$this->assert()->isNotEmpty($URL);
+		Debug_Assert::isNotEmpty($URL);
 
 		if(preg_match('~^(http[s]?)://([^/]+)(/.*)?$~', $URL, $m)) {
 

@@ -192,7 +192,7 @@ class System {
 	 * @return string Subscription identifier
 	 */
 	public static function subscribeSignal($signal_name, callable $signal_handler){
-		return System_Signals::getInstance()->subscribe($signal_name, $signal_handler);
+		return System_Signals::subscribe($signal_name, $signal_handler);
 	}
 
 	/**
@@ -200,6 +200,15 @@ class System {
 	 * @return bool
 	 */
 	public static function unsubscribeSignal($subscription_identifier){
-		return System_Signals::getInstance()->unsubscribe($subscription_identifier);
+		return System_Signals::unsubscribe($subscription_identifier);
+	}
+
+	/**
+	 * @param System_Signals_Signal $signal
+	 * @return int How many callbacks it passed
+	 * @throws System_Signals_Exception
+	 */
+	public static function publishSignal(System_Signals_Signal $signal){
+		return System_Signals::publish($signal);
 	}
 }

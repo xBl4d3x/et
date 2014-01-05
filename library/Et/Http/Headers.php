@@ -220,9 +220,9 @@ class Http_Headers extends Object {
 	 * @return bool|string
 	 */
 	public static function getResponseHeader($code, $code_message = null){
-		self::assert()->isGreaterOrEqualThan($code, 100);
+		Debug_Assert::isGreaterOrEqualThan($code, 100);
 		if($code_message !== null){
-			self::assert()->isString($code_message);
+			Debug_Assert::isString($code_message);
 		}
 
 		if($code_message === null && isset(self::$response_codes[$code])){
@@ -290,7 +290,7 @@ class Http_Headers extends Object {
 
 		try {
 			header($header, true, $code);
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new Http_Headers_Exception(
 				"Failed to send response header '{$header}' for HTTP code {$code} - {$e->getMessage()}",
 				Http_Headers_Exception::CODE_FAILED_TO_SEND_HEADER
@@ -344,7 +344,7 @@ class Http_Headers extends Object {
 				header((string)$header, $replace);
 			}
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new Http_Headers_Exception(
 				"Failed to send header '{$header}' - {$e->getMessage()}",
 				Http_Headers_Exception::CODE_FAILED_TO_SEND_HEADER

@@ -1,7 +1,8 @@
 <?php
 namespace Et;
-et_require("Loader_Cache_Abstract");
-class Loader_Cache_Default extends Loader_Cache_Abstract {
+require_once "Abstract.php";
+
+class ClassLoader_Cache_Default extends ClassLoader_Cache_Abstract {
 
 	/**
 	 * @return string
@@ -11,41 +12,53 @@ class Loader_Cache_Default extends Loader_Cache_Abstract {
 	}
 
 	/**
-	 * @return array
+	 * @return bool
 	 */
 	function loadsPaths() {
 		$file = $this->getFilePath();
 		if(!file_exists($file)){
-			return array();
+			return false;
 		}
+
 		$data = @file_get_contents($file);
 		if(!$data){
-			return array();
+			return false;
 		}
-		$paths = @json_decode($data);
+
+		$paths = @json_decode($data, true);
 		if(!is_array($paths)){
-			return array();
+			return false;
 		}
-		return $paths;
+
+		$this->cached_paths = $paths;
+		$this->changed = false;
+
+		return true;
 	}
 
 	/**
-	 * @param array $paths
 	 * @return bool
 	 */
-	function storePaths(array $paths) {
+	function storePaths() {
+
 		$file = $this->getFilePath();
-		$data = json_encode($paths, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		$data = json_encode($this->cached_paths, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
 		if(!@file_put_contents($file, $data)){
 			return false;
 		}
+
 		@chmod($file, ET_DEFAULT_FILES_CHMOD);
 		if(ET_DEFAULT_CHOWN_GROUP){
 			@chgrp($file, ET_DEFAULT_CHOWN_GROUP);
 		}
+
 		if(ET_DEFAULT_CHOWN_USER){
 			@chown($file, ET_DEFAULT_CHOWN_USER);
 		}
+
+		$this->changed = false;
+
 		return true;
 	}
 
@@ -53,10 +66,7 @@ class Loader_Cache_Default extends Loader_Cache_Abstract {
 	 * @return bool
 	 */
 	function clearPaths() {
-		$file = $this->getFilePath();
-		if(!file_exists($file)){
-			return true;
-		}
-		return @unlink($file);
+		$this->cached_paths = array();
+		return $this->storePaths();
 	}
 }

@@ -419,49 +419,6 @@ class System_Text extends Object {
 	}
 
 	/**
-	 * @param callable|null $identifier_exists_callback [optional]
-	 * @param array $callback_arguments [optional]
-	 * @param int $max_length [optional]
-	 * @param string $prefix [optional]
-	 * @param string $delimiter [optional]
-	 *
-	 * @throws System_Text_Exception
-	 * @return string
-	 */
-	public function createIdentifier(callable $identifier_exists_callback = null, array $callback_arguments = array(), $max_length = 64, $prefix = "", $delimiter = "-"){
-		$base_identifier = (string)$prefix . $this->getTransliteration()->createIdentifier($this->text, $delimiter, true, $max_length);
-		if($base_identifier === ""){
-			throw new System_Text_Exception(
-				"Identifier may not be empty string",
-				System_Text_Exception::CODE_INVALID_IDENTIFIER
-			);
-		}
-
-		if(!$identifier_exists_callback){
-			return $base_identifier;
-		}
-
-		$counter = 0;
-		do {
-			$postfix = $counter ? "{$delimiter}{$counter}" : "";
-			$postfix_length = strlen($postfix);
-
-			$identifier = trim(substr($base_identifier, 0, $max_length - $postfix_length), $delimiter) . $postfix;
-			$counter++;
-			$args = $callback_arguments;
-			array_unshift($args, $identifier);
-			if($counter == 25){
-				throw new System_Text_Exception(
-					"Failed to generate unique identifier int 25 retries",
-					System_Text_Exception::CODE_IDENTIFIER_GENERATION_FAILED
-				);
-			}
-		} while(call_user_func_array($identifier_exists_callback, $args));
-
-		return $identifier;
-	}
-
-	/**
 	 * @param array $tag_to_remove [optional]
 	 * @param array $tags_not_to_remove [optional]
 	 * @return string
@@ -517,7 +474,7 @@ class System_Text extends Object {
 				}
 				$col_lines = explode("\n", $column);
 				foreach($col_lines as $line){
-					$len = System::getText($line)->getLength() + 2;
+					$len = static::getInstance($line)->getLength() + 2;
 					if($columns_widths[$c] < $len){
 						$columns_widths[$c] = $len;
 					}
@@ -534,7 +491,7 @@ class System_Text extends Object {
 				if(!$c){
 					echo "|";
 				}
-				echo System::getText(" {$column}")->pad($w, " ", self::PAD_RIGHT);
+				echo static::getInstance(" {$column}")->pad($w, " ", self::PAD_RIGHT);
 				echo "|";
 			}
 			echo "\n";

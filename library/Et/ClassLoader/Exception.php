@@ -1,7 +1,7 @@
 <?php
 namespace Et;
-et_require("Exception");
-class Loader_Exception extends Exception {
+require_once dirname(__DIR__) . "/Exception.php";
+class ClassLoader_Exception extends Exception {
 
 	const CODE_INVALID_LOADER_CLASS = 10;
 	const CODE_INVALID_CLASS_NAME_PREFIX = 20;

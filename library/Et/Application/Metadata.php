@@ -59,14 +59,14 @@ class Application_Metadata extends System_Components_Component {
 	 */
 	function __construct($application_ID){
 		Application::checkApplicationIDFormat($application_ID);
-		$this->name = $application_ID;
+		$this->title = $application_ID;
 		$this->loadMetadata();
-		parent::__construct($application_ID, $this->getName(), $this->getDescription());
+		parent::__construct($application_ID, $this->getTitle(), $this->getDescription());
 	}
 
 	function reload(){
 		$this->loadMetadata();
-		$this->changed = true;
+		$this->_changed = true;
 	}
 
 
@@ -78,14 +78,14 @@ class Application_Metadata extends System_Components_Component {
 
 			$metadata = new Data_Array($this->getMetadataFile()->includeArrayContent());
 			
-			$this->name = trim($metadata->getString("name"));
+			$this->title = trim($metadata->getString("name"));
 			$this->description = trim($metadata->getString("description"));
 			$this->version = $metadata->getInt("version");
 			$this->signal_handlers = $metadata->getRawValue("signal_handlers", array());
 			$this->factory_class_map = $metadata->getRawValue("factory_class_map", array());
 
 			$assert = $this->assert();
-			$assert->isNotEmpty($this->name, "application name not specified");
+			$assert->isNotEmpty($this->title, "application name not specified");
 			$assert->isArray($this->signal_handlers, "signal handlers must be an array");
 			$assert->isArray($this->factory_class_map, "factory class map must be an array");
 			$assert->isArray($this->factory_class_map, "factory class map must be an array");
@@ -164,7 +164,7 @@ class Application_Metadata extends System_Components_Component {
 		$config_class = "EtApp\\{$this->getApplicationID()}\\Config";
 		if(!class_exists($config_class) || !is_subclass_of($config_class, 'Et\Application_Config', true)){
 			throw new Application_Exception(
-				"Configuration class '{$config_class}' for application {$this->getID()} ({$this->getName()}) not found or is not subclass of Et\\Application_Config",
+				"Configuration class '{$config_class}' for application {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\Application_Config",
 				Application_Exception::CODE_INVALID_CONFIG
 			);
 		}
@@ -185,7 +185,7 @@ class Application_Metadata extends System_Components_Component {
 		$installer_class = "EtApp\\{$this->getApplicationID()}\\Installer";
 		if(!class_exists($installer_class) || !is_subclass_of($installer_class, 'Et\Application_Installer', true)){
 			throw new Application_Exception(
-				"Installer class '{$installer_class}' for application {$this->getID()} ({$this->getName()}) not found or is not subclass of Et\\Application_Installer",
+				"Installer class '{$installer_class}' for application {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\Application_Installer",
 				Application_Exception::CODE_INVALID_CONFIG
 			);
 		}
@@ -205,7 +205,7 @@ class Application_Metadata extends System_Components_Component {
 	 * @return string
 	 */
 	public function getApplicationName(){
-		return $this->getName();
+		return $this->getTitle();
 	}
 
 	/**

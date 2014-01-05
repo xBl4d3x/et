@@ -210,31 +210,8 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 	}
 
 
-
-
 	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @param int $offset [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null, $offset = 0){
-		$padding = str_repeat("\t", $offset);
-		if($this->isEmpty()){
-			return "{$padding}*";
-		}
-		$expressions = $this->getExpressions();
-		$output = array();
-
-		foreach($expressions as $expression){
-			$output[] = $expression->toSQL($db);
-		}
-
-		return $padding . implode(",\n{$padding}", $output);
-	}
-
-
-	/**
-	 * @return DB_Query_Select_AllColumns|DB_Query_Select_Column|DB_Query_Select_Count|DB_Query_Select_Expression|DB_Query_Select_SubQuery
+	 * @return DB_Query_Select_AllColumns|DB_Query_Select_Column|DB_Query_Select_Expression|DB_Query_Select_SubQuery
 	 */
 	public function current() {
 		return current($this->expressions);
@@ -269,23 +246,5 @@ class DB_Query_Select extends Object implements \Iterator,\Countable {
 	 */
 	public function count() {
 		return $this->getExpressionsCount();
-	}
-
-	/**
-	 * @return string
-	 */
-	function __toString(){
-		if($this->isEmpty()){
-			return "*";
-		}
-
-		$expressions = $this->getExpressions();
-		$output = array();
-
-		foreach($expressions as $expression){
-			$output[] = (string)$expression;
-		}
-
-		return implode(",\n", $output);
 	}
 }

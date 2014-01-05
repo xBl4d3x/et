@@ -17,14 +17,20 @@ class Factory {
 	 */
 	protected static $class_override_check_cache = array();
 
+	/**
+	 * @var bool
+	 */
+	protected static $initialized = false;
+
 	public static function initialize(){
+		if(static::$initialized){
+			return;
+		}
+		static::$initialized = true;
+
 		et_require("System");
 		$class_override_map = System::getConfig()->getSectionData(static::ENVIRONMENT_CONFIG_SECTION);
-		foreach($class_override_map as $k => $v){
-			if(!isset(static::$class_override_map[$k])){
-				static::$class_override_map[$k] = (string)$v;
-			}
-		}
+		static::setClassOverrideMap($class_override_map, false);
 	}
 
 	/**
@@ -32,42 +38,30 @@ class Factory {
 	 * @param bool $merge [optional]
 	 */
 	public static function setClassOverrideMap(array $class_override_map, $merge = true){
-		if(!$merge || !static::$class_override_map){
-			static::$class_override_map = $class_override_map;
-		} else {
-			static::$class_override_map = array_merge(static::$class_override_map, $class_override_map);
+		if(!static::$initialized){
+			static::initialize();
 		}
-		static::clearClassOverrideCheckCache();
+
+		if(!$merge){
+			static::$class_override_map = array();
+		}
+
+		foreach($class_override_map as $k => $v){
+			static::$class_override_map[$k] = (string)$v;
+		}
+
+		static::$class_override_check_cache = array();
 	}
 
 	/**
 	 * @return array
 	 */
 	public static function getClassOverrideMap(){
-		return static::$class_override_map;
-	}
-
-	/**
-	 * @param string $original_class_name
-	 *
-	 * @return bool
-	 */
-	public static function removeClassNameOverride($original_class_name){
-		if(!isset(static::$class_override_map[$original_class_name])){
-			return false;
+		if(!static::$initialized){
+			static::initialize();
 		}
-		unset(static::$class_override_map[$original_class_name]);
-		static::clearClassOverrideCheckCache();
-		return true;
-	}
 
-	/**
-	 * @param string $original_class_name
-	 * @param string $override_by_class_name
-	 */
-	public static function setClassNameOverride($original_class_name, $override_by_class_name){
-		static::$class_override_map[$original_class_name] = $override_by_class_name;
-		static::clearClassOverrideCheckCache();
+		return static::$class_override_map;
 	}
 
 
@@ -85,6 +79,10 @@ class Factory {
 	 * @return string
 	 */
 	public static function getClassName($original_class_name, $required_parent_class_name = null, $check_if_exists = true){
+
+		if(!static::$initialized){
+			static::initialize();
+		}
 
 		$real_class_name = isset(static::$class_override_map[$original_class_name])
 			? static::$class_override_map[$original_class_name]
@@ -129,7 +127,8 @@ class Factory {
 	 */
 	public static function getClassInstanceWithoutConstructor($original_class_name, $required_parent_class_name = null, $check_if_exists = true){
 		$class_name = static::getClassName($original_class_name,$required_parent_class_name, $check_if_exists);
-		return Debug::createObjectInstanceWithoutConstructor($class_name);
+		$reflection = new \ReflectionClass($class_name);
+		return $reflection->newInstanceWithoutConstructor();
 	}
 
 	/**
@@ -141,7 +140,54 @@ class Factory {
 	 */
 	public static function getClassInstance($original_class_name, array $constructor_arguments = array(), $required_parent_class_name = null, $check_if_exists = true){
 		$class_name = static::getClassName($original_class_name,$required_parent_class_name, $check_if_exists);
-		return Debug::createObjectInstance($class_name, $constructor_arguments);
+		if(!$constructor_arguments){
+			return new $class_name();
+		}
+
+		$keys = array_keys($constructor_arguments);
+		$args_count = count($keys);
+
+		switch($args_count){
+			case 1:
+				return new $class_name(
+					$constructor_arguments[$keys[0]]
+				);
+
+			case 2:
+				return new $class_name(
+					$constructor_arguments[$keys[0]],
+					$constructor_arguments[$keys[1]]
+				);
+
+			case 3:
+				return new $class_name(
+					$constructor_arguments[$keys[0]],
+					$constructor_arguments[$keys[1]],
+					$constructor_arguments[$keys[2]]
+				);
+
+			case 4:
+				return new $class_name(
+					$constructor_arguments[$keys[0]],
+					$constructor_arguments[$keys[1]],
+					$constructor_arguments[$keys[2]],
+					$constructor_arguments[$keys[3]]
+				);
+
+			case 5:
+				return new $class_name(
+					$constructor_arguments[$keys[0]],
+					$constructor_arguments[$keys[1]],
+					$constructor_arguments[$keys[2]],
+					$constructor_arguments[$keys[3]],
+					$constructor_arguments[$keys[4]]
+				);
+
+			default:
+				$reflection = new \ReflectionClass($class_name);
+				return $reflection->newInstanceArgs($constructor_arguments);
+		}
+
 	}
 
 }

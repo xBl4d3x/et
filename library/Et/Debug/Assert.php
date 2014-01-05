@@ -1,180 +1,182 @@
 <?php
 namespace Et;
+et_require('Debug_Assert_Exception');
 class Debug_Assert {
 
-	/**
-	 * @var Debug_Assert
-	 */
-	protected static $instance;
+	const TYPE_BOOL = "boolean";
+	const TYPE_INT = "integer";
+	const TYPE_FLOAT = "double";
+	const TYPE_STRING = "string";
+	const TYPE_ARRAY = "array";
+	const TYPE_OBJECT = "object";
+	const TYPE_RESOURCE = "resource";
+	const TYPE_NULL = "NULL";
 
-	/**
-	 * @return Debug_Assert
-	 */
-	public static function getInstance(){
-		if(!self::$instance){
-			self::$instance = new static();
-		}
-		return self::$instance;
-	}
-
+	
 	/**
 	 * @param string $reason
 	 * @param string $comment
-	 * @param int $backtrace_offset
 	 * @param array $reason_data [optional]
 	 *
 	 * @throws Debug_Assert_Exception
 	 */
-	protected function throwException($reason, $comment, $backtrace_offset, array $reason_data = array()){
+	protected static function throwException($reason, $comment, array $reason_data = array()){
+		
 		if(!$reason){
-			return;
+			$reason = "Assert failed";
 		}
 
 		foreach($reason_data as $k => $v){
 			$reason = str_replace("{{$k}}", (string)$v, $reason);
 		}
 
-		if(!is_scalar($comment)){
-			$comment = "";
+		$error_message = "Assert failed";
+		if($reason){
+			$error_message .= ": {$reason}";
 		}
-		$comment = trim($comment);
 
-		et_require('Debug_Assert_Exception');
+		$comment = trim($comment);
+		if($comment){
+			$error_message .= "\nComment: {$comment}";
+		}
+
+
+		$backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		$backtrace_offset = 0;
+		do {
+			$b = array_shift($backtrace);
+			if(!isset($b["class"]) || $b["class"] != static::class){
+				break;
+			}
+			$backtrace_offset++;
+			
+		} while($backtrace);
+		
 		throw new Debug_Assert_Exception(
-			$comment ? $comment : $reason,
-			$backtrace_offset,
-			$reason
+			$error_message,
+			$backtrace_offset
 		);
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isTrue($value, $comment = "", $backtrace_offset = 2){
+	public static function isTrue($value, $comment = ""){
 		if($value !== true){
-			$this->throwException("Value should be TRUE (boolean)", $comment, $backtrace_offset);
+			static::throwException("Value is not TRUE (boolean)", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotTrue($value, $comment = "", $backtrace_offset = 2){
+	public static function isNotTrue($value, $comment = ""){
 		if($value === true){
-			$this->throwException("Value should NOT be TRUE", $comment, $backtrace_offset);
+			static::throwException("Value is TRUE (boolean)", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isFalse($value, $comment = "", $backtrace_offset = 2){
+	public static function isFalse($value, $comment = ""){
 		if($value !== false){
-			$this->throwException("Value should be FALSE", $comment, $backtrace_offset);
+			static::throwException("Value is not FALSE (boolean)", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotFalse($value, $comment = "", $backtrace_offset = 2){
+	public static function isNotFalse($value, $comment = ""){
 		if($value === false){
-			$this->throwException("Value should NOT be FALSE", $comment, $backtrace_offset);
+			static::throwException("Value is FALSE (boolean)", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isEmpty($value, $comment = "", $backtrace_offset = 2){
+	public static function isEmpty($value, $comment = ""){
 		if(!empty($value)){
-			$this->throwException("Value should be empty", $comment, $backtrace_offset);
+			static::throwException("Value is not empty", $comment);
 		}
-		return $this;
+		
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 *
+	 */
+	public static function isNotEmpty($value, $comment = ""){
+		if(empty($value)){
+			static::throwException("Value is empty", $comment);
+		}
+
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param bool $check_mx [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optiona]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isEmail($value, $check_mx = false, $comment = "", $backtrace_offset = 2){
-		$this->isString($value, $comment, $backtrace_offset + 1);
+	public static function isEmail($value, $check_mx = false, $comment = ""){
+		static::isString($value, $comment);
+
 		if(!filter_var($value, FILTER_VALIDATE_EMAIL)){
-			$this->throwException("Invalid e-mail format", $comment, $backtrace_offset);
+			static::throwException("Invalid e-mail format", $comment);
 		}
 
 		if($check_mx){
-			list($domain) = explode("@", $value);
+			list($domain) = explode("@", $value, 2);
 			if(!getmxrr($domain, $mx_hosts)){
-				$this->throwException("Invalid e-mail - DNS MX record not found", $comment, $backtrace_offset);
+				static::throwException("Invalid e-mail - DNS MX record not found", $comment);
 			}
 		}
-
-		return $this;
-	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optiona]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isValidEmail($value, $comment = "", $backtrace_offset = 2){
-		$this->isEmail($value, true, $comment, $backtrace_offset + 1);
-		return $this;
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param bool $path_required [optional]
 	 * @param bool $query_allowed [optional]
-	 * @param bool $hash_allowed [optional]
 	 * @param string $comment [optional]
-	 * @param array|null $schemes_allowed [optional] Default: array('http', 'https')
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isURL($value, $path_required = true, $query_allowed = true, $hash_allowed = true, $comment = "", array $schemes_allowed = null, $backtrace_offset = 2){
+	public static function isURL($value, $path_required = true, $query_allowed = true, $comment = ""){
 
-		$this->isString($value, $comment, $backtrace_offset + 1);
+		static::isString($value, $comment);
 		if($path_required){
 			$res = filter_var($value, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED);
 		} else {
@@ -182,141 +184,70 @@ class Debug_Assert {
 		}
 
 		if(!$res){
-			$this->throwException("Invalid URL format", $comment, $backtrace_offset);
+			static::throwException("Invalid URL format", $comment);
 		}
 
-		if($schemes_allowed === null){
-			$schemes_allowed = array("http", "https");
-		}
-
-		if($schemes_allowed){
-			foreach($schemes_allowed as &$scheme){
-				$scheme = preg_quote($scheme);
-			}
-
-			if(!preg_match('~^('.implode("|", $schemes_allowed).'):~', $value)){
-				$this->throwException("Invalid URL scheme, allowed: {SCHEMES}", $comment, $backtrace_offset, array("SCHEMES" => implode(", ", $schemes_allowed)));
-			}
+		if(!preg_match('~^(http|https):~', $value)){
+			static::throwException("Invalid or missing URL scheme (http/https)", $comment);
 		}
 
 		if(!$query_allowed && strpos($value, "?") !== false){
-			$this->throwException("URL query part (?) not allowed", $comment, $backtrace_offset);
-		}
-
-		if(!$hash_allowed && strpos($value, "#") !== false){
-			$this->throwException("URL hash part (#) not allowed", $comment, $backtrace_offset);
-		}
-
-		return $this;
-	}
-
-
-	/**
-	 * @param mixed $value
-	 * @param bool $path_required [optional]
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isClearURL($value, $path_required = true, $comment = "", $backtrace_offset = 2){
-		$this->isURL($value, $path_required, false, false, $comment, null, $backtrace_offset + 1);
-		return $this;
+			static::throwException("URL query part (after '?') not allowed", $comment);
+		}		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param bool $query_allowed [optional]
-	 * @param bool $hash_allowed [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isURI($value, $query_allowed = true, $hash_allowed = true, $comment = "", $backtrace_offset = 2){
-		$this->isString($value, $comment, $backtrace_offset + 1);
-		if(!isset($value[0]) || $value[0] != '/' || !filter_var("http://localhost{$value}", FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED)){
-			$this->throwException("Invalid URI format", $comment, $backtrace_offset);
+	public static function isURI($value, $query_allowed = true, $comment = ""){
+		static::isString($value, $comment);
+		if($value === "" || $value[0] != '/' || !filter_var("http://localhost{$value}", FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED)){
+			static::throwException("Invalid URI format", $comment);
 		}
 
 		if(!$query_allowed && strpos($value, "?") !== false){
-			$this->throwException("URI query part (?) not allowed", $comment, $backtrace_offset);
-		}
-
-		if(!$hash_allowed && strpos($value, "#") !== false){
-			$this->throwException("URI hash part (#) not allowed", $comment, $backtrace_offset);
-		}
-		
-		return $this;
+			static::throwException("URI query part (?) not allowed", $comment);
+		}		
 	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isClearURI($value, $comment = "", $backtrace_offset = 2){
-		$this->isURI($value, false, false, $comment, $backtrace_offset + 1);
-		return $this;
-	}
-
 
 	/**
 	 * @param mixed $value
 	 * @param bool $IPv4_only [optional]
 	 * @param bool $IPv6_only [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isIP($value, $IPv4_only = false, $IPv6_only = false, $comment = "", $backtrace_offset = 2){
-		$this->isString($value, $comment, $backtrace_offset + 1);
+	public static function isIP($value, $IPv4_only = false, $IPv6_only = false, $comment = ""){
+
+		static::isString($value, $comment);
 		$IPv4_only = (bool)$IPv4_only;
 		$IPv6_only = (bool)$IPv6_only;
 
-		if($IPv4_only != $IPv6_only){
-			if($IPv4_only){
-				if(!filter_var($value, FILTER_VALIDATE_IP. FILTER_FLAG_IPV4)){
-					$this->throwException("Invalid IPv4 IP", $comment, $backtrace_offset);
-				}
-			} else {
-				if(!filter_var($value, FILTER_VALIDATE_IP. FILTER_FLAG_IPV6)){
-					$this->throwException("Invalid IPv6 IP", $comment, $backtrace_offset);
-				}
-			}
-		} else {
+		if($IPv4_only == $IPv6_only){
 			if(!filter_var($value, FILTER_VALIDATE_IP)){
-				$this->throwException("Invalid IP", $comment, $backtrace_offset);
+				static::throwException("Invalid IP", $comment);
 			}
+			return;
 		}
 
-		return $this;
-	}
+		if($IPv4_only && !filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)){
 
+			static::throwException("Invalid IPv4 IP", $comment);
 
+		} elseif($IPv6_only && !filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)){
 
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isNotEmpty($value, $comment = "", $backtrace_offset = 2){
-		if(empty($value)){
-			$this->throwException("Value should NOT be empty", $comment, $backtrace_offset);
+			static::throwException("Invalid IPv6 IP", $comment);
+
 		}
-
-		return $this;
 	}
+
 
 	/**
 	 * @param mixed $value
@@ -325,7 +256,7 @@ class Debug_Assert {
 	 *
 	 * @return bool
 	 */
-	protected function valueEquals(&$value, &$equals_to, $strict){
+	protected static function valueEquals(&$value, &$equals_to, $strict){
 		if($strict){
 			if($value !== $equals_to){
 				return false;
@@ -352,21 +283,19 @@ class Debug_Assert {
 	 * @param mixed $equals_to
 	 * @param bool $strict_compare [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	function equalValues($value, $equals_to, $strict_compare = false, $comment = "", $backtrace_offset = 2){
-		if(!$this->valueEquals($value, $equals_to, $strict_compare)){
-			$this->throwException(
+	static function isEqual($value, $equals_to, $strict_compare = false, $comment = ""){
+		if(!static::valueEquals($value, $equals_to, $strict_compare)){
+			static::throwException(
 				"Values are not equal",
-				$comment,
-				$backtrace_offset
+				$comment
 			);
 		}
 
-		return $this;
+		
 	}
 
 	/**
@@ -374,85 +303,77 @@ class Debug_Assert {
 	 * @param mixed $equals_to
 	 * @param bool $strict_compare [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	function notEqualValue($value, $equals_to, $strict_compare = false, $comment = "", $backtrace_offset = 2){
-		if(!$this->valueEquals($value, $equals_to, $strict_compare)){
-			$this->throwException(
-				"Values should NOT be equal",
-				$comment,
-				$backtrace_offset
+	static function isNotEqual($value, $equals_to, $strict_compare = false, $comment = ""){
+		if(static::valueEquals($value, $equals_to, $strict_compare)){
+			static::throwException(
+				"Values are equal",
+				$comment
 			);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param mixed $equals_to
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	function sameValues($value, $equals_to, $comment = "", $backtrace_offset = 2){
-		if(!$this->valueEquals($value, $equals_to, true)){
-			$this->throwException(
+	static function isSame($value, $equals_to, $comment = ""){
+		if(!static::valueEquals($value, $equals_to, true)){
+			static::throwException(
 				"Values are not same",
-				$comment,
-				$backtrace_offset
+				$comment
 			);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param mixed $equals_to
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	function notSame($value, $equals_to, $comment = "", $backtrace_offset = 2){
-		if(!$this->valueEquals($value, $equals_to, true)){
-			$this->throwException(
-				"Values should NOT be same",
-				$comment,
-				$backtrace_offset
+	static function isNotSame($value, $equals_to, $comment = ""){
+		if(static::valueEquals($value, $equals_to, true)){
+			static::throwException(
+				"Values are same",
+				$comment
 			);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string|array $allowed_type_or_types
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function hasType($value, $allowed_type_or_types, $comment = "", $backtrace_offset = 2){
+	public static function hasType($value, $allowed_type_or_types, $comment = ""){
 		if(!is_array($allowed_type_or_types)){
 			$allowed_type_or_types = array($allowed_type_or_types);
 		}
 
 		if(!in_array(gettype($value), $allowed_type_or_types)){
-			$reason = "Value type should be {ALLOWED_TYPES}, not {GIVEN_TYPE}";
-			$this->throwException(
+			$reason = "Value must be {ALLOWED_TYPES}, not {GIVEN_TYPE}";
+			static::throwException(
 				$reason,
 				$comment,
-				$backtrace_offset,
 				array(
 					"ALLOWED_TYPES" => implode(" or ", $allowed_type_or_types),
 					"GIVEN_TYPE" => gettype($value)
@@ -460,335 +381,316 @@ class Debug_Assert {
 			);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string|array $disallowed_type_or_types
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function hasNotType($value, $disallowed_type_or_types, $comment = "", $backtrace_offset = 2){
+	public static function hasNotType($value, $disallowed_type_or_types, $comment = ""){
 		if(!is_array($disallowed_type_or_types)){
 			$disallowed_type_or_types = array($disallowed_type_or_types);
 		}
 
 		if(!in_array(gettype($value), $disallowed_type_or_types)){
-			$reason = "Value type should NOT be {DISALLOWED_TYPES}";
-			$this->throwException(
+			$reason = "Value may not be {DISALLOWED_TYPES}";
+			static::throwException(
 				$reason,
 				$comment,
-				$backtrace_offset,
 				array(
 					"DISALLOWED_TYPES" => implode(" or ", $disallowed_type_or_types)
 				)
 			);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isBool($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "boolean", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isBool($value, $comment = ""){
+		static::hasType($value, self::TYPE_BOOL, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotBool($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "boolean", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotBool($value, $comment = ""){
+		static::hasNotType($value, self::TYPE_BOOL, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isScalar($value, $comment = "", $backtrace_offset = 2){
+	public static function isScalar($value, $comment = ""){
 		if(!is_scalar($value)){
-			$this->throwException("Value should be scalar, not {OBJECT_CLASS}", $comment, $backtrace_offset, array("TYPE" => gettype($value)));
+			static::throwException("Value must be scalar, not {TYPE}", $comment, array("TYPE" => gettype($value)));
 		}
-		return $this;
+		
 
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotScalar($value, $comment = "", $backtrace_offset = 2){
+	public static function isNotScalar($value, $comment = ""){
 		if(is_scalar($value)){
-			$this->throwException("Value should NOT be scalar", $comment, $backtrace_offset);
+			static::throwException("Value may not be scalar", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isScalarOrNULL($value, $comment = "", $backtrace_offset = 2){
+	public static function isScalarOrNULL($value, $comment = ""){
 		if(!is_scalar($value) && $value !== null){
-			$reason = "Value should be scalar or NULL, not {OBJECT_CLASS}";
-			$this->throwException($reason, $comment, $backtrace_offset, array("TYPE" => gettype($value)));
+			$reason = "Value must be scalar or NULL, not {TYPE}";
+			static::throwException($reason, $comment, array("TYPE" => gettype($value)));
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotScalarOrNULL($value, $comment = "", $backtrace_offset = 2){
+	public static function isNotScalarOrNULL($value, $comment = ""){
 		if(is_scalar($value) || $value === null){
-			$this->throwException("Value should NOT be scalar or NULL", $comment, $backtrace_offset);
+			static::throwException("Value may not be scalar or NULL", $comment);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNumber($value, $comment = "", $backtrace_offset = 2){
+	public static function isNumber($value, $comment = ""){
 		if(!is_numeric($value)){
-			$reason = "Value should be number, not {TYPE}";
-			$this->throwException($reason, $comment, $backtrace_offset, array("TYPE" => gettype($value)));
+			$reason = "Value must be number, not {TYPE}";
+			static::throwException($reason, $comment, array("TYPE" => gettype($value)));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotNumber($value, $comment = "", $backtrace_offset = 2){
+	public static function isNotNumber($value, $comment = ""){
 		if(is_numeric($value)){
-			$this->throwException("Value should NOT be numeric", $comment, $backtrace_offset);
+			static::throwException("Value may not be number", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isInteger($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "integer", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isInteger($value, $comment = ""){
+		static::hasType($value, self::TYPE_INT, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotInteger($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "integer", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotInteger($value, $comment = ""){
+		static::hasNotType($value, self::TYPE_INT, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isFloat($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "double", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isFloat($value, $comment = ""){
+		static::hasType($value, self::TYPE_FLOAT, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotFloat($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "double", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotFloat($value, $comment = ""){
+		static::hasNotType($value, self::TYPE_FLOAT, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNull($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "NULL", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNull($value, $comment = ""){
+		if($value !== null){
+			static::throwException("Value is not NULL", $comment);
+		}
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotNull($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "NULL", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotNull($value, $comment = ""){
+		if($value === null){
+			static::throwException("Value may not be NULL", $comment);
+		}
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isString($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "string", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isString($value, $comment = ""){
+		static::hasType($value, self::TYPE_STRING, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotString($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "string", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotString($value, $comment = ""){
+		static::hasNotType($value, self::TYPE_STRING, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isStringOrNumber($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, array("string", "integer", "double"), $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isStringOrNumber($value, $comment = ""){
+		static::hasType($value, array(self::TYPE_STRING, self::TYPE_INT, self::TYPE_FLOAT), $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotStringOrNumber($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, array("string", "integer", "double"), $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotStringOrNumber($value, $comment = ""){
+		static::hasNotType($value, array(self::TYPE_STRING, self::TYPE_INT, self::TYPE_FLOAT), $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isArray($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "array", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isArray($value, $comment = ""){
+		static::hasType($value, self::TYPE_ARRAY, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isLinearArray($value, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset + 1);
+	public static function isLinearArray($value, $comment = ""){
+		static::isArray($value, $comment);
+
 		if(!$value){
-			return $this;
+			return;
 		}
 
 		if(array_keys($value) !== range(0, count($value) - 1, 1)){
-			$this->throwException("Value is not linear array", $comment, $backtrace_offset);
+			static::throwException("Value is not linear array", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param array|string $allowed_value_type_or_types
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isArrayOf($value, $allowed_value_type_or_types, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset + 1);
+	public static function isArrayOfType($value, $allowed_value_type_or_types, $comment = ""){
+		static::isArray($value, $comment);
 		if(!$value){
-			return $this;
+			return;
 		}
 
 		if(!is_array($allowed_value_type_or_types)){
@@ -796,427 +698,409 @@ class Debug_Assert {
 		}
 
 		foreach($value as $k => $v){
-			if(!in_array(gettype($v), $allowed_value_type_or_types)){
-				$reason = "Value type at key '{KEY}' should be {ALLOWED_TYPES}, not {GIVEN_TYPE}";
-				$this->throwException(
+			$type = gettype($v);
+			if(!in_array($type, $allowed_value_type_or_types)){
+				$reason = "Value with key '{KEY}' must be {ALLOWED_TYPES}, not {GIVEN_TYPE}";
+				static::throwException(
 					$reason,
 					$comment,
-					$backtrace_offset,
 					array(
 						"ALLOWED_TYPES" => implode(" or ", $allowed_value_type_or_types),
+						"GIVEN_TYPE" => $type,
+						"KEY" => $k
+					)
+				);
+			}
+		}
+		
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 * 
+	 */
+	public static function isArrayOfArrays($value, $comment = ""){
+		static::isArrayOfType($value, self::TYPE_ARRAY, $comment);
+		
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 * 
+	 */
+	public static function isArrayOfStrings($value, $comment = ""){
+		static::isArrayOfType($value, self::TYPE_STRING, $comment);
+		
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 * 
+	 */
+	public static function isArrayOfNumbers($value, $comment = ""){
+		static::isArrayOfType($value, array(self::TYPE_INT, self::TYPE_FLOAT), $comment);
+		
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 * 
+	 */
+	public static function isArrayOfStringsOrNumbers($value, $comment = ""){
+		static::isArrayOfType($value, array(self::TYPE_STRING, self::TYPE_INT, self::TYPE_FLOAT), $comment);
+		
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 * 
+	 */
+	public static function isArrayOfScalars($value, $comment = ""){
+		static::isArray($value, $comment);
+		if(!$value){
+			return;
+		}
+
+		foreach($value as $k => $v){
+			if(!is_scalar($value)){
+				$reason = "Value with key '{KEY}' must be scalar, not {GIVEN_TYPE}";
+				static::throwException(
+					$reason,
+					$comment,
+					array(
 						"GIVEN_TYPE" => gettype($v),
 						"KEY" => $k
 					)
 				);
 			}
 		}
-		return $this;
-	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isArrayOfArrays($value, $comment = "", $backtrace_offset = 2){
-		$this->isArrayOf($value, 'array', $comment, $backtrace_offset + 1);
-		return $this;
-	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isArrayOfStrings($value, $comment = "", $backtrace_offset = 2){
-		$this->isArrayOf($value, 'string', $comment, $backtrace_offset + 1);
-		return $this;
-	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isArrayOfNumbers($value, $comment = "", $backtrace_offset = 2){
-		$this->isArrayOf($value, array('integer', 'double'), $comment, $backtrace_offset + 1);
-		return $this;
-	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isArrayOfStringsOrNumbers($value, $comment = "", $backtrace_offset = 2){
-		$this->isArrayOf($value, array('string', 'integer', 'double'), $comment, $backtrace_offset + 1);
-		return $this;
-	}
-
-	/**
-	 * @param mixed $value
-	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
-	 */
-	public function isArrayOfScalars($value, $comment = "", $backtrace_offset = 2){
-		$this->isArrayOf($value, array('string', 'integer', 'double', 'boolean'), $comment, $backtrace_offset + 1);
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed|array $value
 	 * @param string $instances_of_class
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isArrayOfInstances($value, $instances_of_class, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset + 1);
-		$this->classExists($instances_of_class, $comment, $backtrace_offset + 1);
+	public static function isArrayOfInstances($value, $instances_of_class, $comment = ""){
+		static::isArray($value, $comment);
+		static::isClassName($instances_of_class, true, $comment);
+
 		foreach($value as $k => $v){
 			if(!($v instanceof $instances_of_class)){
-				$this->throwException("Value with key {KEY} is not instance of {CLASS}", $comment, $backtrace_offset, array("KEY" => $k, "CLASS" => $instances_of_class));
+
+				static::throwException(
+					"Value with key {KEY} is not instance of {CLASS}",
+					$comment,
+					array(
+						"KEY" => $k,
+						"CLASS" => $instances_of_class
+					)
+				);
+
 			}
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotArray($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "array", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotArray($value, $comment = ""){
+		static::hasNotType($value, self::TYPE_ARRAY, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isObject($value, $comment = "", $backtrace_offset = 2){
-		$this->hasType($value, "object", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isObject($value, $comment = ""){
+		static::hasType($value, self::TYPE_OBJECT, $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotObject($value, $comment = "", $backtrace_offset = 2){
-		$this->hasNotType($value, "object", $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isNotObject($value, $comment = ""){
+		static::hasNotType($value, self::TYPE_OBJECT, $comment);
+		
 	}
 
 	/**
 	 * @param string|Locales_Locale $value
-	 * @param bool $instance_only [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isLocale($value, $instance_only = false, $comment = "", $backtrace_offset = 2){
+	public static function isLocale($value, $comment = ""){
 		if($value instanceof Locales_Locale){
-			return $this;
-		}
-
-		if($instance_only){
-			$this->throwException("Locale instance expected", $comment, $backtrace_offset);
+			return;
 		}
 
 		try {
 			Locales::checkLocale($value);
 		} catch(Locales_Exception $e){
-			$this->throwException("Invalid locale", $comment, $backtrace_offset);
+			static::throwException("Invalid locale", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $date
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isDate($date, $comment = "", $backtrace_offset = 2){
+	public static function isDate($date, $comment = ""){
 		if($date instanceof Locales_DateTime){
-			return $this;
+			return;
 		}
-		$this->isStringMatching($date, '~^\d{4}-\d{2}-\d{2}$~', $comment, $backtrace_offset+1);
+
+		static::isStringMatching($date, '~^\d{4}-\d{2}-\d{2}$~', $comment ? $comment : "Invalid date format");
 		if(@strtotime($date) === false){
-			$this->throwException("Invalid date", $comment, $backtrace_offset);
+			static::throwException("Invalid date", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $time
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isTime($time, $comment = "", $backtrace_offset = 2){
+	public static function isTime($time, $comment = ""){
 		if($time instanceof Locales_DateTime){
-			return $this;
+			return;
 		}
-		$this->isStringMatching($time, '~^\d{2}:\d{2}:\d{2}$~', $comment, $backtrace_offset+1);
+
+		static::isStringMatching($time, '~^\d{2}:\d{2}:\d{2}$~', $comment ? $comment : "Invalid time format");
 		$time_ts = @strtotime("2020-01-01 {$time}");
 		if($time_ts === false || date("Y-m-d", $time_ts) !== "2020-01-01"){
-			$this->throwException("Invalid time", $comment, $backtrace_offset);
+			static::throwException("Invalid time", $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $date_time
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isDateTime($date_time, $comment = "", $backtrace_offset = 2){
-		$this->isString($date_time, $comment, $backtrace_offset + 1);
+	public static function isDateTime($date_time, $comment = ""){
+		if($date_time instanceof Locales_DateTime){
+			return;
+		}
 
-		$this->isStringMatching($date_time, '~^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}$~', $comment, $backtrace_offset+1);
+		static::isStringMatching($date_time, '~^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}$~', $comment ? $comment : "Invalid date and time format");
 		$date = substr($date_time, 0, 10);
 		if(@strtotime($date) === false){
-			$this->throwException("Invalid date", $comment, $backtrace_offset);
+			static::throwException("Invalid date", $comment);
 		}
 
 		$time = substr($date_time, 11, 8);
 		$time_ts = @strtotime("2020-01-01 {$time}");
 		if($time_ts === false || date("Y-m-d", $time_ts) !== "2020-01-01"){
-			$this->throwException("Invalid time", $comment, $backtrace_offset);
+			static::throwException("Invalid time", $comment);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $instance_of
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isInstanceOf($value, $instance_of, $comment = "", $backtrace_offset = 2){
-		if(!($value instanceof $instance_of)){
-			if(is_object($value)){
-				$reason = "Value (object of class {OBJECT_CLASS}) is not instance of {INSTANCE_OF}";
-				$reason_data = array(
-					"OBJECT_CLASS" => get_class($value),
-					"INSTANCE_OF" => $instance_of
-				);
-			} else {
-				$reason = "Value (type {TYPE}) is not instance of {$instance_of}";
-				$reason_data = array(
-					"TYPE" => gettype($value),
-					"INSTANCE_OF" => $instance_of
-				);
-			}
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+	public static function isInstanceOf($value, $instance_of, $comment = ""){
+		if(!$value instanceof $instance_of){
+			static::throwException("Value must be instance of {INSTANCE_OF}", $comment, array("INSTANCE_OF" => $instance_of));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed|object $value
 	 * @param string $instance_of
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotInstanceOf($value, $instance_of, $comment = "", $backtrace_offset = 2){
-		/** @var $value object */
+	public static function isNotInstanceOf($value, $instance_of, $comment = ""){
 		if($value instanceof $instance_of){
-			$reason = "Value (object of class {OBJECT_CLASS}) should NOT be instance of {INSTANCE_OF}";
-			$reason_data = array(
-				"OBJECT_CLASS" => get_class($value),
-				"INSTANCE_OF" => $instance_of
-			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException("Value may no be instance of {INSTANCE_OF}", $comment, array("INSTANCE_OF" => $instance_of));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param int|float $greater_than
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isGreaterThan($value, $greater_than, $comment = "", $backtrace_offset = 2){
-		$this->isNumber($value, $comment, $backtrace_offset + 1);
+	public static function isGreaterThan($value, $greater_than, $comment = ""){
+		static::isNumber($value, $comment);
 		if($value <= $greater_than){
-			$reason = "Value should be greater than {GREATER_THAN}, {VALUE} is not";
+			$reason = "Value must be greater than {GREATER_THAN}";
 			$reason_data = array(
 				"GREATER_THAN" => $greater_than,
-				"VALUE" => $value
 			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException($reason, $comment, $reason_data);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param int|float $greater_or_equal_than
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isGreaterOrEqualThan($value, $greater_or_equal_than, $comment = "", $backtrace_offset = 2){
-		$this->isNumber($value, $comment, $backtrace_offset + 1);
+	public static function isGreaterOrEqualThan($value, $greater_or_equal_than, $comment = ""){
+		static::isNumber($value, $comment);
 		if($value < $greater_or_equal_than){
-			$reason = "Value should be greater or equal than {GREATER_THAN}, {VALUE} is not";
+			$reason = "Value must be greater than {GREATER_THAN} or equal";
 			$reason_data = array(
-				"GREATER_THAN" => $greater_or_equal_than,
-				"VALUE" => $value
+				"GREATER_THAN" => $greater_or_equal_than
 			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException($reason, $comment, $reason_data);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param int|float $lower_than
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isLowerThan($value, $lower_than, $comment = "", $backtrace_offset = 2){
-		$this->isNumber($value, $comment, $backtrace_offset + 1);
+	public static function isLowerThan($value, $lower_than, $comment = ""){
+		static::isNumber($value, $comment);
 		if($value >= $lower_than){
-			$reason = "Value should be lower than {LOWER_THAN}, {VALUE} is not";
+			$reason = "Value must be lower than {LOWER_THAN}";
 			$reason_data = array(
 				"LOWER_THAN" => $lower_than,
 				"VALUE" => $value
 			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException($reason, $comment, $reason_data);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param int|float $lower_or_equal_than
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isLowerOrEqualThan($value, $lower_or_equal_than, $comment = "", $backtrace_offset = 2){
-		$this->isNumber($value, $comment, $backtrace_offset + 1);
+	public static function isLowerOrEqualThan($value, $lower_or_equal_than, $comment = ""){
+		static::isNumber($value, $comment);
 		if($value > $lower_or_equal_than){
-			$reason = "Value should be lower or equal than {LOWER_THAN}, {VALUE} is not";
+			$reason = "Value must be lower than {LOWER_THAN} or equal";
 			$reason_data = array(
-				"LOWER_THAN" => $lower_or_equal_than,
-				"VALUE" => $value
+				"LOWER_THAN" => $lower_or_equal_than
 			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException($reason, $comment, $reason_data);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param array|mixed $value
 	 * @param string $key
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function arrayHasKey($value, $key, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset + 1);
+	public static function arrayKeyExists($value, $key, $comment = ""){
+		static::isArray($value, $comment);
 		if(!array_key_exists($key, $value)){
-			$reason = "Key '{KEY}' missing in array";
-			$this->throwException($reason, $comment, $backtrace_offset, array("KEY" => $key));
+			$reason = "Key '{KEY}' not found in array";
+			static::throwException($reason, $comment, array("KEY" => $key));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param array|mixed $value
 	 * @param string $key
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function arrayHasNotKey($value, $key, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset);
+	public static function arrayKeyNotExists($value, $key, $comment = ""){
+		static::isArray($value, $comment);
 		if(array_key_exists($key, $value)){
-			$reason = "Key '{KEY}' should not exist in array";
-			$this->throwException($reason, $comment, $backtrace_offset, array("KEY" => $key));
+			$reason = "Key '{KEY}' may not exist";
+			static::throwException($reason, $comment, array("KEY" => $key));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param array|mixed $value
 	 * @param array $keys
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function arrayHasKeys($value, array $keys, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset);
+	public static function arrayKeysExist($value, array $keys, $comment = ""){
+		static::isArray($value, $comment);
 		if(!$keys){
-			return $this;
+			return;
 		}
 
 		$missing_keys = array();
@@ -1227,29 +1111,28 @@ class Debug_Assert {
 		}
 
 		if($missing_keys){
-			$reason = "Keys {KEYS} missing in array";
+			$reason = "Missing {KEYS} key(s) in array";
 			$reason_data = array(
 				"KEYS" => "'" . implode("', '", $missing_keys) . "'"
 			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException($reason, $comment, $reason_data);
 		}
 
-		return $this;
+		
 	}
 
 	/**
 	 * @param array|mixed $value
 	 * @param array $keys
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function arrayHasNotKeys($value, array $keys, $comment = "", $backtrace_offset = 2){
-		$this->isArray($value, $comment, $backtrace_offset);
+	public static function arrayKeysNotExist($value, array $keys, $comment = ""){
+		static::isArray($value, $comment);
 		if(!$keys){
-			return $this;
+			return;
 		}
 
 		$existing_keys = array();
@@ -1260,356 +1143,347 @@ class Debug_Assert {
 		}
 
 		if($existing_keys){
-			$reason = "Keys {KEYS} should not exist in array";
+			$reason = "Key(s) {KEYS} may not exist";
 			$reason_data = array(
 				"KEYS" => "'" . implode("', '", $existing_keys) . "'"
 			);
-			$this->throwException($reason, $comment, $backtrace_offset, $reason_data);
+			static::throwException($reason, $comment, $reason_data);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $regex_pattern
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 * @param string $regex_modifiers [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isStringMatching($value, $regex_pattern, $comment = "", $backtrace_offset = 2, $regex_modifiers = ""){
-		$this->isStringOrNumber($value, $comment, $backtrace_offset);
+	public static function isStringMatching($value, $regex_pattern, $comment = "", $regex_modifiers = ""){
+		static::isStringOrNumber($value, $comment);
 		if(!preg_match("~{$regex_pattern}~{$regex_modifiers}", $value)){
-			$reason = "Value does not match pattern {PATTERN}";
-			$this->throwException($reason, $comment, $backtrace_offset, array("PATTERN" => $regex_pattern));
+			$reason = "Value has invalid format";
+			static::throwException($reason, $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $regex_pattern
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 * @param string $regex_modifiers [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isStringNotMatching($value, $regex_pattern, $comment = "", $backtrace_offset = 2, $regex_modifiers = ""){
-		$this->isStringOrNumber($value, $comment, $backtrace_offset);
+	public static function isStringNotMatching($value, $regex_pattern, $comment = "", $regex_modifiers = ""){
+		static::isStringOrNumber($value, $comment);
 		if(preg_match("~{$regex_pattern}~{$regex_modifiers}", $value)){
-			$reason = "Value should NOT match pattern {PATTERN}";
-			$this->throwException($reason, $comment, $backtrace_offset, array("PATTERN" => $regex_pattern));
+			$reason = "Value has invalid format";
+			static::throwException($reason, $comment);
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isVariableName($value, $comment = "", $backtrace_offset = 2){
-		$this->isStringMatching($value, '^\w+$', $comment, $backtrace_offset + 1, "i");
-		return $this;
+	public static function isVariableName($value, $comment = ""){
+		static::isStringMatching($value, '^\w+$', $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isIdentifier($value, $comment = "", $backtrace_offset = 2){
-		$this->isStringMatching($value, '^\w+(-\w+)*$', $comment, $backtrace_offset + 1, "i");
-		return $this;
+	public static function isIdentifier($value, $comment = ""){
+		static::isStringMatching($value, '^\w[-\w]*$', $comment);
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param bool $check_if_exists [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isClassName($value, $check_if_exists = false, $comment = "", $backtrace_offset = 2){
-		if(!is_string($value) || !preg_match('~^\\\\?\w+(\\\\\w+)*$~', $value)){
-			$this->throwException("Value ".(is_string($value) ? "'{$value}'" : "")." is not valid class name", $comment, $backtrace_offset);
-		}
-
+	public static function isClassName($value, $check_if_exists = false, $comment = ""){
+		static::isStringMatching($value, '~^\\\\?\w+(\\\\\w+)*$~', $comment ? $comment : "Invalid class name");
 		if($check_if_exists && !class_exists($value)){
-			$reason = "Class {CLASS_NAME} not exists";
-			$this->throwException($reason, $comment, $backtrace_offset, array("CLASS_NAME" => $value));
+			static::throwException("Class '{CLASS_NAME}' not exists", $comment, array("CLASS_NAME" => $value));
 		}
-
-		return $this;
 	}
 
 	/**
 	 * @param mixed $value
+	 * @param bool $check_if_exists [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 *
 	 */
-	public function classExists($value, $comment = "", $backtrace_offset = 2){
-		$this->isClassName($value, true, $comment, $backtrace_offset + 1);
-		return $this;
+	public static function isInterfaceName($value, $check_if_exists = false, $comment = ""){
+		static::isStringMatching($value, '~^\\\\?\w+(\\\\\w+)*$~', $comment ? $comment : "Invalid class name");
+		if($check_if_exists && !interface_exists($value)){
+			static::throwException("Interface '{CLASS_NAME}' not exists", $comment, array("CLASS_NAME" => $value));
+		}
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param bool $check_if_exists [optional]
+	 * @param string $comment [optional]
+	 *
+	 * @throws Debug_Assert_Exception
+	 *
+	 */
+	public static function isTraitName($value, $check_if_exists = false, $comment = ""){
+		static::isStringMatching($value, '~^\\\\?\w+(\\\\\w+)*$~', $comment ? $comment : "Invalid class name");
+		if($check_if_exists && !trait_exists($value)){
+			static::throwException("Trait '{CLASS_NAME}' not exists", $comment, array("CLASS_NAME" => $value));
+		}
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $parent_class_name
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function classIsSubclassOf($value, $parent_class_name, $comment = "", $backtrace_offset = 2){
-		$this->isClassName($value, $comment, $backtrace_offset + 1);
-		$this->isClassName($parent_class_name, $comment, $backtrace_offset + 1);
-		if(!is_subclass_of($value, $parent_class_name)){
+	public static function isSubclass($value, $parent_class_name, $comment = ""){
+		static::isClassName($value, $comment);
+		static::isClassName($parent_class_name, $comment);
+		if(!is_subclass_of($value, $parent_class_name, true)){
 			$reason = "Class {CLASS_NAME} is not subclass of {PARENT_CLASS}";
-			$this->throwException($reason, $comment, $backtrace_offset, array("CLASS_NAME" => $value, "PARENT_CLASS" => $parent_class_name));
+			static::throwException($reason, $comment, array("CLASS_NAME" => $value, "PARENT_CLASS" => $parent_class_name));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param mixed $value
 	 * @param string $parent_class_name
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function classIsSameClassOrSubclassOf($value, $parent_class_name, $comment = "", $backtrace_offset = 2){
-		$this->isClassName($value, true, $comment, $backtrace_offset + 1);
-		$this->isClassName($parent_class_name, true, $comment, $backtrace_offset + 1);
-		if(!is_a($value, $parent_class_name, true)){
-			$reason = "Class {CLASS_NAME} is not {PARENT_CLASS} neither its subclass";
-			$this->throwException($reason, $comment, $backtrace_offset, array("CLASS_NAME" => $value, "PARENT_CLASS" => $parent_class_name));
+	public static function isSubclassOrSameClass($value, $parent_class_name, $comment = ""){
+
+		if($value == $parent_class_name){
+			static::isClassName($value, true, $comment);
+		} else {
+			static::isSubclass($value, $parent_class_name, $comment);
 		}
-		return $this;
 	}
 
 
 	/**
 	 * @param string $file_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function fileExists($file_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($file_path, $comment, $backtrace_offset + 1);
+	public static function fileExists($file_path, $comment = ""){
+		static::isString($file_path, $comment);
 		if(!file_exists($file_path) || !@is_file($file_path)){
 			$reason = "File '{FILE}' does not exist";
-			$this->throwException($reason, $comment, $backtrace_offset, array("FILE" => $file_path));
+			static::throwException($reason, $comment, array("FILE" => $file_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $file_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function fileNotExists($file_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($file_path, $comment, $backtrace_offset + 1);
+	public static function fileNotExists($file_path, $comment = ""){
+		static::isString($file_path, $comment);
 		if(file_exists($file_path) && @is_file($file_path)){
-			$reason = "File '{FILE}' should NOT exist";
-			$this->throwException($reason, $comment, $backtrace_offset, array("FILE" => $file_path));
+			$reason = "File '{FILE}' already exists";
+			static::throwException($reason, $comment, array("FILE" => $file_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $file_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function fileIsReadable($file_path, $comment = "", $backtrace_offset = 2){
-		$this->fileExists($file_path, $comment, $backtrace_offset + 1);
+	public static function isReadableFile($file_path, $comment = ""){
+		static::fileExists($file_path, $comment);
 		if(!@is_readable($file_path)){
 			$reason = "File '{FILE}' is not readable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("FILE" => $file_path));
+			static::throwException($reason, $comment, array("FILE" => $file_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $file_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function fileIsNotReadable($file_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($file_path, $comment, $backtrace_offset + 1);
+	public static function isNotReadableFile($file_path, $comment = ""){
+		static::isString($file_path, $comment);
 		if(file_exists($file_path) && @is_file($file_path) && @is_readable($file_path)){
-			$reason = "File '{FILE}' should NOT be readable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("FILE" => $file_path));
+			$reason = "File '{FILE}' already exists and is readable";
+			static::throwException($reason, $comment, array("FILE" => $file_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $file_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function fileIsWritable($file_path, $comment = "", $backtrace_offset = 2){
-		$this->fileExists($file_path, $comment, $backtrace_offset + 1);
+	public static function isWritableFile($file_path, $comment = ""){
+		static::fileExists($file_path, $comment);
 		if(!@is_writable($file_path)){
 			$reason = "File '{FILE}' is not writable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("FILE" => $file_path));
+			static::throwException($reason, $comment, array("FILE" => $file_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $file_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function fileIsNotWritable($file_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($file_path, $comment, $backtrace_offset + 1);
+	public static function isNotWritableFile($file_path, $comment = ""){
+		static::isString($file_path, $comment);
 		if(file_exists($file_path) && @is_file($file_path) && @is_readable($file_path)){
-			$reason = "File '{FILE}' should NOT be writable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("FILE" => $file_path));
+			$reason = "File '{FILE}' already exists and is writable";
+			static::throwException($reason, $comment, array("FILE" => $file_path));
 		}
-		return $this;
+		
 	}
 
 
 	/**
 	 * @param string $dir_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function dirExists($dir_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($dir_path, $comment, $backtrace_offset + 1);
+	public static function directoryExists($dir_path, $comment = ""){
+		static::isString($dir_path, $comment);
 		if(!file_exists($dir_path) || !@is_dir($dir_path)){
 			$reason = "Directory '{DIR}' does not exist";
-			$this->throwException($reason, $comment, $backtrace_offset, array("DIR" => $dir_path));
+			static::throwException($reason, $comment, array("DIR" => $dir_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $dir_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function dirNotExists($dir_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($dir_path, $comment, $backtrace_offset + 1);
+	public static function directoryNotExists($dir_path, $comment = ""){
+		static::isString($dir_path, $comment);
 		if(file_exists($dir_path) && @is_dir($dir_path)){
-			$reason = "Directory '{DIR}' should NOT exist";
-			$this->throwException($reason, $comment, $backtrace_offset, array("DIR" => $dir_path));
+			$reason = "Directory '{DIR}' already exists";
+			static::throwException($reason, $comment, array("DIR" => $dir_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $dir_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function dirIsReadable($dir_path, $comment = "", $backtrace_offset = 2){
-		$this->dirExists($dir_path, $comment, $backtrace_offset);
+	public static function isReadableDirectory($dir_path, $comment = ""){
+		static::directoryExists($dir_path, $comment);
 		if(!@is_readable($dir_path)){
 			$reason = "Directory '{DIR}' is not readable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("DIR" => $dir_path));
+			static::throwException($reason, $comment, array("DIR" => $dir_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $dir_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function dirIsNotReadable($dir_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($dir_path, $comment, $backtrace_offset);
+	public static function isNotReadableDirectory($dir_path, $comment = ""){
+		static::isString($dir_path, $comment);
 		if(file_exists($dir_path) && @is_dir($dir_path) && @is_readable($dir_path)){
-			$reason = "Directory '{DIR}' should NOT be readable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("DIR" => $dir_path));
+			$reason = "Directory '{DIR}' exists and is readable";
+			static::throwException($reason, $comment, array("DIR" => $dir_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $dir_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function dirIsWritable($dir_path, $comment = "", $backtrace_offset = 2){
-		$this->dirExists($dir_path, $comment, $backtrace_offset);
+	public static function isWritableDirectory($dir_path, $comment = ""){
+		static::directoryExists($dir_path, $comment);
 		if(!@is_writable($dir_path)){
 			$reason = "Directory '{DIR}' is not writable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("DIR" => $dir_path));
+			static::throwException($reason, $comment, array("DIR" => $dir_path));
 		}
-		return $this;
+		
 	}
 
 	/**
 	 * @param string $dir_path
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function dirIsNotWritable($dir_path, $comment = "", $backtrace_offset = 2){
-		$this->isString($dir_path, $comment, $backtrace_offset);
+	public static function isNotWritableDirectory($dir_path, $comment = ""){
+		static::isString($dir_path, $comment);
 		if(file_exists($dir_path) && @is_dir($dir_path) && @is_writable($dir_path)){
-			$reason = "Directory '{DIR}' should NOT be writable";
-			$this->throwException($reason, $comment, $backtrace_offset, array("DIR" => $dir_path));
+			$reason = "Directory '{DIR}' exists and is writable";
+			static::throwException($reason, $comment, array("DIR" => $dir_path));
 		}
-		return $this;
+		
 	}
 
 	/**
@@ -1617,16 +1491,14 @@ class Debug_Assert {
 	 * @param array $array
 	 * @param bool $strict_compare [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isInArray($value, array $array, $strict_compare = false, $comment = "", $backtrace_offset = 2){
+	public static function arrayContains($value, array $array, $strict_compare = false, $comment = ""){
 		if(!in_array($value, $array, $strict_compare)){
-			$this->throwException("Value not found in array", $comment, $backtrace_offset);
+			static::throwException("Value not found in array", $comment);
 		}
-		return $this;
 	}
 
 	/**
@@ -1634,15 +1506,14 @@ class Debug_Assert {
 	 * @param array $array
 	 * @param bool $strict_compare [optional]
 	 * @param string $comment [optional]
-	 * @param int $backtrace_offset [optional]
 	 *
 	 * @throws Debug_Assert_Exception
-	 * @return Debug_Assert
+	 * 
 	 */
-	public function isNotInArray($value, array $array, $strict_compare = false, $comment = "", $backtrace_offset = 2){
+	public static function arrayNotContains($value, array $array, $strict_compare = false, $comment = ""){
 		if(in_array($value, $array, $strict_compare)){
-			$this->throwException("Value should NOT be in array", $comment, $backtrace_offset);
+			static::throwException("Value should NOT be in array", $comment);
 		}
-		return $this;
+		
 	}
 }

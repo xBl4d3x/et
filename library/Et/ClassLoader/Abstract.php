@@ -1,11 +1,6 @@
 <?php
 namespace Et;
-abstract class Loader_Abstract {
-
-	/**
-	 * @var string
-	 */
-	protected $loader_name;
+abstract class ClassLoader_Abstract {
 
 	/**
 	 * Load class
@@ -32,21 +27,6 @@ abstract class Loader_Abstract {
 		}
 
 		return $path;
-	}
-
-	/**
-	 * @return string
-	 * @throws Loader_Exception
-	 */
-	function getLoaderName(){
-		if(!$this->loader_name){
-			et_require("Loader_Exception");
-			throw new Loader_Exception(
-				"Missing loader name for class " . get_class($this),
-				Loader_Exception::CODE_MISSING_LOADER_NAME
-			);
-		}
-		return $this->loader_name;
 	}
 
 	/**

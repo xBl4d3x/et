@@ -8,6 +8,11 @@ class System_Components_Backend_Default_Config extends System_Components_Backend
 	protected $_type = "Default";
 
 	/**
+	 * @var bool
+	 */
+	protected $enable_write_lock = true;
+
+	/**
 	 * @var string
 	 */
 	protected $storage_dir = "";
@@ -25,6 +30,14 @@ class System_Components_Backend_Default_Config extends System_Components_Backend
 		$values["storage_dir"] =  ET_SYSTEM_DATA_PATH . "components/";
 		return $values;
 	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getEnableWriteLock() {
+		return $this->enable_write_lock;
+	}
+
 
 
 	/**

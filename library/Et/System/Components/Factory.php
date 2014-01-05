@@ -13,7 +13,7 @@ class System_Components_Factory extends Object {
 	 * @return string
 	 */
 	protected static function getOriginalClassName($type, $template){
-		self::assert()->isVariableName($type);
+		Debug_Assert::isVariableName($type);
 		return str_replace("{TYPE}", $type, $template);
 	}
 

@@ -1,7 +1,7 @@
 <?php
 namespace Et;
-et_require("Loader_Abstract");
-class Application_Loader extends Loader_Abstract {
+et_require("ClassLoader_Abstract");
+class Application_Loader extends ClassLoader_Abstract {
 
 	/**
 	 * @var string

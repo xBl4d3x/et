@@ -23,7 +23,7 @@ class DB_Query_Function extends Object {
 	 * @param array|DB_Table_Column[]|DB_Expression[]|DB_Query[] $function_arguments [optional]
 	 */
 	function __construct(DB_Query $query, $function_name, array $function_arguments = array()){
-		$this->assert()->isVariableName($function_name);
+		Debug_Assert::isVariableName($function_name);
 		$this->function_name = $function_name;
 		if($function_arguments){
 			$this->setArguments($query, $function_arguments);

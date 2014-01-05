@@ -17,31 +17,17 @@ abstract class Debug_Error_Handler_Abstract {
 	/**
 	 * @var int E_* combination
 	 */
-	protected $error_code_mask;
+	protected $error_code_mask = E_ALL;
 
 	/**
 	 * @var bool
 	 */
 	protected $enabled = true;
 
-	/**
-	 * @var string
-	 */
-	protected $error_handler_ID;
-
 	function __construct(){
-		$this->error_code_mask = E_ALL | E_STRICT;
+
 	}
 
-	/**
-	 * @return string
-	 */
-	function getErrorHandlerID(){
-		if(!$this->error_handler_ID){
-			$this->error_handler_ID = spl_object_hash($this);
-		}
-		return $this->error_handler_ID;
-	}
 
 	/**
 	 * @param Debug_Error $e
@@ -74,7 +60,7 @@ abstract class Debug_Error_Handler_Abstract {
 	abstract protected function _handleError(Debug_Error $e);
 
 	/**
-	 * @return Debug_Error_Handler_Abstract
+	 * @return static|\Et\Debug_Error_Handler_Abstract
 	 */
 	public function enable() {
 		$this->enabled = true;
@@ -82,7 +68,7 @@ abstract class Debug_Error_Handler_Abstract {
 	}
 
 	/**
-	 * @return Debug_Error_Handler_Abstract
+	 * @return static|\Et\Debug_Error_Handler_Abstract
 	 */
 	public function disable() {
 		$this->enabled = false;
@@ -98,7 +84,7 @@ abstract class Debug_Error_Handler_Abstract {
 
 	/**
 	 * @param int $error_code_mask
-	 * @return Debug_Error_Handler_Abstract
+	 * @return static|\Et\Debug_Error_Handler_Abstract
 	 */
 	public function setErrorCodeMask($error_code_mask) {
 		$this->error_code_mask = (int)$error_code_mask;
@@ -115,7 +101,7 @@ abstract class Debug_Error_Handler_Abstract {
 	/**
 	 * @param boolean $handle_exceptions
 	 *
-	 * @return Debug_Error_Handler_Abstract
+	 * @return static|\Et\Debug_Error_Handler_Abstract
 	 */
 	public function setHandleExceptions($handle_exceptions) {
 		$this->handle_exceptions = (bool)$handle_exceptions;
@@ -131,7 +117,7 @@ abstract class Debug_Error_Handler_Abstract {
 
 	/**
 	 * @param boolean $handle_errors
-	 * @return Debug_Error_Handler_Abstract
+	 * @return static|\Et\Debug_Error_Handler_Abstract
 	 */
 	public function setHandleErrors($handle_errors) {
 		$this->handle_errors = (bool)$handle_errors;
@@ -152,10 +138,9 @@ abstract class Debug_Error_Handler_Abstract {
 	 *
 	 * @return string
 	 */
-	public function getTextBacktrace(Debug_Error $e, $max_text_length = 256, array &$dumped_objects = array()){
+	public function getBacktraceAsText(Debug_Error $e, $max_text_length = 256, array &$dumped_objects = array()){
 		$backtrace = $e->getBacktrace();
 		$lines = array();
-		et_require('Debug');
 
 		foreach($backtrace as $row){
 			$path = $row["file"];
@@ -214,7 +199,7 @@ abstract class Debug_Error_Handler_Abstract {
 	 *
 	 * @return string
 	 */
-	public function getTextHeader(Debug_Error $e){
+	public function getErrorHeaderAsText(Debug_Error $e){
 		if($e->isException()){
 			$output = "Exception {$e->getExceptionClass()} - {$e->getErrorCodeLabel()} (code {$e->getErrorCode()}) occurred:\n";
 		} else {
@@ -227,7 +212,8 @@ abstract class Debug_Error_Handler_Abstract {
 		if($e->getURL()){
 			$output .= "URL: " . $e->getURL() . "\n";
 		}
-		$output .= "Time: " . date("Y-m-d H:i:s", $e->getTimestamp()) . "\n";
+
+		$output .= "Time: " . date("Y-m-d H:i:sP", $e->getTimestamp()) . "\n";
 		$output .= "Strict mode: " . ($e->getStrictModeEnabled() ? "YES" : "NO") . "\n";
 		$output .= "On shutdown: " . ($e->hasOccurredOnShutdown() ? "YES" : "NO");
 
@@ -242,12 +228,11 @@ abstract class Debug_Error_Handler_Abstract {
 	 *
 	 * @return string
 	 */
-	public function getTextErrorContext(Debug_Error $e, $max_text_length = 256, array &$dumped_objects = array()){
+	public function getErrorContextAsText(Debug_Error $e, $max_text_length = 256, array &$dumped_objects = array()){
 		if(!$e->hasContextData()){
 			return "";
 		}
 
-		et_require('Debug');
 		$context = $e->getContextData();
 		if($e->isError() && is_array($context)){
 			$output = "";
@@ -270,7 +255,7 @@ abstract class Debug_Error_Handler_Abstract {
 	/**
 	 * @return string
 	 */
-	function getTextFactoryMap(){
+	function getFactoryMapAsText(){
 		$factory_map = array();
 		if(class_exists("Et\\Factory", false)){
 			$factory_map = Factory::getClassOverrideMap();
@@ -297,21 +282,21 @@ abstract class Debug_Error_Handler_Abstract {
 	 *
 	 * @return string
 	 */
-	function formatErrorToText(Debug_Error $e){
+	function getErrorAsText(Debug_Error $e){
 		$output = str_repeat("=", self::LINE_DELIMITER_LENGTH) . "\n";
 		$dumped_objects = array();
-		$output .= $this->getTextHeader($e);
+		$output .= $this->getErrorHeaderAsText($e);
 
 		if($e->hasContextData()){
 			$output .= "\n\n";
 			$output .= "Error context/data:\n";
 			$output .=  str_repeat("=", self::LINE_DELIMITER_LENGTH) . "\n";
-			$output .= $this->getTextErrorContext($e, 256, $dumped_objects);
+			$output .= $this->getErrorContextAsText($e, 256, $dumped_objects);
 		}
 
 
 		if(class_exists('Et\Factory', false)){
-			$factory_map = $this->getTextFactoryMap();
+			$factory_map = $this->getFactoryMapAsText();
 			if($factory_map){
 				$output .= "\n\n";
 				$output .= "Factory overloaded classes:\n";
@@ -320,7 +305,7 @@ abstract class Debug_Error_Handler_Abstract {
 			}
 		}
 
-		$backtrace = $this->getTextBacktrace($e, 256, $dumped_objects);
+		$backtrace = $this->getBacktraceAsText($e, 256, $dumped_objects);
 		if($backtrace){
 			$output .= "\n\n";
 			$output .= "Debug backtrace:\n";
@@ -335,7 +320,7 @@ abstract class Debug_Error_Handler_Abstract {
 			$previous_content .=  str_repeat("=", self::LINE_DELIMITER_LENGTH) . "\n";
 			$previous_content .= "Previous ".($previous->isError() ? "error" : "exception").":\n";
 
-			$previous_content .= $this->formatErrorToText($previous);
+			$previous_content .= $this->getErrorAsText($previous);
 			$output .= str_replace("\n", "\n    ", rtrim($previous_content));
 		}
 

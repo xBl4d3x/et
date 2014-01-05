@@ -83,7 +83,7 @@ class Locales_Formatter_Number extends Object {
 	 * @return string
 	 */
 	function formatNumber($number, $max_fraction_digits = null, array $formatter_attributes = array()){
-		self::assert()->isNumber($number);
+		Debug_Assert::isNumber($number);
 		if($max_fraction_digits !== null){
 			$max_fraction_digits = max(0, (int)$max_fraction_digits);
 			$formatter_attributes[\NumberFormatter::MAX_FRACTION_DIGITS] = $max_fraction_digits;
@@ -156,7 +156,7 @@ class Locales_Formatter_Number extends Object {
 	 */
 	function formatCurrency($amount, $currency, $max_fraction_digits = null, array $formatter_attributes = array()){
 
-		$this->assert()->isNumber($amount);
+		Debug_Assert::isNumber($amount);
 		if($max_fraction_digits !== null){
 			$max_fraction_digits = max(0, (int)$max_fraction_digits);
 			$formatter_attributes[\NumberFormatter::MAX_FRACTION_DIGITS] = $max_fraction_digits;

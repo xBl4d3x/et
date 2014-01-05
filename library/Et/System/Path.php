@@ -112,7 +112,7 @@ abstract class System_Path extends Object implements \JsonSerializable {
 			if(!chmod($this->path, $chmod_mode)){
 				Debug::triggerError(sprintf("chmod('%s', 0%o) failed", $this->path, $chmod_mode));
 			}
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"chmod() failed - {$e->getMessage()}",
 				System_Exception::CODE_CHMOD_FAILED,
@@ -146,7 +146,7 @@ abstract class System_Path extends Object implements \JsonSerializable {
 					$this->path,
 					is_string($owner_user) ? "'{$owner_user}'" : $owner_user
 				);
-				Exception_PHPError::triggerError($error);
+				Debug::triggerErrorOrLastError($error);
 			}
 
 			if($owner_group !== "" && !chgrp($this->path, $owner_group)){
@@ -155,15 +155,13 @@ abstract class System_Path extends Object implements \JsonSerializable {
 					$this->path,
 					is_string($owner_group) ? "'{$owner_group}'" : $owner_group
 				);
-				Exception_PHPError::triggerError($error);
+				Debug::triggerErrorOrLastError($error);
 			}
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"Failed to change owner - {$e->getMessage()}",
-				System_Exception::CODE_CHANGE_OWNER_FAILED,
-				null,
-				$e
+				System_Exception::CODE_CHANGE_OWNER_FAILED
 			);
 		}
 	}

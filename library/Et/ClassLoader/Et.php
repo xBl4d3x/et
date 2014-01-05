@@ -1,12 +1,8 @@
 <?php
 namespace Et;
-et_require("Loader_Abstract");
-class Loader_Et extends Loader_Abstract {
+require_once  "Abstract.php";
+class ClassLoader_Et extends ClassLoader_Abstract {
 
-	/**
-	 * @var string
-	 */
-	protected $loader_name = "et_loader";
 
 	/**
 	 * @param string $class_name
@@ -14,9 +10,17 @@ class Loader_Et extends Loader_Abstract {
 	 * @return string|bool
 	 */
 	public function getClassPath($class_name) {
-		if(substr($class_name, 0, 2) != "Et"){
+		if(substr($class_name, 0, 3) != "Et\\"){
 			return false;
 		}
 		return dirname(__DIR__) . "/" . str_replace("_", "/", substr($class_name, 3)) . ".php";
+	}
+
+	/**
+	 * @return string
+	 * @throws ClassLoader_Exception
+	 */
+	function getLoaderName() {
+		return "et";
 	}
 }

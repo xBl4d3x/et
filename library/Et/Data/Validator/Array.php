@@ -282,7 +282,7 @@ class Data_Validator_Array extends Data_Validator_Abstract {
 	 * @return mixed
 	 */
 	function formatValue($value) {
-		$this->assert()->isArray($value);
+		Debug_Assert::isArray($value);
 
 		foreach($value as &$v){
 			$v = $this->value_validator->formatValue($v);

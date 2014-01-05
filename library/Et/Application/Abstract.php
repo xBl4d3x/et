@@ -157,7 +157,7 @@ abstract class Application_Abstract extends Object {
 		$URI = $this->metadata->getApplicationURI() . "scripts/";
 		$rest_of_path = null;
 		if($script_name){
-			$this->assert()->isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
+			Debug_Assert::isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
 			$rest_of_path = $script_name . ".php";
 		}
 		return $URI . $this->buildRestOfURL($rest_of_path, $query_parameters);
@@ -172,7 +172,7 @@ abstract class Application_Abstract extends Object {
 		$URI = $this->metadata->getApplicationURL() . "scripts/";
 		$rest_of_path = null;
 		if($script_name){
-			$this->assert()->isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
+			Debug_Assert::isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
 			$rest_of_path = $script_name . ".php";
 		}
 		return $URI . $this->buildRestOfURL($rest_of_path, $query_parameters);

@@ -3,7 +3,7 @@ namespace Et;
 class DB_Query_GroupBy extends Object implements \Iterator,\Countable {
 
 	/**
-	 * @var DB_Query_Column
+	 * @var DB_Query_Column[]
 	 */
 	protected $group_by_columns = array();
 
@@ -88,39 +88,6 @@ class DB_Query_GroupBy extends Object implements \Iterator,\Countable {
 		return $this->group_by_columns;
 	}
 
-	/**
-	 * @param DB_Adapter_Abstract $db [optional]
-	 * @param int $offset [optional]
-	 * @return string
-	 */
-	function toSQL(DB_Adapter_Abstract $db = null, $offset = 0){
-		if($this->isEmpty()){
-			return "";
-		}
-		$columns = $columns = $this->getGroupByColumns();
-		$padding = str_repeat("\t", $offset);
-		$output = array();
-
-		foreach($columns as $column){
-			$output[] = $column->toSQL($db);
-		}
-
-		return $padding . implode(",\n{$padding}", $output);
-	}
-
-	function __toString(){
-		if($this->isEmpty()){
-			return "";
-		}
-		$columns = $this->getGroupByColumns();
-		$output = array();
-
-		foreach($columns as $column){
-			$output[] = (string)$column;
-		}
-
-		return implode(",\n", $output);
-	}
 
 
 	/**

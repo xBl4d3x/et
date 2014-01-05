@@ -30,7 +30,7 @@ class Application_Modules extends Object {
 			return;
 		}
 
-		Loader::registerLoader(new Application_Modules_Loader());
+		ClassLoader::registerLoader(new Application_Modules_Loader());
 
 		$modules_dir = System::getDir(ET_MODULES_PATH);
 		$modules_names = $modules_dir->listDirNames(

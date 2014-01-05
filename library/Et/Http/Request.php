@@ -81,7 +81,7 @@ class Http_Request extends Object {
 	 * @param null|string $request_method
 	 */
 	function __construct($URL, $request_method){
-		self::assert()->isStringMatching($request_method, '^[A-Z]+$');
+		Debug_Assert::isStringMatching($request_method, '^[A-Z]+$');
 		if(!$URL instanceof Http_Request_URL){
 			$URL = new Http_Request_URL($URL);
 		}

@@ -1,7 +1,7 @@
 <?php
 namespace Et;
-et_require('Exception');
-class Exception_PHPError extends Exception {
+require_once dirname(__DIR__) . "/Exception.php";
+class Debug_PHPError extends Exception {
 
 	/**
 	 * Exception error codes human readable labels
@@ -69,11 +69,11 @@ class Exception_PHPError extends Exception {
 	 * @param string $error_message
 	 * @param array $error_context [optional]
 	 * @param int $error_code [optional] NULL = E_USER_ERROR
-	 * @param string $script [optional]
+	 * @param string $file [optional]
 	 * @param int $line_number [optional]
 	 * @param int $backtrace_offset [optional]
 	 */
-	function __construct($error_message, array $error_context = array(), $error_code = null, $script = null, $line_number = null, $backtrace_offset = 1){
+	function __construct($error_message, array $error_context = array(), $error_code = null, $file = null, $line_number = null, $backtrace_offset = 1){
 
 		if($error_code === null){
 			$error_code = E_USER_ERROR;
@@ -81,72 +81,39 @@ class Exception_PHPError extends Exception {
 
 		parent::__construct($error_message, $error_code, $error_context, null, $backtrace_offset);
 
-		if($script === null || $line_number === null){
+		if($file === null || $line_number === null){
 			$backtrace = debug_backtrace();
 			while(isset($backtrace[1]) && $backtrace_offset > 1){
 				array_shift($backtrace);
 				$backtrace_offset--;
 			}
-			$script = $backtrace[0]["file"];
+			$file = $backtrace[0]["file"];
 			$line_number = $backtrace[0]["line"];
 		}
 
 		$this->line = $line_number;
-		$this->file = $script;
+		$this->file = $file;
 
-	}
-
-	/**
-	 * @param string $error_message
-	 * @param array $error_context [optional]
-	 * @param null|int $error_code [optional] NULL = E_USER_ERROR
-	 * @param int $backtrace_offset [optional]
-	 *
-	 * @throws Exception_PHPError
-	 */
-	public static function triggerError($error_message, array $error_context = array(), $error_code = null, $backtrace_offset = 2){
-		if(!$error_code){
-			$error_code = E_USER_ERROR;
-		}
-
-		throw new Exception_PHPError(
-			$error_message,
-			$error_context,
-			$error_code,
-			null,
-			null,
-			$backtrace_offset
-		);
 	}
 
 	/**
 	 * Returns true if error is fatal
 	 *
-	 * @param int $error_number
 	 * @return bool
 	 */
-	public function isFatal($error_number = null){
-		if($error_number === null){
-			$error_number = $this->code;
-		}
-		return in_array($error_number, self::$fatal_errors);
+	public function isFatal(){
+		return in_array($this->code, self::$fatal_errors);
 	}
 
 	/**
 	 * Get error constant name (E_*)
 	 *
-	 * @param int $error_number
-	 *
 	 * @return string
 	 */
-	public function getErrorConstantName($error_number = null){
-		if($error_number === null){
-			$error_number = $this->code;
-		}
-
-		return isset(self::$errors_constants[$error_number])
-			? self::$errors_constants[$error_number]
-			: "UNKNOWN [{$error_number}]";
+	public function getErrorConstantName(){
+		return isset(self::$errors_constants[$this->code])
+			? self::$errors_constants[$this->code]
+			: "UNKNOWN [{$this->code}]";
 	}
 
 	/**

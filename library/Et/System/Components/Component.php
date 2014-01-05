@@ -11,11 +11,11 @@ class System_Components_Component extends Object {
 	protected $ID;
 
 	/**
-	 * Human readable component name
+	 * Human readable component title
 	 *
 	 * @var string
 	 */
-	protected $name = "";
+	protected $title = "";
 
 
 	/**
@@ -49,31 +49,31 @@ class System_Components_Component extends Object {
 	/**
 	 * @var bool
 	 */
-	protected $changed = false;
+	protected $_changed = false;
 
 	/**
 	 * @param string $component_ID
-	 * @param string $name [optional]
+	 * @param string $title [optional]
 	 * @param string $description [optional]
 	 */
-	function __construct($component_ID, $name = "", $description = ""){
-		$this->assert()->isIdentifier($component_ID);
+	function __construct($component_ID, $title = "", $description = ""){
+		Debug_Assert::isIdentifier($component_ID);
 
 		$this->ID = $component_ID;
-		$this->setName($name);
+		$this->setTitle($title);
 		$this->setDescription($description);
-		$this->changed = true;
+		$this->_changed = true;
 	}
 
 	function __wakeup(){
-		$this->changed = false;
+		$this->_changed = false;
 	}
 
 	/**
 	 * @return bool
 	 */
 	function hasChanged(){
-		return $this->changed;
+		return $this->_changed;
 	}
 
 	/**
@@ -90,7 +90,7 @@ class System_Components_Component extends Object {
 		}
 
 		if(!$this->enabled){
-			$this->changed = true;
+			$this->_changed = true;
 		}
 
 		$this->enabled = true;
@@ -101,7 +101,7 @@ class System_Components_Component extends Object {
 	 */
 	function disable(){
 		if($this->enabled){
-			$this->changed = true;
+			$this->_changed = true;
 		}
 
 		$this->enabled = false;
@@ -125,7 +125,7 @@ class System_Components_Component extends Object {
 	 */
 	function install($version_number){
 		if(!$this->installed){
-			$this->changed = true;
+			$this->_changed = true;
 		}
 		$this->installed = true;
 		$this->setInstalledVersion($version_number);
@@ -136,7 +136,7 @@ class System_Components_Component extends Object {
 	 */
 	function uninstall(){
 		if($this->installed){
-			$this->changed = true;
+			$this->_changed = true;
 		}
 		$this->installed = false;
 		$this->installed_version = 0;
@@ -169,10 +169,10 @@ class System_Components_Component extends Object {
 			);
 		}
 
-		self::assert()->isGreaterThan($version, 0, "Version must be number greater than 0");
+		Debug_Assert::isGreaterThan($version, 0, "Version must be number greater than 0");
 
 		if($this->installed_version != (int)$version){
-			$this->changed = true;
+			$this->_changed = true;
 		}
 
 		$this->installed_version = (int)$version;
@@ -195,19 +195,19 @@ class System_Components_Component extends Object {
 	/**
 	 * @return string
 	 */
-	public function getName() {
-		return $this->name;
+	public function getTitle() {
+		return $this->title;
 	}
 
 	/**
 	 * @param string $label
 	 */
-	public function setName($label) {
+	public function setTitle($label) {
 		$label = trim($label);
-		if($this->name !== $label){
-			$this->changed = true;
+		if($this->title !== $label){
+			$this->_changed = true;
 		}
-		$this->name = $label;
+		$this->title = $label;
 	}
 
 	/**
@@ -216,7 +216,7 @@ class System_Components_Component extends Object {
 	public function setDescription($description) {
 		$description = trim($description);
 		if($this->description !== $description){
-			$this->changed = true;
+			$this->_changed = true;
 		}
 		$this->description = $description;
 	}

@@ -157,7 +157,7 @@ abstract class Application_Modules_Module extends Object {
 		$URI = $this->module_metadata->getModuleURI() . "scripts/";
 		$rest_of_path = null;
 		if($script_name){
-			$this->assert()->isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
+			Debug_Assert::isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
 			$rest_of_path = $script_name . ".php";
 		}
 		return $URI . $this->buildRestOfURL($rest_of_path, $query_parameters);
@@ -172,7 +172,7 @@ abstract class Application_Modules_Module extends Object {
 		$URI = $this->module_metadata->getModuleURL() . "scripts/";
 		$rest_of_path = null;
 		if($script_name){
-			$this->assert()->isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
+			Debug_Assert::isStringMatching($script_name, '^[\w-]+(?:/[\w-]+)*$', 'Invalid script name format');
 			$rest_of_path = $script_name . ".php";
 		}
 		return $URI . $this->buildRestOfURL($rest_of_path, $query_parameters);

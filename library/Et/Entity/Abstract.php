@@ -238,7 +238,7 @@ abstract class Entity_Abstract extends Object {
 	 */
 	function hasID(){
 		if($this->hasNumericID()){
-			return (int)$this->ID != 0;
+			return (int)$this->ID > 0;
 		}
 		return trim($this->ID) !== "";
 	}
@@ -291,34 +291,6 @@ abstract class Entity_Abstract extends Object {
 		return $definition;
 	}
 
-	/**
-	 * @param array $where_properties_equal [optional]
-	 * @return \Et\DB_Query
-	 */
-	public static function getQuery(array $where_properties_equal = array()){
-		$query = DB_Query::getInstance(static::getEntityName());
-		if($where_properties_equal){
-			$query->getWhere()->addColumnsEqual($where_properties_equal, static::getEntityName());
-		}
-		return $query;
-	}
-
-	/**
-	 * @param array $select_properties [optional] If empty, all properties are selected
-	 * @param array $where_properties_equal [optional]
-	 * @return \Et\DB_Query
-	 */
-	public static function getSelectQuery(array $select_properties = null, array $where_properties_equal = array()){
-		$query = static::getQuery($where_properties_equal);
-
-		if(!$select_properties){
-			$select_properties = static::getEntityDefinition()->getPropertiesNames();
-		}
-
-		$query->selectColumns($select_properties, static::getEntityName());
-
-		return $query;
-	}
 
 	/**
 	 * @return Entity_Definition_Main|Entity_Definition_Part
@@ -482,21 +454,7 @@ abstract class Entity_Abstract extends Object {
 
 	}
 
-	/**
-	 * @return \Et\DB_Adapter_Abstract
-	 */
-	public static function getDB() {
-		return static::$__db
-			? static::$__db
-			: DB::get();
-	}
 
-	/**
-	 * @param \Et\DB_Adapter_Abstract $_db
-	 */
-	public static function setDB(DB_Adapter_Abstract $_db) {
-		static::$__db = $_db;
-	}
 
 	/**
 	 * @return \Et\Data_Validation_Result|\Et\Data_Validation_Result_Error[]
@@ -553,6 +511,54 @@ abstract class Entity_Abstract extends Object {
 
 	protected function _validateProperty($property_name, $value, Entity_Property_Abstract $definition){
 		return $definition->validate($value);
+	}
+
+
+
+	/**
+	 * @return \Et\DB_Adapter_Abstract
+	 */
+	public static function getDB() {
+		return static::$__db
+			? static::$__db
+			: DB::get();
+	}
+
+	/**
+	 * @param \Et\DB_Adapter_Abstract $_db
+	 */
+	public static function setDB(DB_Adapter_Abstract $_db) {
+		static::$__db = $_db;
+	}
+
+
+	/**
+	 * @param array $where_properties_equal [optional]
+	 * @return \Et\DB_Query
+	 */
+	public static function getQuery(array $where_properties_equal = array()){
+		$query = DB_Query::getInstance(static::getEntityName());
+		if($where_properties_equal){
+			$query->getWhere()->addColumnsEqual($where_properties_equal, static::getEntityName());
+		}
+		return $query;
+	}
+
+	/**
+	 * @param array $select_properties [optional] If empty, all properties are selected
+	 * @param array $where_properties_equal [optional]
+	 * @return \Et\DB_Query
+	 */
+	public static function getSelectQuery(array $select_properties = null, array $where_properties_equal = array()){
+		$query = static::getQuery($where_properties_equal);
+
+		if(!$select_properties){
+			$select_properties = static::getEntityDefinition()->getPropertiesNames();
+		}
+
+		$query->selectColumns($select_properties, static::getEntityName());
+
+		return $query;
 	}
 
 	/**
@@ -945,7 +951,7 @@ abstract class Entity_Abstract extends Object {
 	 * @param array $row
 	 * @return static|static|\Et\Entity_Main|\Et\Entity_Part_Single|\Et\Entity_Part_Multiple
 	 */
-	protected function initFromRowData(array $row){
+	protected static function initFromRowData(array $row){
 		/** @var $entity Entity_Abstract */
 		$entity = new static();
 		foreach($row as $k => $v){

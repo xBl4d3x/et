@@ -168,27 +168,27 @@ class DB_Adapter_PDO_SQLite extends DB_Adapter_PDO {
 		switch($definition->getColumnType()){
 
 
-			case DB_Table_Column_Definition::COLUMN_TYPE_FLOAT:
+			case DB_Table_Column_Definition::TYPE_FLOAT:
 				$query .= "REAL";
 				break;
 
-			case DB_Table_Column_Definition::COLUMN_TYPE_INT:
-			case DB_Table_Column_Definition::COLUMN_TYPE_BOOL:
-			case DB_Table_Column_Definition::COLUMN_TYPE_DATE:
-			case DB_Table_Column_Definition::COLUMN_TYPE_DATETIME:
+			case DB_Table_Column_Definition::TYPE_INT:
+			case DB_Table_Column_Definition::TYPE_BOOL:
+			case DB_Table_Column_Definition::TYPE_DATE:
+			case DB_Table_Column_Definition::TYPE_DATETIME:
 				$query .= "INTEGER";
 				break;
 
-			case DB_Table_Column_Definition::COLUMN_TYPE_LOCALE:
+			case DB_Table_Column_Definition::TYPE_LOCALE:
 				$query .= "CHAR(5) CHARACTER SET utf8 COLLATE utf8_bin";
 				break;
 
 
-			case DB_Table_Column_Definition::COLUMN_TYPE_BINARY_DATA:
-			case DB_Table_Column_Definition::COLUMN_TYPE_SERIALIZED:
-			case DB_Table_Column_Definition::COLUMN_TYPE_STRING:
+			case DB_Table_Column_Definition::TYPE_BINARY_DATA:
+			case DB_Table_Column_Definition::TYPE_SERIALIZED:
+			case DB_Table_Column_Definition::TYPE_STRING:
 				$use_blob = $definition->issBinaryDataColumn();
-				if($definition->getColumnType() == DB_Table_Column_Definition::COLUMN_TYPE_SERIALIZED){
+				if($definition->getColumnType() == DB_Table_Column_Definition::TYPE_SERIALIZED){
 					if($definition->getColumnSize() > 0){
 						$size = $definition->getColumnSize();
 					} else {
@@ -313,5 +313,12 @@ class DB_Adapter_PDO_SQLite extends DB_Adapter_PDO {
 		}
 		$query .= ";";
 		return $query;
+	}
+
+	/**
+	 * @throws DB_Exception
+	 */
+	public function getDatabaseType() {
+		return self::DB_TYPE_SQLITE;
 	}
 }

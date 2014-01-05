@@ -11,7 +11,7 @@ class System_Text_Transliteration_Default_Map_Factory extends Object {
 	 * @return string
 	 */
 	public static function getMapClassName($map_class_postfix){
-		self::assert()->isVariableName($map_class_postfix);
+		Debug_Assert::isVariableName($map_class_postfix);
 		$class_name = static::CLASS_NAMES_PREFIX . $map_class_postfix;
 		return Factory::getClassName($class_name, 'Et\System_Text_Transliteration_Default_Map_Abstract');
 	}

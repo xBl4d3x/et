@@ -18,8 +18,7 @@ class System_Signals_Signal extends Object {
 	 * @param \Et\Object $signal_source [optional]
 	 */
 	function __construct($signal_name, Object $signal_source = null){
-		System_Signals::checkSignalNameFormat($signal_name);
-		$this->signal_name = $signal_name;
+		$this->signal_name = (string)$signal_name;
 		$this->signal_source = $signal_source;
 	}
 

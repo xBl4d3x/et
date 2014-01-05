@@ -80,7 +80,7 @@ class Data_Validator_Date extends Data_Validator_Abstract {
 		}
 
 		if($value instanceof Locales_DateTime){
-			$value = Locales_Date::getInstanceFromTimestamp($value->getTimestamp());
+			$value = Locales_Date::getInstance($value->getTimestamp());
 			return true;
 		}
 
@@ -144,7 +144,7 @@ class Data_Validator_Date extends Data_Validator_Abstract {
 		}
 
 		if($value instanceof Locales_DateTime){
-			$value = Locales_Date::getInstanceFromTimestamp($value->getTimestamp());
+			$value = Locales_Date::getInstance($value->getTimestamp());
 			return $value;
 		}
 
@@ -152,11 +152,7 @@ class Data_Validator_Date extends Data_Validator_Abstract {
 			return null;
 		}
 
-		if(is_numeric($value)){
-			return Locales_Date::getInstanceFromTimestamp($value);
-		} else {
-			return Locales_Date::getInstance($value);
-		}
+		return Locales_Date::getInstance($value);
 	}
 
 	/**

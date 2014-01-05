@@ -13,7 +13,7 @@ class Debug_Error implements \JsonSerializable {
 	protected $timestamp;
 
 	/**
-	 * @var Exception|Exception_PHPError|\Exception
+	 * @var Exception|Debug_PHPError|\Exception
 	 */
 	protected $error;
 
@@ -240,8 +240,8 @@ class Debug_Error implements \JsonSerializable {
 	 * @return bool
 	 */
 	function isError(){
-		et_require('Exception_PHPError');
-		return $this->error instanceof Exception_PHPError;
+		et_require('Debug_PHPError');
+		return $this->error instanceof Debug_PHPError;
 	}
 
 	/**

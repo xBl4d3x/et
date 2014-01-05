@@ -19,7 +19,7 @@ class System_Config extends Object {
 	 */
 	function __construct($name, Data_Array $config_sections = null){
 
-		$this->assert()->isVariableName($name);
+		Debug_Assert::isVariableName($name);
 		$this->name = $name;
 		if(!$config_sections){
 			$config_sections = $this->getConfigSectionsFromFile();

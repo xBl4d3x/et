@@ -64,18 +64,16 @@ class System_Dir extends System_Path {
 
 			if(!mkdir($this->path)){
 				/** @noinspection SpellCheckingInspection */
-				Exception_PHPError::triggerError("mkdir('{$this->path}') failed");
+				Debug::triggerErrorOrLastError("mkdir('{$this->path}') failed");
 			}
 
 			$this->setPermissions();
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 
 			throw new System_Exception(
 				"Failed to create directory '{$this->path}' - {$e->getMessage()}",
-				System_Exception::CODE_CANNOT_CREATE,
-				null,
-				$e
+				System_Exception::CODE_CANNOT_CREATE
 			);
 
 		}
@@ -100,16 +98,14 @@ class System_Dir extends System_Path {
 
 			if(!rmdir($this->path)){
 				/** @noinspection SpellCheckingInspection */
-				Exception_PHPError::triggerError("rmdir('{$this->path}') failed");
+				Debug::triggerErrorOrLastError("rmdir('{$this->path}') failed");
 			}
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			if(file_exists($this->path)){
 				throw new System_Exception(
 					"Failed to delete directory '{$this->path}' - {$e->getMessage()}",
-					System_Exception::CODE_DELETE_FAILED,
-					null,
-					$e
+					System_Exception::CODE_DELETE_FAILED
 				);
 			}
 		}
@@ -127,16 +123,14 @@ class System_Dir extends System_Path {
 
 			$dir = dir($this->path);
 			if(!$dir instanceof \Directory){
-				Exception_PHPError::triggerError("dir('{$this->path}') failed");
+				Debug::triggerErrorOrLastError("dir('{$this->path}') failed");
 			}
 			return $dir;
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"Failed to open directory '{$this->path}' - {$e->getMessage()}",
-				System_Exception::CODE_CANNOT_OPEN,
-				null,
-				$e
+				System_Exception::CODE_CANNOT_OPEN
 			);
 		}
 	}

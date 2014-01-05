@@ -58,7 +58,7 @@ class System_Components_Backend_Default extends System_Components_Backend_Abstra
 	 * @return System_File
 	 */
 	function getComponentsFile($component_type){
-		$this->assert()->isIdentifier($component_type);
+		Debug_Assert::isIdentifier($component_type);
 		return System::getFile((string)$this->storage_dir . $component_type . ".components");
 	}
 
@@ -70,9 +70,13 @@ class System_Components_Backend_Default extends System_Components_Backend_Abstra
 		$file = $this->getComponentsFile($components_type);
 
 		try {
-			return $file->getUnserializedContent('Et\System_Components_List');
+
+			return $file->getUnserializedData('Et\System_Components_List', true);
+
 		} catch(Exception $e){
+
 			return false;
+
 		}
 	}
 
@@ -82,7 +86,11 @@ class System_Components_Backend_Default extends System_Components_Backend_Abstra
 	 */
 	function storeComponents(System_Components_List $components) {
 		$file = $this->getComponentsFile($components->getComponentsType());
-		$file->writeContent(serialize($components), true);
+		$file->writeSerializedData(
+			$components,
+			true,
+			$this->config->getEnableWriteLock()
+		);
 	}
 
 	/**

@@ -72,6 +72,7 @@ class System_Signals {
 				}
 
 			} catch(\Exception $e){
+
 				throw new System_Signals_Exception(
 					"Failed to publish signal '{$signal_name}' - {$e->getMessage()}",
 					System_Signals_Exception::CODE_PUBLISH_FAILED,
@@ -80,23 +81,11 @@ class System_Signals {
 					),
 					$e
 				);
+
 			}
 			$passed++;
 		}
 		return $passed;
-	}
-
-	/**
-	 * @param string $signal_name
-	 * @throws System_Signals_Exception
-	 */
-	public static function checkSignalNameFormat($signal_name){
-		if(!preg_match('~^[\w\-]+([/:][\w\-]+)*$~', $signal_name)){
-			throw new System_Signals_Exception(
-				"Invalid signal name format '{$signal_name}'",
-				System_Signals_Exception::CODE_INVALID_NAME
-			);
-		}
 	}
 
 }

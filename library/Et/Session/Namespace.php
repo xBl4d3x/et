@@ -18,7 +18,7 @@ class Session_Namespace extends Data_Array {
 			Session::initialize();
 		}
 
-		$this->assert()->isIdentifier($namespace_name);
+		Debug_Assert::isIdentifier($namespace_name);
 		$this->namespace_name = $namespace_name;
 		$session_key = $this->getSessionKey();
 

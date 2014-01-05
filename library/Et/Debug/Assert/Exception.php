@@ -16,16 +16,11 @@ class Debug_Assert_Exception extends Exception {
 	);
 
 	/**
-	 * @param string $comment_or_reason
+	 * @param string $error_message
 	 * @param int $backtrace_offset [optional]
-	 * @param null|string $reason [optional]
 	 */
-	function __construct($comment_or_reason, $backtrace_offset = 1, $reason = null){
-		$exception_data = null;
-		if($reason != $comment_or_reason){
-			$exception_data = array("reason" => $reason);
-		}
-		parent::__construct($comment_or_reason, self::CODE_ASSERT_FAILED, $exception_data, null, $backtrace_offset);
+	function __construct($error_message, $backtrace_offset = 1){
+		parent::__construct($error_message, self::CODE_ASSERT_FAILED, null, null, $backtrace_offset);
 		if($this->debug_backtrace){
 			$origin = $this->debug_backtrace[0];
 			$this->file = $origin["file"];

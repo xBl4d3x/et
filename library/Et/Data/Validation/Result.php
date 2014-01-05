@@ -100,7 +100,7 @@ class Data_Validation_Result extends Object implements \JsonSerializable,\Iterat
 	 * @return Data_Validation_Result_Error
 	 */
 	protected function createErrorInstance($error_name, $error_code, $error_message, array $error_message_data){
-		$this->assert()->isVariableName($error_code, "Invalid error code format");
+		Debug_Assert::isVariableName($error_code, "Invalid error code format");
 		if($error_message_data){
 			$error_message = System::getText($error_message)->replaceData($error_message_data);
 		}

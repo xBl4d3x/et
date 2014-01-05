@@ -93,7 +93,7 @@ class System_File extends System_Path {
 			if(!unlink($this->path)){
 				Debug::triggerError("unlink('{$this->path}') failed");
 			}
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			if(file_exists($this->path)){
 				throw new System_Exception(
 					"Failed to delete file '{$this->path}' - {$e->getMessage()}",
@@ -132,10 +132,11 @@ class System_File extends System_Path {
 	 *
 	 * @param string $content
 	 * @param bool $overwrite [optional] Default: TRUE
+	 * @param bool $write_lock [optional]
 	 *
 	 * @throws System_Exception
 	 */
-	public function writeContent($content, $overwrite = true){
+	public function writeContent($content, $overwrite = true, $write_lock = false){
 
 		$exists = $this->exists();
 		if($exists && !$overwrite){
@@ -151,10 +152,10 @@ class System_File extends System_Path {
 		}
 
 		try {
-			if(file_put_contents($this->path, $content) === false){
+			if(file_put_contents($this->path, $content, $write_lock ? LOCK_EX : null) === false){
 				Debug::triggerError("file_put_contents('{$this->path}', ...) failed");
 			}
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"Failed write content to file '{$this->path}' - {$e->getMessage()}",
 				System_Exception::CODE_WRITE_FAILED,
@@ -172,30 +173,35 @@ class System_File extends System_Path {
 	 * Append file content
 	 *
 	 * @param string $content
+	 * @param bool $write_lock [optional]
 	 *
 	 * @throws System_Exception
 	 */
-	public function appendContent($content){
+	public function appendContent($content, $write_lock = false){
 
 		$exists = $this->exists();
 		if(!$exists){
-			$this->writeContent($content);
+			$this->writeContent($content, true, $write_lock);
 			return;
 		}
 
 		try {
-			if(file_put_contents($this->path, $content, FILE_APPEND) === false){
-				Debug::triggerError(
+
+			if(file_put_contents($this->path, $content, $write_lock ? FILE_APPEND | LOCK_EX : FILE_APPEND) === false){
+				Debug::triggerErrorOrLastError(
 					"file_put_contents('{$this->path}', ... , FILE_APPEND) failed"
 				);
 			}
-		} catch(Exception_PHPError $e){
+
+		} catch(Debug_PHPError $e){
+
 			throw new System_Exception(
 				"Failed append content to file '{$this->path}' - {$e->getMessage()}",
 				System_Exception::CODE_WRITE_FAILED,
 				null,
 				$e
 			);
+
 		}
 	}
 
@@ -211,23 +217,27 @@ class System_File extends System_Path {
 		$this->checkIsReadable();
 		try {
 			if($offset){
+
 				if($max_length){
 					$output = file_get_contents($this->path, null, null, $offset, $max_length);
 				} else {
 					$output = file_get_contents($this->path, null, null, $offset);
 				}
+
 			} else {
+
 				$output = file_get_contents($this->path);
+
 			}
 
 			if($output === false){
-				Debug::triggerError(
+				Debug::triggerErrorOrLastError(
 					"file_get_contents('{$this->path}') failed"
 				);
 			}
 			return $output;
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"Failed read content of file '{$this->path}' - {$e->getMessage()}",
 				System_Exception::CODE_READ_FAILED,
@@ -252,7 +262,7 @@ class System_File extends System_Path {
 			}
 			return $content;
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"Failed to include file '{$this->path}' - {$e->getMessage()}",
 				System_Exception::CODE_INCLUDE_FAILED,
@@ -280,19 +290,39 @@ class System_File extends System_Path {
 		return $content;
 	}
 
+	function writeSerializedData($content_to_serialize, $base64_encode = false, $write_lock = true){
+		$content = serialize($content_to_serialize);
+		if($base64_encode){
+			$content = base64_encode($content);
+		}
+		$this->writeContent($content, true, $write_lock);
+	}
+
 	/**
 	 * @param null|string $required_instance_class_name [optional]
-	 * @return object
+	 * @param bool $decode_base64 [optional]
 	 * @throws System_Exception
+	 * @return object
 	 */
-	function getUnserializedContent($required_instance_class_name = null){
+	function getUnserializedData($required_instance_class_name = null, $decode_base64 = false){
+
 		$content = $this->getContent();
+
 		try {
-			$unserialized = unserialize($content);
-			if($unserialized === false){
-				Debug::triggerError("unserialize() returned FALSE");
+
+			if($decode_base64){
+				$content = base64_decode($content);
+				if($content === false){
+					Debug::triggerErrorOrLastError("base64_decode() returned FALSE");
+				}
 			}
-		} catch(Exception_PHPError $e){
+
+			$unserialized = unserialize($content);
+			if($unserialized === false && $content != serialize(false)){
+				Debug::triggerErrorOrLastError("unserialize() returned FALSE");
+			}
+
+		} catch(Debug_PHPError $e){
 
 			throw new System_Exception(
 				"Failed to unserialize content of file '{$this->path}' - {$e->getMessage()}",
@@ -417,7 +447,7 @@ class System_File extends System_Path {
 
 			return $target_file;
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 
 			throw new System_Exception(
 				"Failed to copy file '{$this->path}' to '{$target_file->getPath()}' - {$e->getMessage()}",
@@ -472,7 +502,7 @@ class System_File extends System_Path {
 
 			return $target_file;
 
-		} catch(Exception_PHPError $e){
+		} catch(Debug_PHPError $e){
 
 			throw new System_Exception(
 				"Failed to move file '{$this->path}' to '{$target_file->getPath()}' - {$e->getMessage()}",

@@ -22,7 +22,7 @@ class System_Components_List extends Object implements \Countable,\Iterator,\Arr
 	 * @param string $components_type
 	 */
 	function __construct($components_type){
-		$this->assert()->isVariableName($components_type);
+		Debug_Assert::isVariableName($components_type);
 		$this->components_type = $components_type;
 	}
 

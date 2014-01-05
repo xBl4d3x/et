@@ -158,7 +158,7 @@ abstract class Data_Pagination_Abstract extends Object implements \Iterator,\Cou
 	public function sortBy(array $sort_by){
 		$this->sort_by = array();
 		foreach($sort_by as $key => $how){
-			$this->assert()->isIdentifier($key, "Invalid sort key '{$key}' format");
+			Debug_Assert::isIdentifier($key, "Invalid sort key '{$key}' format");
 			if(is_numeric($key)){
 				$key = $how;
 				$how = static::SORT_ASC;
@@ -794,7 +794,7 @@ abstract class Data_Pagination_Abstract extends Object implements \Iterator,\Cou
 	 * @param string $items_count_parameter
 	 */
 	public function setItemsPerPageParameter($items_count_parameter) {
-		$this->assert()->isIdentifier($items_count_parameter);
+		Debug_Assert::isIdentifier($items_count_parameter);
 		$this->items_per_page_parameter = $items_count_parameter;
 	}
 
@@ -809,7 +809,7 @@ abstract class Data_Pagination_Abstract extends Object implements \Iterator,\Cou
 	 * @param string $order_by_parameter
 	 */
 	public function setOrderByParameter($order_by_parameter) {
-		$this->assert()->isIdentifier($order_by_parameter);
+		Debug_Assert::isIdentifier($order_by_parameter);
 		$this->order_by_parameter = $order_by_parameter;
 	}
 
@@ -824,7 +824,7 @@ abstract class Data_Pagination_Abstract extends Object implements \Iterator,\Cou
 	 * @param string $page_number_parameter
 	 */
 	public function setPageNumberParameter($page_number_parameter) {
-		$this->assert()->isIdentifier($page_number_parameter);
+		Debug_Assert::isIdentifier($page_number_parameter);
 		$this->page_number_parameter = $page_number_parameter;
 	}
 
