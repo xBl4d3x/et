@@ -3,11 +3,6 @@ namespace Et;
 class Http_Request extends Object {
 
 	/**
-	 * @var Http_Request
-	 */
-	protected static $current_request;
-
-	/**
 	 * @var Http_Request_Data_GET
 	 */
 	protected static $GET;
@@ -71,9 +66,7 @@ class Http_Request extends Object {
 			$_SERVER = static::$SERVER;
 		}
 
-		static::getCurrentRequest();
 		static::$initialized = true;
-
 	}
 
 	/**
@@ -81,7 +74,7 @@ class Http_Request extends Object {
 	 * @param null|string $request_method
 	 */
 	function __construct($URL, $request_method){
-		Debug_Assert::isStringMatching($request_method, '^[A-Z]+$');
+		Debug_Assert::isStringMatching($request_method, '^[A-Z]+$', "Invalid request method");
 		if(!$URL instanceof Http_Request_URL){
 			$URL = new Http_Request_URL($URL);
 		}
@@ -143,15 +136,6 @@ class Http_Request extends Object {
 		return $this->URL;
 	}
 
-	/**
-	 * @return Http_Request
-	 */
-	public static function getCurrentRequest(){
-		if(!static::$current_request){
-			static::$current_request = new static(ET_REQUEST_URL_WITH_QUERY, ET_REQUEST_METHOD);
-		}
-		return static::$current_request;
-	}
 
 	/**
 	 * @param null|string $path [optional]

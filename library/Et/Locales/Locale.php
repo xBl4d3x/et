@@ -1,7 +1,6 @@
 <?php
 namespace Et;
-et_require("Object");
-class Locales_Locale extends Object implements \JsonSerializable {
+class Locales_Locale implements \JsonSerializable {
 
 	/**
 	 * @var string
@@ -85,29 +84,29 @@ class Locales_Locale extends Object implements \JsonSerializable {
 	}
 
 	/**
-	 * @param null|string|Locales_Locale $output_locale [optional] If NULL, application locale is used
+	 * @param string|Locales_Locale $output_locale [optional] If NULL, application locale is used
 	 *
 	 * @return string
 	 */
-	function getLanguageName($output_locale = null){
+	function getLanguageName($output_locale = Locales::CURRENT_LOCALE){
 		return \Locale::getDisplayLanguage($this->locale, (string)Locales::getLocale($output_locale));
 	}
 
 	/**
-	 * @param null|string|Locales_Locale $output_locale [optional] If NULL, application locale is used
+	 * @param string|Locales_Locale $output_locale [optional] If NULL, application locale is used
 	 *
 	 * @return string
 	 */
-	function getRegionName($output_locale = null){
+	function getRegionName($output_locale = Locales::CURRENT_LOCALE){
 		return \Locale::getDisplayRegion($this->locale, (string)Locales::getLocale($output_locale));
 	}
 
 	/**
-	 * @param null|string|Locales_Locale $output_locale [optional] If NULL, application locale is used
+	 * @param string|Locales_Locale $output_locale [optional] If NULL, application locale is used
 	 *
 	 * @return string
 	 */
-	function getLocaleName($output_locale = null){
+	function getLocaleName($output_locale = Locales::CURRENT_LOCALE){
 		return \Locale::getDisplayName($this->locale, (string)Locales::getLocale($output_locale));
 	}
 
@@ -182,46 +181,46 @@ class Locales_Locale extends Object implements \JsonSerializable {
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime
-	 * @param null|string|\DateTimeZone $target_timezone [optional]
+	 * @param int|string|\DateTime|Locales_DateTime $datetime
+	 * @param string|\DateTimeZone|Locales_Timezone $target_timezone [optional]
 	 *
 	 * @return Locales_Formatter_DateTime
 	 */
-	function getDateTimeFormatter(Locales_DateTime $datetime, $target_timezone = null){
+	function getDateTimeFormatter($datetime, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return new Locales_Formatter_DateTime($datetime, $this, $target_timezone);
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime
+	 * @param int|string|\DateTime|Locales_DateTime $datetime
 	 * @param null|int $date_style [optional]
-	 * @param null|string|\DateTimeZone $target_timezone [optional]
+	 * @param string|\DateTimeZone|Locales_Timezone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function formatDate(Locales_DateTime $datetime, $date_style = null, $target_timezone = null){
+	function formatDate($datetime, $date_style = null, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getDateTimeFormatter($datetime, $target_timezone)->formatDate($date_style);
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime
+	 * @param int|string|\DateTime|Locales_DateTime $datetime
 	 * @param null|int $time_style [optional]
-	 * @param null|string|\DateTimeZone $target_timezone [optional]
+	 * @param string|\DateTimeZone|Locales_Timezone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function formatTime(Locales_DateTime $datetime, $time_style = null, $target_timezone = null){
+	function formatTime($datetime, $time_style = null, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getDateTimeFormatter($datetime, $target_timezone)->formatTime($time_style);
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime	 *
+	 * @param int|string|\DateTime|Locales_DateTime $datetime
 	 * @param null|int $date_style [optional]
 	 * @param null|int $time_style [optional]
-	 * @param null|string|\DateTimeZone $target_timezone [optional]
+	 * @param string|\DateTimeZone|Locales_Timezone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function formatDateTime(Locales_DateTime $datetime, $date_style = null, $time_style = null, $target_timezone = null){
+	function formatDateTime( $datetime, $date_style = null, $time_style = null, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getDateTimeFormatter($datetime, $target_timezone)->formatDateTime($date_style, $time_style);
 	}
 

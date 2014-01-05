@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Http_Headers extends Object {
+class Http_Headers {
 
 	// 2xx codes
 	const CODE_200_OK = 200;
@@ -625,6 +625,7 @@ class Http_Headers extends Object {
 			$extra_headers = array();
 		}
 
+		$text = (string)$text;
 		$extra_headers["Content-Type"] = "text/plain;charset={$encoding}";
 		$extra_headers["Content-Length"] = strlen($text);
 

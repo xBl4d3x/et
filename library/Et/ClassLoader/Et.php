@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-require_once  "Abstract.php";
+et_require("ClassLoader_Abstract");
 class ClassLoader_Et extends ClassLoader_Abstract {
 
 

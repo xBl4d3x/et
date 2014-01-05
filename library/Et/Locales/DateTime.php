@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Locales_DateTime extends Object {
+class Locales_DateTime {
 
 	const FORMAT_DEFAULT_WITHOUT_TZ = 'Y-m-d\TH:i:s';
 	const FORMAT_DEFAULT_WITH_TZ = self::FORMAT_ISO8601;
@@ -70,10 +70,12 @@ class Locales_DateTime extends Object {
 			$this->datetime = new \DateTime($datetime, $timezone);
 			
 		} catch(\Exception $e){
+
 			throw new Locales_Exception(
 				"Failed to create DateTime object - {$e->getMessage()}",
 				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
+
 		}
 
 		$errors = \DateTime::getLastErrors();
@@ -133,11 +135,11 @@ class Locales_DateTime extends Object {
 
 	/**
 	 * @param Locales_Locale|string $target_locale
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $target_timezone
+	 * @param string|\DateTimeZone|\Et\Locales_TimeZone $target_timezone
 	 *
 	 * @return Locales_Formatter_DateTime
 	 */
-	function getFormatter($target_locale = null, $target_timezone = null){
+	function getFormatter($target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return new Locales_Formatter_DateTime($this, $target_locale, $target_timezone);
 	}
 
@@ -174,7 +176,7 @@ class Locales_DateTime extends Object {
 	 *
 	 * @return string
 	 */
-	function getMonthNameLocalized($short_format = false, $target_locale = null){
+	function getMonthNameLocalized($short_format = false, $target_locale = Locales::CURRENT_LOCALE){
 		return $this->getFormatter($target_locale)->getMonthName($short_format);
 	}
 
@@ -210,7 +212,7 @@ class Locales_DateTime extends Object {
 	 *
 	 * @return string
 	 */
-	function getDayNameLocalized($short_format = false, $target_locale = null){
+	function getDayNameLocalized($short_format = false, $target_locale = Locales::CURRENT_LOCALE){
 		return $this->getFormatter($target_locale)->getDayName($short_format);
 	}
 
@@ -361,7 +363,7 @@ class Locales_DateTime extends Object {
 	 *
 	 * @return string
 	 */
-	function getDateTimeLocalized($date_style = null, $time_style = null, $target_locale = null, $target_timezone = null){
+	function getDateTimeLocalized($date_style = null, $time_style = null, $target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getFormatter($target_locale, $target_timezone)->formatDateTime($date_style, $time_style);
 	}
 
@@ -383,12 +385,12 @@ class Locales_DateTime extends Object {
 	 * @see Locales_DateTime_Formatter::formatDate()
 	 *
 	 * @param null|int $date_style [optional]
-	 * @param Locales_Locale|string|null $target_locale [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $target_timezone [optional]
+	 * @param Locales_Locale|string $target_locale [optional]
+	 * @param string|\DateTimeZone|\Et\Locales_Timezone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function getDateLocalized($date_style = null, $target_locale = null, $target_timezone = null){
+	function getDateLocalized($date_style = null, $target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getFormatter($target_locale, $target_timezone)->formatDate($date_style);
 	}
 
@@ -444,22 +446,22 @@ class Locales_DateTime extends Object {
 	 *
 	 * @param null|int $time_style [optional]
 	 * @param Locales_Locale|string|null $target_locale [optional]
-	 * @param null|string|\DateTimeZone $target_timezone [optional]
+	 * @param string|\DateTimeZone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function getTimeLocalized($time_style = null, $target_locale = null, $target_timezone = null){
+	function getTimeLocalized($time_style = null, $target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getFormatter($target_locale, $target_timezone)->formatTime($time_style);
 	}
 
 
 	/**
 	 * @param Locales_Locale|string|null $target_locale [optional]
-	 * @param null|string|\DateTimeZone $target_timezone [optional]
+	 * @param string|\DateTimeZone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function getLocalized($target_locale = null, $target_timezone = null){
+	function getLocalized($target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE){
 		return $this->getDateTimeLocalized(null, null, $target_locale, $target_timezone);
 	}
 
@@ -478,7 +480,7 @@ class Locales_DateTime extends Object {
 		}
 
 		if($timezone && !$timezone instanceof \DateTimeZone){
-			$timezone = Locales_Timezone::getInstance((string)$timezone)->getDateTimeZone();
+			$timezone = Locales::getTimezone($timezone)->getDateTimeZone();
 		}
 
 		try {
@@ -489,9 +491,7 @@ class Locales_DateTime extends Object {
 
 			throw new Locales_Exception(
 				"Failed to create DateTime object - {$e->getMessage()}",
-				Locales_Exception::CODE_INVALID_DATE_TIME,
-				null,
-				$e
+				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
 		}
 
@@ -502,6 +502,7 @@ class Locales_DateTime extends Object {
 				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
 		}
+
 		if($errors["warning_count"]){
 			throw new Locales_Exception(
 				array_shift($errors["warnings"]),

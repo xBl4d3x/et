@@ -1,7 +1,6 @@
 <?php
 namespace Et;
-et_require("Object");
-class Locales_Formatter_Number extends Object {
+class Locales_Formatter_Number {
 
 	/**
 	 * @var Locales_Locale

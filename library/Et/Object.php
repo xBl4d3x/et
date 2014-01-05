@@ -98,7 +98,7 @@ abstract class Object {
 	 *
 	 * @return array
 	 */
-	protected function getVisibleObjectPropertiesNames(){
+	protected function getVisiblePropertiesNames(){
 		$props = array_keys(get_object_vars($this));
 		$output = array();
 		foreach($props as $k){
@@ -115,8 +115,8 @@ abstract class Object {
 	 *
 	 * @return array
 	 */
-	protected function getVisibleObjectPropertiesValues(){
-		$props = $this->getVisibleObjectPropertiesNames();
+	protected function getVisiblePropertiesValues(){
+		$props = $this->getVisiblePropertiesNames();
 		$output = array();
 		foreach($props as $prop){
 			$output[$prop] = $this->{$prop};

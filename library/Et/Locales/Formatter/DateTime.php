@@ -4,7 +4,7 @@ namespace Et;
  * Date and time formatter
  * @link http://userguide.icu-project.org/formatparse/datetime
  */
-class Locales_Formatter_DateTime extends Exception {
+class Locales_Formatter_DateTime {
 
 	const CALENDAR_GREGORIAN = \IntlDateFormatter::GREGORIAN;
 	const CALENDAR_TRADITIONAL = \IntlDateFormatter::TRADITIONAL;
@@ -84,25 +84,16 @@ class Locales_Formatter_DateTime extends Exception {
 	protected $default_time_style = self::STYLE_MEDIUM;
 
 	/**
-	 * @param Locales_DateTime $datetime
-	 * @param Locales_Locale $target_locale [optional[
-	 * @param null|Locales_Timezone $target_timezone [optional] If not set, system timezone is used
+	 * @param int|string|\DateTime|Locales_DateTime $datetime
+	 * @param \Et\Locales_Locale|int|string $target_locale [optional[
+	 * @param \Et\Locales_Timezone|mixed|string $target_timezone [optional] If not set, system timezone is used
 	 * @param null|int $calendar [optional] If not set, Locales_Formatter_DateTime::CALENDAR_GREGORIAN is used
 	 */
-	function __construct(Locales_DateTime $datetime, Locales_Locale $target_locale = null, Locales_Timezone $target_timezone = null, $calendar = null){
+	function __construct($datetime, $target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE, $calendar = null){
 
-		$this->datetime = $datetime;
-
-		if(!$target_locale){
-			$target_locale = Locales::getCurrentLocale();
-		}
-		$this->locale = $target_locale;
-
-
-		if(!$target_timezone){
-			$target_timezone = Locales_Timezone::getCurrentTimezone();
-		}
-		$this->target_timezone = $target_timezone;
+		$this->datetime = Locales::getDateTime($datetime);
+		$this->locale = Locales::getLocale($target_locale);
+		$this->target_timezone = Locales::getTimezone($target_timezone);
 
 
 		if($calendar === null){

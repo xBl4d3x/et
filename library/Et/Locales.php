@@ -3,13 +3,19 @@ namespace Et;
 et_require("Object");
 class Locales extends Object {
 
+	const CURRENT_LOCALE = "_current_";
 	const APPLICATION_LOCALE = "_application_";
 	const USER_LOCALE = "_user_";
+	
+	const CURRENT_TIMEZONE = "_current_";
+	const APPLICATION_TIMEZONE = "_application_";
+	const USER_TIMEZONE = "_user_";
+	const SYSTEM_TIMEZONE = "_system_";
 
 	/**
 	 * @var array
 	 */
-	protected static $locales_names = array(
+	protected static $locale_names = array(
 		'sq_AL' => 'Albanian (Albania) ',
 		'ar_DZ' => 'Arabic (Algeria) ',
 		'ar_BH' => 'Arabic (Bahrain) ',
@@ -121,17 +127,17 @@ class Locales extends Object {
 	/**
 	 * @var array
 	 */
-	protected static $language_codes;
+	protected static $language_names;
 
 	/**
 	 * @var array[]
 	 */
-	protected static $locales_names_localized = array();
+	protected static $locale_names_localized = array();
 
 	/**
 	 * @var array[]
 	 */
-	protected static $languages_names_localized = array();
+	protected static $language_names_localized = array();
 
 	/**
 	 * @var \Et\Locales_Locale[]
@@ -146,7 +152,18 @@ class Locales extends Object {
 	/**
 	 * @var array
 	 */
-	protected static $timezones_names;
+	protected static $timezone_names;
+
+	/**
+	 * @var \Et\Locales_Locale
+	 */
+	protected static $current_locale;
+	
+	/**
+	 * @var \Et\Locales_Timezone
+	 */
+	protected static $current_timezone;
+	
 
 	/**
 	 * @param string $locale
@@ -156,86 +173,90 @@ class Locales extends Object {
 	 */
 	public static function getLocaleName($locale){
 		self::checkLocale($locale);
-		return static::$locales_names[(string)$locale];
+		return static::$locale_names[(string)$locale];
 	}
 
 	/**
 	 * @return array
 	 */
-	public static function getLocalesNames(){
-		return static::$locales_names;
+	public static function getLocaleNames(){
+		return static::$locale_names;
 	}
+	
 
 	/**
 	 * @param string|Locales_Locale $target_locale [optional]
 	 * @return array
 	 */
-	public static function getLocalesNamesLocalized($target_locale = null){
+	public static function getLocaleNamesLocalized($target_locale = self::CURRENT_LOCALE){
 
-		if(!$target_locale){
-			$target_locale = Application::getApplicationLocale();
-		}
-
+		$target_locale = static::getLocale($target_locale);
 		$target_locale_string = (string)$target_locale;
-		if(isset(self::$locales_names_localized[$target_locale_string])){
-			return self::$locales_names_localized[$target_locale_string];
+		if(isset(self::$locale_names_localized[$target_locale_string])){
+			return self::$locale_names_localized[$target_locale_string];
 		}
 
-		self::$locales_names_localized[$target_locale_string] = array();
-		foreach(static::$locales_names as $locale => $name){
-			self::$locales_names_localized[$target_locale_string][$locale] = \Locale::getDisplayName($locale, $target_locale_string);
+		self::$locale_names_localized[$target_locale_string] = array();
+		foreach(static::$locale_names as $locale => $name){
+			self::$locale_names_localized[$target_locale_string][$locale] = \Locale::getDisplayName($locale, $target_locale_string);
 		}
 
 		/** @noinspection PhpUndefinedMethodInspection */
-		$target_locale->getCollator()->asort(self::$locales_names_localized[$target_locale_string]);
+		$target_locale->getCollator()->asort(self::$locale_names_localized[$target_locale_string]);
 
-		return self::$locales_names_localized[$target_locale_string];
+		return self::$locale_names_localized[$target_locale_string];
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function getLanguageNames(){
+		if(self::$language_names){
+			return self::$language_names;
+		}
+
+		foreach(self::$locale_names as $locale => $name){
+			$language = substr($locale, 0, 2);
+			list($language_name) = explode("(", $name, 2);
+			self::$language_names[$language] = trim($language_name);
+		}
+
+		asort(self::$language_names);
+		return self::$language_names;
 	}
 
 	/**
 	 * @return array
 	 */
 	public static function getLanguageCodes(){
-		if(self::$language_codes){
-			return self::$language_codes;
-		}
-
-		foreach(self::$locales_names as $locale => $name){
-			list($language) = substr($locale, 0, 2);
-			self::$language_codes[$language] = $language;
-		}
-
-		asort(self::$language_codes);
-		return self::$language_codes;
+		$codes = array_keys(static::getLanguageNames());
+		sort($codes);
+		return $codes;
 	}
 
 	/**
 	 * @param Locales_Locale|string $target_locale [optional]
 	 * @return array
 	 */
-	public static function getLanguagesNamesLocalized($target_locale = null){
-		if(!$target_locale){
-			$target_locale = Application::getApplicationLocale();
-		}
+	public static function getLanguageNamesLocalized($target_locale = self::CURRENT_LOCALE){
 
 		$target_locale = static::getLocale($target_locale);
 		$target_locale_string = (string)$target_locale;
 
-		if(isset(self::$languages_names_localized[$target_locale_string])){
-			return self::$languages_names_localized[$target_locale_string];
+		if(isset(self::$language_names_localized[$target_locale_string])){
+			return self::$language_names_localized[$target_locale_string];
 		}
 		
-		$languages_codes = static::getLanguageCodes();
+		$languages_codes = static::getLanguageNames();
 
-		self::$languages_names_localized[$target_locale_string] = array();
+		self::$language_names_localized[$target_locale_string] = array();
 		foreach($languages_codes as $language){
-			self::$languages_names_localized[$target_locale_string][$language] = \Locale::getDisplayLanguage($language, $target_locale_string);
+			self::$language_names_localized[$target_locale_string][$language] = \Locale::getDisplayLanguage($language, $target_locale_string);
 		}
 
-		/** @noinspection PhpUndefinedMethodInspection */
-		$target_locale->getCollator()->asort(self::$languages_names_localized[$target_locale_string]);
+		$target_locale->getCollator()->asort(self::$language_names_localized[$target_locale_string]);
 
-		return self::$languages_names_localized[$target_locale_string];
+		return self::$language_names_localized[$target_locale_string];
 	}
 
 	/**
@@ -243,12 +264,48 @@ class Locales extends Object {
 	 * @param Locales_Locale|string $target_locale
 	 * @return bool|string
 	 */
-	public static function getLanguageNameLocalized($language_code, $target_locale = null){
-		$names = static::getLanguagesNamesLocalized($target_locale);
+	public static function getLanguageNameLocalized($language_code, $target_locale = self::CURRENT_LOCALE){
+		$names = static::getLanguageNamesLocalized($target_locale);
 		return isset($names[$language_code])
 				? $names[$language_code]
 				: false;
 	}
+
+	/**
+	 * @param \Et\Locales_Locale $current_locale
+	 */
+	public static function setCurrentLocale($current_locale) {
+		static::$current_locale = self::getLocale($current_locale);
+	}
+
+	/**
+	 * @return \Et\Locales_Locale
+	 */
+	public static function getCurrentLocale() {
+		if(!static::$current_locale){
+			return self::getLocale(ET_DEFAULT_LOCALE);
+		}
+		return static::$current_locale;
+	}
+
+	/**
+	 * @param \Et\Locales_Timezone $current_timezone
+	 */
+	public static function setCurrentTimezone($current_timezone) {
+		static::$current_timezone = self::getTimezone($current_timezone);
+	}
+
+	/**
+	 * @return \Et\Locales_Timezone
+	 */
+	public static function getCurrentTimezone() {
+		if(!static::$current_timezone){
+			return self::getSystemTimezone();
+		}
+		return static::$current_timezone;
+	}
+	
+	
 
 	/**
 	 * @param string $locale
@@ -256,7 +313,7 @@ class Locales extends Object {
 	 * @throws Locales_Exception
 	 */
 	public static function checkLocale($locale){
-		if(!static::getLocaleExists($locale)){
+		if(!self::getLocaleExists($locale)){
 			throw new Locales_Exception(
 				"Invalid locale '{$locale}' - not found in locales list",
 				Locales_Exception::CODE_INVALID_LOCALE
@@ -269,7 +326,20 @@ class Locales extends Object {
 	 * @return bool
 	 */
 	public static function getLocaleExists($locale){
-		return isset(static::$locales_names[(string)$locale]);
+		if($locale instanceof Locales_Locale){
+			return true;
+		}
+
+		$locale = (string)$locale;
+		if(isset(static::$locale_names[$locale])){
+			return true;
+		}
+
+		return in_array($locale, array(
+			self::CURRENT_LOCALE,
+			self::APPLICATION_LOCALE,
+			self::USER_LOCALE
+		));
 	}
 
 	/**
@@ -277,10 +347,10 @@ class Locales extends Object {
 	 * @return bool
 	 */
 	public static function getLanguageExists($language){
-		if(!static::$language_codes){
-			static::getLanguageCodes();
+		if(!static::$language_names){
+			static::getLanguageNames();
 		}
-		return isset(static::$language_codes[$language]);
+		return isset(static::$language_names[$language]);
 	}
 
 	/**
@@ -326,10 +396,12 @@ class Locales extends Object {
 	 * @return Locales_Locale
 	 * @throws Locales_Exception
 	 */
-	public static function getLocale($locale = null){
-		if($locale === null){
-			return Application::getApplicationLocale();
+	public static function getLocale($locale){
+		if($locale === static::CURRENT_LOCALE){
+			return static::getCurrentLocale();
 		}
+
+		//todo: application and user locale
 
 		if(isset(static::$locales[(string)$locale])){
 			return static::$locales[(string)$locale];
@@ -351,7 +423,7 @@ class Locales extends Object {
 	public static function getLocales(array $locales){
 		$output = array();
 		foreach($locales as $locale){
-			$output[$locale] = static::getLocale($locale);
+			$output[(string)$locale] = static::getLocale($locale);
 		}
 		return $output;
 	}
@@ -414,36 +486,36 @@ class Locales extends Object {
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime
+	 * @param string|int|\DateTime|Locales_DateTime $datetime
 	 * @param null|int $date_style [optional]
 	 * @param null|string|\DateTimeZone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function formatDate(Locales_DateTime $datetime, $date_style = null, $target_timezone = null){
+	function formatDate($datetime, $date_style = null, $target_timezone = null){
 		return static::getCurrentLocale()->formatDate($datetime, $date_style, $target_timezone);
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime
+	 * @param string|int|\DateTime|Locales_DateTime $datetime
 	 * @param null|int $time_style [optional]
 	 * @param null|string|\DateTimeZone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function formatTime(Locales_DateTime $datetime, $time_style = null, $target_timezone = null){
+	function formatTime($datetime, $time_style = null, $target_timezone = null){
 		return static::getCurrentLocale()->formatTime($datetime, $time_style, $target_timezone);
 	}
 
 	/**
-	 * @param Locales_DateTime $datetime	 *
+	 * @param string|int|\DateTime|Locales_DateTime $datetime	 *
 	 * @param null|int $date_style [optional]
 	 * @param null|int $time_style [optional]
 	 * @param null|string|\DateTimeZone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function formatDateTime(Locales_DateTime $datetime, $date_style = null, $time_style = null, $target_timezone = null){
+	function formatDateTime($datetime, $date_style = null, $time_style = null, $target_timezone = null){
 		return static::getCurrentLocale()->formatDateTime($datetime, $date_style, $time_style, $target_timezone);
 	}
 
@@ -451,14 +523,8 @@ class Locales extends Object {
 	 * @param null|string|Locales_Locale $locale [optional]
 	 * @return \Collator
 	 */
-	public static function getCollator($locale = null){
-		if(!$locale){
-			$locale = static::getCurrentLocale();
-		}
-		if(!$locale instanceof Locales_Locale){
-			$locale = Locales::getLocale($locale);
-		}
-		return $locale->getCollator();
+	public static function getCollator($locale = self::CURRENT_LOCALE){
+		return self::getLocale($locale)->getCollator();
 	}
 
 	/**
@@ -474,7 +540,7 @@ class Locales extends Object {
 		}
 
 		$locale = \Locale::acceptFromHttp($header);
-		if(!static::getLocaleExists($locale)){
+		if(!$locale || !static::getLocaleExists($locale)){
 			return false;
 		}
 
@@ -482,33 +548,41 @@ class Locales extends Object {
 	}
 
 	/**
-	 * @param string|Locales_Timezone|null $timezone If NULL, application timezone is returned
+	 * @param string|Locales_Timezone $timezone
 	 * @return \Et\Locales_Timezone
 	 */
-	public static function getTimezone($timezone = null){
-		if($timezone === null){
-			return Application::getApplicationTimezone();
-		}
+	public static function getTimezone($timezone){
+		if(is_string($timezone)){
+			if($timezone == static::CURRENT_TIMEZONE){
+				return static::getCurrentTimezone();
+			} elseif($timezone == static::SYSTEM_TIMEZONE){
+				return static::getSystemTimezone();
+			}
 
-		if(isset(static::$timezones[(string)$timezone])){
-			return static::$timezones[(string)$timezone];
+			//todo: application and user timezone
+
+		} elseif($timezone instanceof Locales_Timezone){
+			return $timezone;
 		}
 
 		$timezone = (string)$timezone;
-		static::$timezones[$timezone] = new Locales_Timezone($timezone);
+		if(isset(static::$timezones[$timezone])){
+			return static::$timezones[$timezone];
+		}
 
+		static::$timezones[$timezone] = new Locales_Timezone($timezone);
 		return static::$timezones[$timezone];
 	}
 
 	/**
 	 * @return array
 	 */
-	public static function getTimezonesNames() {
-		if(static::$timezones_names){
-			return static::$timezones_names;
+	public static function getTimezoneNames() {
+		if(static::$timezone_names){
+			return static::$timezone_names;
 		}
 
-		static::$timezones_names = array();
+		static::$timezone_names = array();
 		$timezones = \DateTimeZone::listAbbreviations();
 		foreach($timezones as $tz){
 			foreach($tz as $t){
@@ -526,14 +600,15 @@ class Locales extends Object {
 				if($gmt_offset_hours < 10){
 					$gmt_offset_hours = "0{$gmt_offset_hours}";
 				}
+
 				$label .= "{$gmt_offset_hours}:00)";
-				static::$timezones_names[$timezone] = $label;
+				static::$timezone_names[$timezone] = $label;
 			}
 		}
 
-		arsort(static::$timezones_names);
+		asort(static::$timezone_names);
 
-		return static::$timezones_names;
+		return static::$timezone_names;
 	}
 
 	/**
@@ -549,6 +624,9 @@ class Locales extends Object {
 	 * @return \Et\Locales_Date
 	 */
 	public static function getDate($date, $timezone = null){
+		if($date instanceof Locales_Date){
+			return $date;
+		}
 		return new Locales_Date($date, $timezone);
 	}
 
@@ -566,6 +644,9 @@ class Locales extends Object {
 	 * @return \Et\Locales_DateTime
 	 */
 	public static function getDateTime($datetime, $timezone = null){
+		if($datetime instanceof Locales_DateTime){
+			return $datetime;
+		}
 		return new Locales_DateTime($datetime, $timezone);
 	}
 

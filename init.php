@@ -29,21 +29,21 @@ set_include_path(
 // ========================================================================================
 // Error handler
 // ========================================================================================
-require_once "library/Et/Debug.php";
+et_require("Debug");
 Debug::initializeErrorHandler();
 
 
 // =========================================================================================
 // Et\* Class loader
 // =========================================================================================
-require_once "library/Et/ClassLoader.php";
+et_require("ClassLoader");
 ClassLoader::activate();
 
-require_once "library/Et/ClassLoader/Et.php";
+et_require("ClassLoader_Et");
 ClassLoader::registerLoader(new ClassLoader_Et());
 
 
-require_once "library/Et/Factory.php";
+et_require("Factory");
 Factory::initialize();
 
 // =========================================================================================

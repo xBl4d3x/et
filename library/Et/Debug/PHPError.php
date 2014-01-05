@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-require_once dirname(__DIR__) . "/Exception.php";
+et_require("Exception");
 class Debug_PHPError extends Exception {
 
 	/**

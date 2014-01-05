@@ -1,6 +1,5 @@
 <?php
 namespace Et;
-et_require("Object");
 /**
  * Message formatter
  *
@@ -9,7 +8,7 @@ et_require("Object");
  * @link http://unicode.org/repos/cldr-tmp/trunk/diff/supplemental/language_plural_rules.ht
  * @link http://php.net/manual/en/class.messageformatter.php
  */
-class Locales_Formatter_Message extends Object {
+class Locales_Formatter_Message {
 
 	/**
 	 * @var Locales_Locale
@@ -19,7 +18,7 @@ class Locales_Formatter_Message extends Object {
 	/**
 	 * @param Locales_Locale|string $locale
 	 */
-	function __construct($locale){
+	function __construct($locale = Locales::CURRENT_LOCALE){
 		$this->locale = Locales::getLocale($locale);
 	}
 
@@ -105,17 +104,14 @@ class Locales_Formatter_Message extends Object {
 			return $message;
 		}
 
-		$this->prepareMessageForFormatter($message, $arguments);
+		// PHP 5.5 seems to have named patterns
+		//$this->prepareMessageForFormatter($message, $arguments);
 		$formatter = $this->getFormatter();
 
 		if(!$formatter->setPattern($message) || intl_is_failure(intl_get_error_code())){
 			throw new Locales_Exception(
 				"Failed to set message pattern to formatter - intl error ".intl_get_error_message()." [code ".intl_get_error_code()."] occurred",
-				Locales_Exception::CODE_FORMATTER_FAILURE,
-				array(
-				     "message to format" => $message,
-				     "message arguments" => $arguments
-				)
+				Locales_Exception::CODE_FORMATTER_FAILURE
 			);
 		}
 
@@ -124,11 +120,7 @@ class Locales_Formatter_Message extends Object {
 
 			throw new Locales_Exception(
 				"Failed to format message - intl error ".intl_get_error_message()." [code ".intl_get_error_code()."] occurred",
-				Locales_Exception::CODE_FORMATTER_FAILURE,
-				array(
-				     "message to format" => $message,
-				     "message arguments" => $arguments
-				)
+				Locales_Exception::CODE_FORMATTER_FAILURE
 			);
 		}
 

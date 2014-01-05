@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-et_require("Object");
+et_require("Locales_DateTime");
 class Locales_Date extends Locales_DateTime {
 	
 	const FORMAT_DEFAULT = self::FORMAT_DATE;
@@ -56,11 +56,11 @@ class Locales_Date extends Locales_DateTime {
 	}
 
 	/**
-	 * @param Locales_Locale|string|null $target_locale [optional]
+	 * @param Locales_Locale|string $target_locale [optional]
 	 *
 	 * @return string
 	 */
-	function getLocalized($target_locale = null){
+	function getLocalized($target_locale = Locales::CURRENT_LOCALE){
 		return $this->getDateLocalized($target_locale);
 	}
 }

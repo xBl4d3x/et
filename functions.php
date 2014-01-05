@@ -1,14 +1,14 @@
 <?php
 /**
- * @param string $class_name
+ * @param string $class_name_without_ns
  */
-function et_require($class_name){
+function et_require($class_name_without_ns){
 	static $required_et_classes;
-	if(isset($required_et_classes[$class_name])){
+	if(isset($required_et_classes[$class_name_without_ns]) || class_exists("Et\\{$class_name_without_ns}", false)){
 		return;
 	}
-	$required_et_classes[$class_name] = true;
-	$file_path = __DIR__ . "/library/Et/" . str_replace(array("_", "\\"), "/", $class_name) . ".php";
+	$required_et_classes[$class_name_without_ns] = true;
+	$file_path = __DIR__ . "/library/Et/" . str_replace(array("_", "\\"), "/", $class_name_without_ns) . ".php";
 	/** @noinspection PhpIncludeInspection */
 	require_once($file_path);
 }

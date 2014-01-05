@@ -102,7 +102,7 @@ class Application_Metadata extends System_Components_Component {
 	}
 
 	function __sleep(){
-		return $this->getVisibleObjectPropertiesNames();
+		return $this->getVisiblePropertiesNames();
 	}
 
 	/**

@@ -1,7 +1,6 @@
 <?php
 namespace Et;
-et_require("Object");
-class Locales_Timezone extends Object {
+class Locales_Timezone {
 
 	/**
 	 * @var \DateTimeZone
@@ -19,9 +18,7 @@ class Locales_Timezone extends Object {
 			} catch(\Exception $e){
 				throw new Locales_Exception(
 					"Failed to create \\DateTimeZone object - {$e->getMessage()}",
-					Locales_Exception::CODE_INVALID_TIME_ZONE,
-					null,
-					$e
+					Locales_Exception::CODE_INVALID_TIME_ZONE
 				);
 			}
 		}
