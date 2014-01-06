@@ -4,10 +4,7 @@ namespace Et;
  * Date and time formatter
  * @link http://userguide.icu-project.org/formatparse/datetime
  */
-class Locales_Formatter_DateTime {
-
-	const CALENDAR_GREGORIAN = \IntlDateFormatter::GREGORIAN;
-	const CALENDAR_TRADITIONAL = \IntlDateFormatter::TRADITIONAL;
+class Locales_Formatter_DateTime extends Object {
 
 	/**
 	 * Completely specified style (Tuesday, April 12, 1952 AD or 3:30:42pm PST)
@@ -54,24 +51,20 @@ class Locales_Formatter_DateTime {
 	const PATTERN_TIMEZONE_LOCATION = "VVVV";
 
 	/**
-	 * @var Locales_Locale
+	 * @var \Et\Locales_Locale
 	 */
-	protected $locale;
+	protected $target_locale;
 
 	/**
-	 * @var Locales_DateTime
-	 */
-	protected $datetime;
-
-	/**
-	 * @var Locales_Timezone
+	 * @var \Et\Locales_Timezone
 	 */
 	protected $target_timezone;
 
 	/**
-	 * @var int
+	 * @var \Et\Locales_DateTime
 	 */
-	protected $calendar;
+	protected $datetime;
+
 
 	/**
 	 * @var int
@@ -84,24 +77,86 @@ class Locales_Formatter_DateTime {
 	protected $default_time_style = self::STYLE_MEDIUM;
 
 	/**
-	 * @param int|string|\DateTime|Locales_DateTime $datetime
-	 * @param \Et\Locales_Locale|int|string $target_locale [optional[
-	 * @param \Et\Locales_Timezone|mixed|string $target_timezone [optional] If not set, system timezone is used
-	 * @param null|int $calendar [optional] If not set, Locales_Formatter_DateTime::CALENDAR_GREGORIAN is used
+	 * @param null|string|int|\Et\Locales_DateTime $datetime
+	 * @param \Et\Locales_Locale|string $target_locale [optional[
+	 * @param \DateTimeZone|string $target_timezone [optional] If not set, system timezone is used
 	 */
-	function __construct($datetime, $target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE, $calendar = null){
+	function __construct($datetime = null, $target_locale = Locales::CURRENT_LOCALE, $target_timezone = Locales::CURRENT_TIMEZONE){
+		$this->setDatetime($datetime);
+		$this->setTargetLocale($target_locale);
+		$this->setTargetTimezone($target_timezone);
 
-		$this->datetime = Locales::getDateTime($datetime);
-		$this->locale = Locales::getLocale($target_locale);
-		$this->target_timezone = Locales::getTimezone($target_timezone);
+	}
 
-
-		if($calendar === null){
-			$calendar = self::CALENDAR_GREGORIAN;
+	/**
+	 * @param null|int $date_style [optional]
+	 * @param null|int $time_style [optional]
+	 * @return \IntlDateFormatter
+	 */
+	function getFormatter($date_style = null, $time_style = null){
+		if($date_style === null){
+			$date_style = $this->getDefaultDateStyle();
 		}
 
-		$this->calendar = $calendar;
+		if($time_style === null){
+			$time_style = $this->getDefaultTimeStyle();
+		}
+
+		return new \IntlDateFormatter(
+			(string)$this->target_locale,
+			$date_style,
+			$time_style,
+			(string)$this->target_timezone,
+			\IntlDateFormatter::GREGORIAN
+		);
 	}
+
+	/**
+	 * @return \Et\Locales_Locale
+	 */
+	public function getTargetLocale() {
+		return $this->target_locale;
+	}
+
+	/**
+	 * @return \Et\Locales_Timezone
+	 */
+	public function getTargetTimezone() {
+		return $this->target_timezone;
+	}
+
+	/**
+	 * @return \Et\Locales_DateTime
+	 */
+	public function getDatetime() {
+		return $this->datetime;
+	}
+
+	/**
+	 * @param \Et\Locales_DateTime|string|int $datetime
+	 */
+	public function setDatetime($datetime) {
+		if(!$datetime instanceof Locales_DateTime){
+			$datetime = Locales::getDateTime($datetime);
+		}
+		$this->datetime = $datetime;
+	}
+
+	/**
+	 * @param \Et\Locales_Locale|string $target_locale
+	 */
+	public function setTargetLocale($target_locale) {
+		$this->target_locale = Locales::getLocale($target_locale);
+	}
+
+	/**
+	 * @param \Et\Locales_Timezone|string $target_timezone
+	 */
+	public function setTargetTimezone($target_timezone) {
+		$this->target_timezone = Locales::getTimezone($target_timezone);
+	}
+
+
 
 	/**
 	 * @param int $default_date_style
@@ -132,59 +187,6 @@ class Locales_Formatter_DateTime {
 	}
 
 
-
-	/**
-	 * @param null|int $date_style [optional] NULL = Locales_Formatter_DateTime::STYLE_NONE
-	 * @param null|int $time_style [optional] NULL = Locales_Formatter_DateTime::STYLE_NONE
-	 *
-	 * @return \IntlDateFormatter
-	 */
-	public function getFormatter($date_style = null, $time_style = null){
-		if($date_style === null){
-			$date_style = self::STYLE_NONE;
-		}
-
-		if($time_style === null){
-			$time_style = self::STYLE_NONE;
-		}
-
-		return new \IntlDateFormatter(
-			$this->locale->getLocale(),
-			$date_style,
-			$time_style,
-			(string)$this->target_timezone,
-			$this->calendar
-		);
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getCalendar() {
-		return $this->calendar;
-	}
-
-	/**
-	 * @return Locales_Locale
-	 */
-	public function getLocale() {
-		return $this->locale;
-	}
-
-	/**
-	 * @return Locales_Timezone
-	 */
-	public function getTargetTimezone() {
-		return $this->target_timezone;
-	}
-
-	/**
-	 * @return Locales_DateTime
-	 */
-	public function getDatetime() {
-		return $this->datetime;
-	}
-
 	/**
 	 * @param null|string $format_pattern [optional]
 	 * @return string
@@ -211,7 +213,7 @@ class Locales_Formatter_DateTime {
 	function formatByPattern($format_pattern){
 		$formatter = $this->getFormatter();
 		$formatter->setPattern($format_pattern);
-		return $formatter->format($this->datetime->getDateTimeInstance());
+		return $formatter->format($this->datetime);
 	}
 
 	/**
@@ -223,8 +225,8 @@ class Locales_Formatter_DateTime {
 		if($date_style === null){
 			$date_style = $this->getDefaultDateStyle();
 		}
-		$formatter = $this->getFormatter($date_style);
-		return $formatter->format($this->datetime->getDateTimeInstance());
+		$formatter = $this->getFormatter($date_style, self::STYLE_NONE);
+		return $formatter->format($this->datetime);
 	}
 
 	/**
@@ -236,8 +238,8 @@ class Locales_Formatter_DateTime {
 		if($time_style === null){
 			$time_style = $this->getDefaultTimeStyle();
 		}
-		$formatter = $this->getFormatter(null, $time_style);
-		return $formatter->format($this->datetime->getDateTimeInstance());
+		$formatter = $this->getFormatter(self::STYLE_NONE, $time_style);
+		return $formatter->format($this->datetime);
 	}
 
 	/**
@@ -254,7 +256,7 @@ class Locales_Formatter_DateTime {
 			$time_style = $this->getDefaultTimeStyle();
 		}
 		$formatter = $this->getFormatter($date_style, $time_style);
-		return $formatter->format($this->datetime->getDateTimeInstance());
+		return $formatter->format($this->datetime);
 	}
 
 	/**

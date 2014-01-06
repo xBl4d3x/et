@@ -269,10 +269,10 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 				return $this->serializeValue($value);
 
 			case self::TYPE_DATE:
-				return Locales_Date::getInstance($value)->format(Locales_Date::FORMAT_DATE);
+				return Locales_Date::getInstance($value)->format(Locales_Date::DATE);
 
 			case self::TYPE_DATETIME:
-				return Locales_DateTime::getInstance($value)->format(Locales_DateTime::FORMAT_MYSQL);
+				return Locales_DateTime::getInstance($value)->format(Locales_DateTime::MYSQL);
 
 			case self::TYPE_BINARY_DATA:
 				return (string)$value;

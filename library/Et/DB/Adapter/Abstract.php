@@ -245,7 +245,7 @@ abstract class DB_Adapter_Abstract extends Object {
 
 
 	/**
-	 * @param null|string|int|\DateTime $date [optional]
+	 * @param null|string|int|\DateTime|\Et\Locales_DateTime $date [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $target_timezone [optional]
 	 * @return string
@@ -256,22 +256,20 @@ abstract class DB_Adapter_Abstract extends Object {
 		}
 
 		$date = Locales::getDate($date, $timezone);
-		$dt = $date->getDateTimeInstance();
-
 		if(!$target_timezone && $this->default_quote_timezone){
 			$target_timezone = $this->default_quote_timezone;
 		}
 
 		if($target_timezone){
 			$target_timezone = Locales::getTimezone($target_timezone);
-			$dt->setTimezone($target_timezone->getDateTimeZone());
+			$date->setTimezone($target_timezone);
 		}
 
-		return "'{$dt->format("Y-m-d")}'";
+		return "'{$date->format("Y-m-d")}'";
 	}
 
 	/**
-	 * @param null|string|int|\DateTime $datetime [optional]
+	 * @param null|string|int|\DateTime|\Et\Locales_DateTime $datetime [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $target_timezone [optional]
 	 * @return string
@@ -282,7 +280,6 @@ abstract class DB_Adapter_Abstract extends Object {
 		}
 
 		$datetime = Locales::getDateTime($datetime, $timezone);
-		$dt = $datetime->getDateTimeInstance();
 
 		if(!$target_timezone && $this->default_quote_timezone){
 			$target_timezone = $this->default_quote_timezone;
@@ -290,10 +287,10 @@ abstract class DB_Adapter_Abstract extends Object {
 
 		if($target_timezone){
 			$target_timezone = Locales::getTimezone($target_timezone);
-			$dt->setTimezone($target_timezone->getDateTimeZone());
+			$datetime->setTimezone($target_timezone);
 		}
 
-		return "'{$dt->format("Y-m-d H:i:s")}'";
+		return "'{$datetime->format("Y-m-d H:i:s")}'";
 	}
 
 

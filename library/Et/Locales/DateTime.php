@@ -1,48 +1,35 @@
 <?php
 namespace Et;
-class Locales_DateTime {
+class Locales_DateTime extends \DateTime {
 
-	const FORMAT_DEFAULT_WITHOUT_TZ = 'Y-m-d\TH:i:s';
-	const FORMAT_DEFAULT_WITH_TZ = self::FORMAT_ISO8601;
+	const DATE = 'Y-m-d';
+	const DATE_WITH_TZ = 'Y-m-dO';
 
-	const FORMAT_DATE = 'Y-m-d';
-	const FORMAT_DATE_WITH_TZ = 'Y-m-dO';
+	const TIME = 'H:i:s';
+	const TIME_WITH_TZ = 'H:i:sO';
 
-	const FORMAT_TIME = 'H:i:s';
-	const FORMAT_TIME_WITH_TZ = 'H:i:sO';
+	const DATETIME = "Y-m-d\\TH:i:s";
+	const DATETIME_WITH_TZ = "Y-m-d\\TH:i:sO";
 
-	const FORMAT_MYSQL = 'Y-m-d H:i:s';
-	const FORMAT_MYSQL_SHORT = 'YmdHis';
+	const MYSQL_DATE = 'Y-m-d';
+	const MYSQL_DATETIME = 'Y-m-d H:i:s';
 
-	const FORMAT_ATOM = 'Y-m-d\TH:i:sP';
-	const FORMAT_COOKIE = 'l, d-M-y H:i:s T';
-	const FORMAT_ISO8601 = 'Y-m-d\TH:i:sO';
-	const FORMAT_RFC822 = 'D, d M y H:i:s O';
-	const FORMAT_RFC850 = 'l, d-M-y H:i:s T';
-	const FORMAT_RFC1036 = 'D, d M y H:i:s O';
-	const FORMAT_RFC1123 = 'D, d M Y H:i:s O';
-	const FORMAT_RFC2822 = 'D, d M Y H:i:s O';
-	const FORMAT_RFC3339 = 'Y-m-d\TH:i:sP';
-	const FORMAT_RSS = 'D, d M Y H:i:s O';
-	const FORMAT_W3C = 'Y-m-d\TH:i:sP';
-	const FORMAT_TIMESTAMP = 'U';
+	const TIMESTAMP = 'U';
 
 	/**
-	 * @var \DateTime
-	 */
-	protected $datetime;
-
-	/**
-	 * @param null|string|int|\DateTime $datetime [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
+	 * @param null|string|int|$datetime [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
+	 * @throws \Et\Locales_Exception
 	 */
 	function __construct($datetime = null, $timezone = null){
 
 		if($datetime instanceof \DateTime){
-			$this->datetime = $datetime;
-			return;
+			if(!$timezone){
+				$timezone = $datetime->getTimezone();
+			}
+			$datetime = $datetime->format(self::DATETIME);
 		}
-		
+
 		if(!$datetime){
 			$datetime = "now";
 		}
@@ -50,25 +37,15 @@ class Locales_DateTime {
 		if(is_numeric($datetime)){
 			$datetime = "@{$datetime}";
 		}
-		
-		$this->initialize($datetime, $timezone);
-	}
-
-	/**
-	 * @param string $datetime
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone
-	 * @throws Locales_Exception
-	 */
-	protected function initialize($datetime, $timezone){
 
 		if($timezone && !$timezone instanceof \DateTimeZone){
-			$timezone = Locales::getTimezone($timezone)->getDateTimeZone();
+			$timezone = Locales::getTimezone($timezone);
 		}
 
 		try {
 
-			$this->datetime = new \DateTime($datetime, $timezone);
-			
+			parent::__construct($datetime, $timezone);
+
 		} catch(\Exception $e){
 
 			throw new Locales_Exception(
@@ -78,56 +55,54 @@ class Locales_DateTime {
 
 		}
 
-		$errors = \DateTime::getLastErrors();
-		if($errors["error_count"]){
+		$errors = self::getLastErrors();
+		if(!empty($errors["error_count"])){
 			throw new Locales_Exception(
 				array_shift($errors["errors"]),
 				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
 		}
 
-		if($errors["warning_count"]){
+		if(!empty($errors["warning_count"])){
 			throw new Locales_Exception(
 				array_shift($errors["warnings"]),
 				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
 		}
 
-		$this->datetime = new \DateTime($datetime, $timezone);
 	}
 
 	/**
-	 * @return \DateTime
+	 * Get the TimeZone associated with the DateTime
+	 * @return \Et\Locales_Timezone
+	 * @link http://php.net/manual/en/datetime.gettimezone.php
 	 */
-	function getDateTimeInstance(){
-		return $this->datetime;
-	}
-
-	/**
-	 * @return \DateTimeZone
-	 */
-	function getDateTimeZoneInstance(){
-		return $this->datetime->getTimezone();
+	public function getTimezone () {
+		$tz = parent::getTimezone();
+		if(!$tz || $tz instanceof Locales_Timezone){
+			return $tz;
+		}
+		return new Locales_Timezone($tz->getName());
 	}
 
 	/**
 	 * @return string
 	 */
 	function getTimeZoneName(){
-		return $this->getDateTimeZoneInstance()->getName();
+		return $this->getTimezone()->getName();
 	}
 
 	/**
 	 * @return array
 	 */
 	function getTimeZoneLocation(){
-		return $this->getDateTimeZoneInstance()->getLocation();
+		return $this->getTimezone()->getLocation();
 	}
 
 	/**
-	 * @param null|string|int|\DateTime $datetime [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
-	 * @return \Et\Locales_DateTime
+	 * @param null|string|int $datetime [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
+	 * @return \Et\Locales_DateTime|static
 	 */
 	public static function getInstance($datetime = null, $timezone = null){
 		return new static($datetime, $timezone);
@@ -135,7 +110,7 @@ class Locales_DateTime {
 
 	/**
 	 * @param Locales_Locale|string $target_locale
-	 * @param string|\DateTimeZone|\Et\Locales_TimeZone $target_timezone
+	 * @param string|\DateTimeZone $target_timezone
 	 *
 	 * @return Locales_Formatter_DateTime
 	 */
@@ -323,33 +298,14 @@ class Locales_DateTime {
 
 
 	/**
-	 * @return int
-	 */
-	function getTimestamp(){
-		return $this->datetime->getTimestamp();
-	}
-
-	/**
-	 * @param string $format
-	 *
-	 * @return string|int
-	 */
-	function format($format = null){
-		if(!$format){
-			$format = static::FORMAT_DEFAULT_WITHOUT_TZ;
-		}
-		return $this->datetime->format($format);
-	}
-
-	/**
 	 * @param bool $with_timezone [optional]
 	 *
 	 * @return string
 	 */
-	function getDateTime($with_timezone = false){
+	function getDateTime($with_timezone = true){
 		$format = $with_timezone
-			? static::FORMAT_DEFAULT_WITH_TZ
-			: static::FORMAT_DEFAULT_WITHOUT_TZ;
+			?  static::DATETIME_WITH_TZ
+			:  static::DATETIME;
 		return $this->format($format);
 	}
 
@@ -359,7 +315,7 @@ class Locales_DateTime {
 	 * @param null|int $date_style [optional]
 	 * @param null|int $time_style [optional]
 	 * @param Locales_Locale|string|null $target_locale [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $target_timezone [optional]
+	 * @param null|string|\DateTimeZone $target_timezone [optional]
 	 *
 	 * @return string
 	 */
@@ -374,9 +330,9 @@ class Locales_DateTime {
 	 */
 	function getDate($with_timezone = false){
 		if($with_timezone){
-			$format = self::FORMAT_DATE_WITH_TZ;
+			$format = self::DATE_WITH_TZ;
 		} else {
-			$format = self::FORMAT_DATE;
+			$format = self::DATE;
 		}
 		return $this->format($format);
 	}
@@ -401,9 +357,9 @@ class Locales_DateTime {
 	 */
 	function getTime($with_timezone = false){
 		if($with_timezone){
-			$format = self::FORMAT_TIME_WITH_TZ;
+			$format = self::TIME_WITH_TZ;
 		} else {
-			$format = self::FORMAT_TIME;
+			$format = self::TIME;
 		}
 		return $this->format($format);
 	}
@@ -414,31 +370,35 @@ class Locales_DateTime {
 	 * @param int $hour
 	 * @param int $minute [optional]
 	 * @param int $second [optional]
+	 * @return static|\Et\Locales_DateTime
 	 */
 	public function setTime ($hour, $minute = 0, $second=0) {
-		$this->datetime->setTime($hour, $minute, $second);
+		parent::setTime($hour, $minute, $second);
+		return $this;
 	}
 
 	/**
 	 * Sets the current date of the DateTime object to a different date.
 	 *
-	 * @param int|null $year
-	 * @param int|null $month
-	 * @param int $day
+	 * @param int|null $year [optional]
+	 * @param int|null $month [optional]
+	 * @param int $day [optional]
+	 * @return static|\Et\Locales_DateTime
 	 */
 	public function setDate ($year = null, $month = null, $day = 1) {
-		if($year === null){
+		if(!$year){
 			$year = date("Y");
 		}
 
-		if($month === null){
+		if(!$month){
 			$month = date("n");
 		}
 
 		$year = (int)$year;
 		$month = (int)$month;
 
-		$this->datetime->setDate($year, $month, $day);
+		parent::setDate($year, $month, $day);
+		return $this;
 	}
 
 	/**
@@ -467,25 +427,22 @@ class Locales_DateTime {
 
 
 	/**
-	 * @param string $formatted_string
-	 * @param string $formatted_string_format [optional]
-	 * @param null|string|\DateTimeZone $timezone [optional]
-	 *
-	 * @return Locales_DateTime
+	 * Parse a string into a new DateTime object according to the specified format
+	 * @param string $format Format accepted by date().
+	 * @param string $time String representing the time.
+	 * @param string|\DateTimeZone $timezone A DateTimeZone object representing the desired time zone.
 	 * @throws Locales_Exception
+	 * @return static|\Et\Locales_DateTime
+	 * @link http://php.net/manual/en/datetime.createfromformat.php
 	 */
-	public static function getInstanceFromFormat($formatted_string, $formatted_string_format = null, $timezone = null){
-		if(!$formatted_string_format){
-			$formatted_string_format = static::FORMAT_DEFAULT_WITHOUT_TZ;
-		}
-
+	public static function createFromFormat ($format, $time, $timezone = null) {
 		if($timezone && !$timezone instanceof \DateTimeZone){
-			$timezone = Locales::getTimezone($timezone)->getDateTimeZone();
+			$timezone = Locales::getTimezone($timezone);
 		}
 
 		try {
 
-			$datetime = \DateTime::createFromFormat($formatted_string_format, $formatted_string, $timezone);
+			$datetime = parent::createFromFormat($format, $time, $timezone);
 
 		} catch(\Exception $e){
 
@@ -495,24 +452,24 @@ class Locales_DateTime {
 			);
 		}
 
-		$errors = \DateTime::getLastErrors();
-		if($errors["error_count"]){
+		$errors = self::getLastErrors();
+		if(!empty($errors["error_count"])){
 			throw new Locales_Exception(
 				array_shift($errors["errors"]),
 				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
 		}
 
-		if($errors["warning_count"]){
+		if(!empty($errors["warning_count"])){
 			throw new Locales_Exception(
 				array_shift($errors["warnings"]),
 				Locales_Exception::CODE_INVALID_DATE_TIME
 			);
 		}
 
-		return new static($datetime);
+		return $datetime;
 	}
-
+	
 	/**
 	 * @return string
 	 */
@@ -525,61 +482,66 @@ class Locales_DateTime {
 	 *
 	 * @return string
 	 */
-	function toString($with_timezone = false) {
+	function toString($with_timezone = true) {
 		return $this->getDateTime($with_timezone);
 	}
 
+	/**
+	 * @return \Et\Locales_DateTime|static
+	 */
 	public function resetDate(){
-		$this->datetime->setDate(1970, 1, 1);
-	}
-
-	public function resetTime(){
-		$this->datetime->setTime(0, 0, 0);
+		return $this->setDate(1970, 1, 1);
 	}
 
 	/**
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
-	 *
-	 * @return Locales_DateTime
+	 * @return \Et\Locales_DateTime|static
 	 */
-	public static function getNowInstance($timezone = null){
+	public function resetTime(){
+		return $this->setTime(0, 0, 0);
+	}
+
+	/**
+	 * @param null|string|\DateTimeZone $timezone [optional]
+	 *
+	 * @return static|\Et\Locales_DateTime
+	 */
+	public static function getNow($timezone = null){
 		return static::getInstance("now", $timezone);
 	}
 
 	/**
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
 	 *
-	 * @return Locales_DateTime
+	 * @return static|\Et\Locales_DateTime
 	 */
-	public static function getTodayInstance($timezone = null){
+	public static function getToday($timezone = null){
 		return static::getInstance("today", $timezone);
 	}
 
 
 	/**
 	 * @param int $year [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
 	 *
 	 * @return Locales_DateTime
 	 */
-	public static function getInstanceByYear($year = null, $timezone = null){
+	public static function getByYear($year = null, $timezone = null){
 		if($year === null){
 			$year = date("Y");
 		}
 
 		$year = (int)$year;
-
 		return static::getInstance("{$year}-01-01", $timezone);
 	}
 
 	/**
 	 * @param null|int $year [optional]
 	 * @param null|int $week [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
 	 *
 	 * @return Locales_DateTime
 	 */
-	public static function getInstanceByWeek($year = null, $week = null, $timezone = null){
+	public static function getByWeek($year = null, $week = null, $timezone = null){
 		if($year === null){
 			$year = date("Y");
 		}
@@ -597,11 +559,11 @@ class Locales_DateTime {
 	 * @param null|int $year [optional]
 	 * @param null|int $week [optional]
 	 * @param null|int $day_of_week [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
 	 *
 	 * @return Locales_DateTime
 	 */
-	public static function getInstanceByWeekDay($year = null, $week = null, $day_of_week = null, $timezone = null){
+	public static function getByWeekDay($year = null, $week = null, $day_of_week = null, $timezone = null){
 		if($year === null){
 			$year = date("Y");
 		}
@@ -624,11 +586,11 @@ class Locales_DateTime {
 	/**
 	 * @param null|int $year [optional]
 	 * @param null|int $month [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
 	 *
 	 * @return Locales_DateTime
 	 */
-	public static function getInstanceByMonth($year = null, $month = null, $timezone = null){
+	public static function getByMonth($year = null, $month = null, $timezone = null){
 		if($year === null){
 			$year = date("Y");
 		}
@@ -648,11 +610,11 @@ class Locales_DateTime {
 	 * @param null|int $year [optional]
 	 * @param null|int $month [optional]
 	 * @param null|int $day [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_TimeZone $timezone [optional]
+	 * @param null|string|\DateTimeZone $timezone [optional]
 	 *
 	 * @return Locales_DateTime
 	 */
-	public static function getInstanceByDate($year = null, $month = null, $day = null, $timezone = null){
+	public static function getByDate($year = null, $month = null, $day = null, $timezone = null){
 		if($year === null){
 			$year = date("Y");
 		}

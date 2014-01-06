@@ -1,57 +1,35 @@
 <?php
 namespace Et;
-class Locales_Timezone {
+class Locales_Timezone extends \DateTimeZone {
 
-	/**
-	 * @var \DateTimeZone
-	 */
-	protected $timezone;
 
 	/**
 	 * @param string|\DateTimeZone $timezone
 	 * @throws Locales_Exception
 	 */
 	function __construct($timezone){
-		if(!$timezone instanceof \DateTimeZone){
-			try {
-				$timezone = new \DateTimeZone((string)$timezone);
-			} catch(\Exception $e){
-				throw new Locales_Exception(
-					"Failed to create \\DateTimeZone object - {$e->getMessage()}",
-					Locales_Exception::CODE_INVALID_TIME_ZONE
-				);
-			}
+		try {
+			parent::__construct((string)$timezone);
+		} catch(\Exception $e){
+			throw new Locales_Exception(
+				"Failed to create timezone instance - {$e->getMessage()}",
+				Locales_Exception::CODE_INVALID_TIME_ZONE
+			);
 		}
-		$this->timezone = $timezone;
 	}
 
 	/**
-	 * @param string|\DateTimeZone $timezone
-	 * @return Locales_Timezone
+	 * @param string $timezone
+	 * @return \Et\Locales_Timezone|static
 	 */
 	public static function getInstance($timezone){
 		return new static($timezone);
 	}
 
 	/**
-	 * @return \DateTimeZone
-	 */
-	function getDateTimeZone(){
-		return $this->timezone;
-	}
-
-	/**
-	 * @return string
-	 */
-	function getTimezoneName(){
-		return $this->timezone->getName();
-	}
-
-
-	/**
 	 * @return string
 	 */
 	function __toString(){
-		return $this->getTimezoneName();
+		return $this->getName();
 	}
 }
