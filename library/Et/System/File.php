@@ -73,9 +73,7 @@ class System_File extends System_Path {
 		} catch(\Exception $e){
 			throw new System_Exception(
 				"Failed to open file '{$this->getPath()}' - {$e->getMessage()}'",
-				System_Exception::CODE_CANNOT_OPEN,
-				null,
-				$e
+				System_Exception::CODE_CANNOT_OPEN
 			);
 		}
 
@@ -90,18 +88,20 @@ class System_File extends System_Path {
 
 		$this->checkExists();
 		try {
+
 			if(!unlink($this->path)){
-				Debug::triggerError("unlink('{$this->path}') failed");
+				Debug::triggerErrorOrLastError("unlink('{$this->path}') failed");
 			}
+
 		} catch(Debug_PHPError $e){
+
 			if(file_exists($this->path)){
 				throw new System_Exception(
 					"Failed to delete file '{$this->path}' - {$e->getMessage()}",
-					System_Exception::CODE_DELETE_FAILED,
-					null,
-					$e
+					System_Exception::CODE_DELETE_FAILED
 				);
 			}
+
 		}
 	}
 
@@ -152,16 +152,18 @@ class System_File extends System_Path {
 		}
 
 		try {
+
 			if(file_put_contents($this->path, $content, $write_lock ? LOCK_EX : null) === false){
-				Debug::triggerError("file_put_contents('{$this->path}', ...) failed");
+				Debug::triggerErrorOrLastError("file_put_contents('{$this->path}', ...) failed");
 			}
+
 		} catch(Debug_PHPError $e){
+
 			throw new System_Exception(
 				"Failed write content to file '{$this->path}' - {$e->getMessage()}",
-				System_Exception::CODE_WRITE_FAILED,
-				null,
-				$e
+				System_Exception::CODE_WRITE_FAILED
 			);
+
 		}
 
 		if(!$exists){
@@ -197,9 +199,7 @@ class System_File extends System_Path {
 
 			throw new System_Exception(
 				"Failed append content to file '{$this->path}' - {$e->getMessage()}",
-				System_Exception::CODE_WRITE_FAILED,
-				null,
-				$e
+				System_Exception::CODE_WRITE_FAILED
 			);
 
 		}
@@ -240,9 +240,7 @@ class System_File extends System_Path {
 		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"Failed read content of file '{$this->path}' - {$e->getMessage()}",
-				System_Exception::CODE_READ_FAILED,
-				null,
-				$e
+				System_Exception::CODE_READ_FAILED
 			);
 		}
 	}
@@ -258,17 +256,19 @@ class System_File extends System_Path {
 			/** @noinspection PhpIncludeInspection */
 			$content = include($this->path);
 			if($content === false){
-				Debug::triggerError("include('{$this->path}') failed");
+				Debug::triggerErrorOrLastError("include('{$this->path}') failed");
 			}
 			return $content;
 
 		} catch(Debug_PHPError $e){
+
 			throw new System_Exception(
 				"Failed to include file '{$this->path}' - {$e->getMessage()}",
 				System_Exception::CODE_INCLUDE_FAILED,
 				null,
 				$e
 			);
+
 		}
 	}
 
@@ -290,6 +290,11 @@ class System_File extends System_Path {
 		return $content;
 	}
 
+	/**
+	 * @param mixed $content_to_serialize
+	 * @param bool $base64_encode [optional]
+	 * @param bool $write_lock [optional]
+	 */
 	function writeSerializedData($content_to_serialize, $base64_encode = false, $write_lock = true){
 		$content = serialize($content_to_serialize);
 		if($base64_encode){
@@ -440,7 +445,7 @@ class System_File extends System_Path {
 		try {
 
 			if(!copy($this->getPath(), $target_file->getPath())){
-				Debug::triggerError(
+				Debug::triggerErrorOrLastError(
 					"copy('{$this->getPath()}', '{$target_file->getPath()}') failed"
 				);
 			}
@@ -451,9 +456,7 @@ class System_File extends System_Path {
 
 			throw new System_Exception(
 				"Failed to copy file '{$this->path}' to '{$target_file->getPath()}' - {$e->getMessage()}",
-				System_Exception::CODE_COPY_FAILED,
-				null,
-				$e
+				System_Exception::CODE_COPY_FAILED
 			);
 
 		}
@@ -495,7 +498,7 @@ class System_File extends System_Path {
 		try {
 
 			if(!rename($this->getPath(), $target_file->getPath())){
-				Debug::triggerError(
+				Debug::triggerErrorOrLastError(
 					"rename('{$this->getPath()}', '{$target_file->getPath()}') failed"
 				);
 			}
@@ -506,9 +509,7 @@ class System_File extends System_Path {
 
 			throw new System_Exception(
 				"Failed to move file '{$this->path}' to '{$target_file->getPath()}' - {$e->getMessage()}",
-				System_Exception::CODE_MOVE_FAILED,
-				null,
-				$e
+				System_Exception::CODE_MOVE_FAILED
 			);
 
 		}

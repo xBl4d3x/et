@@ -3,7 +3,8 @@ namespace Et;
 et_require("Object");
 class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, \JsonSerializable {
 
-	const DEFAULT_PATH_SEPARATOR = "/";
+	const DEFAULT_PATH_SEPARATOR = "|";
+
 	const QUOTE_DOUBLE = ENT_COMPAT;
 	const QUOTE_SINGLE = ENT_QUOTES;
 	const QUOTE_NONE = ENT_NOQUOTES;
@@ -35,7 +36,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param string $path_separator
 	 */
 	public function setPathSeparator($path_separator) {
-		$this->path_separator = substr($path_separator, 0, 1);
+		$this->path_separator = (string)$path_separator;
 	}
 
 	/**
@@ -170,7 +171,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueString($path){
+	public function isString($path){
 		return is_string($this->getRawValue($path));
 	}
 
@@ -178,7 +179,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param string $path
 	 * @return bool
 	 */
-	public function isValueScalar($path){
+	public function isScalar($path){
 		$value = $this->getReference($path, $found);
 		if(!$found){
 			return false;
@@ -193,7 +194,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueBool($path){
+	public function isBool($path){
 		return is_bool($this->getRawValue($path));
 	}
 
@@ -204,7 +205,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isNumericValue($path){
+	public function isNumeric($path){
 		return is_numeric($this->getRawValue($path));
 	}
 
@@ -215,7 +216,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueInt($path){
+	public function isInt($path){
 		return is_int($this->getRawValue($path));
 	}
 
@@ -226,7 +227,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueFloat($path){
+	public function isFloat($path){
 		return is_float($this->getRawValue($path));
 	}
 
@@ -237,7 +238,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueArray($path){
+	public function isArray($path){
 		return is_array($this->getRawValue($path));
 	}
 
@@ -248,7 +249,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueObject($path){
+	public function isObject($path){
 		return is_object($this->getRawValue($path));
 	}
 
@@ -259,7 +260,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueCallable($path){
+	public function isCallable($path){
 		return is_callable($this->getRawValue($path));
 	}
 
@@ -271,7 +272,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @return bool
 	 */
-	public function isValueInstanceOf($path, $class_name){
+	public function isInstanceOf($path, $class_name){
 		return $this->getRawValue($path) instanceof $class_name;
 	}
 
@@ -305,67 +306,45 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 */
 	public function &getReference($path, &$found = false){
 		$found = false;
-		if(!is_numeric($path)){
-			$path = (string)$path;
-		}
 
-		if($path && $path[0] === $this->path_separator){
-			return $this->getPathReference($path, $found);
-		}
-
-		if(isset($this->data[$path])){
+		if(array_key_exists($path, $this->data)){
 			$found = true;
 			return $this->data[$path];
 		}
 
 		$not_found = null;
-		return $not_found;
-		
-	}
-
-	/**
-	 * Get reference to path
-	 *
-	 * @param string $path
-	 * @param bool $found [reference]
-	 * @return mixed|null
-	 */
-	protected function &getPathReference($path, &$found = false){
-
-		$found = false;
-		$parts = explode($this->path_separator, trim($path, $this->path_separator));
-
-		$null = null;
-		if(!$parts){
-			return $null;
+		if(strpos($path, $this->path_separator) === false){
+			return $not_found;
 		}
 
-		$last_part = array_pop($parts);
-		$pointer = &$this->data;
-		foreach($parts as $part){
+		$fragments = explode($this->path_separator, $path);
 
-			if(!is_array($pointer)){
-				return $null;
+		$last_fragment = array_pop($fragments);
+		$reference = &$this->data;
+		foreach($fragments as $part){
+
+			if(!is_array($reference)){
+				return $not_found;
 			}
 
-			if(!isset($pointer[$part])){
-				return $null;
+			if(!isset($reference[$part])){
+				return $not_found;
 			}
 
-			$pointer = &$pointer[$part];
+			$reference = &$reference[$part];
 		}
 
 
-		if(!is_array($pointer)){
-			return $null;
+		if(!is_array($reference)){
+			return $not_found;
 		}
 
-		if(!isset($pointer[$last_part])){
-			return $null;
+		if(!array_key_exists($last_fragment, $reference)){
+			return $not_found;
 		}
 
 		$found = true;
-		return $pointer[$last_part];
+		return $reference[$last_fragment];
 	}
 
 	/**
@@ -373,73 +352,28 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 *
 	 * @param string $path
 	 * @param mixed $value
-	 * @return bool
 	 */
 	public function setValue($path, $value){
-		if(!is_numeric($path)){
-			$path = (string)$path;
-		}
-
-		if($path && $path[0] === $this->path_separator){
-			return $this->setPath($path, $value);
-		} else {
+		if(strpos($path, $this->path_separator) === false){
 			$this->data[$path] = $value;
-			return true;
-		}
-	}
-
-	/**
-	 * Set data value by given path
-	 *
-	 * @param string $path
-	 * @param mixed $value
-	 *
-	 * @return bool
-	 */
-	protected function setPath($path, $value){
-
-		$path = trim($path, $this->path_separator);
-		if($path === ""){
-			$this->data[$path] = $value;
-			return true;
+			return;
 		}
 
-		$parts = explode($this->path_separator, $path);
-		if(!$parts){
-			return false;
-		}
+		$fragments = explode($this->path_separator, $path);
+		$last_fragment = array_pop($fragments);
 
-		if(!isset($parts[1])){
-			$this->data[$parts[0]] = $value;
-			return true;
-		}
+		$reference = &$this->data;
+		foreach($fragments as $part){
 
-		$last_key = array_pop($parts);
-
-		$pointer = &$this->data;
-
-		foreach($parts as $part){
-
-			if(!is_array($pointer)){
-				return false;
+			if(!isset($reference[$part]) || !is_array($reference[$part])){
+				$reference[$part] = array();
 			}
 
-			if(isset($pointer[$part])){
-				$pointer = &$pointer[$part];
-			} else {
-				$pointer[$part] = array();
-				$pointer = &$pointer[$part];
-			}
+			$reference = &$reference[$part];
 		}
 
-		if(!is_array($pointer)){
-			return false;
-		}
-
-		$pointer[$last_key] = $value;
-		return true;
+		$reference[$last_fragment] = $value;
 	}
-
 
 
 	/**
@@ -450,62 +384,27 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 */
 	public function removeValue($path){
 
-		if(!$this->getValueExists($path)){
+		if(array_key_exists($path, $this->data)){
+			unset($this->data[$path]);
+			return true;
+		}
+
+		if(strpos($path, $this->path_separator) === false){
 			return false;
 		}
 
-		if($path && $path[0] === $this->path_separator){
-			return $this->removePath($path);
-		} else {
-			unset($this->data[$path]);
+		$fragments = explode($this->path_separator, $path);
+		$last_fragment = array_pop($fragments);
+		$parent_path = implode($this->path_separator, $fragments);
+		$reference = &$this->getReference($parent_path, $found);
+		if(!$found || !is_array($reference) || !array_key_exists($last_fragment, $reference)){
+			return false;
 		}
 
+		unset($reference[$last_fragment]);
 		return true;
-
 	}
 
-	/**
-	 * Unset value from path
-	 *
-	 * @param string $path
-	 * @return bool
-	 */
-	protected function removePath($path){
-		$path = trim($path, $this->path_separator);
-		if($path === ""){
-
-			if(!isset($this->data[$path])){
-				return false;
-			}
-
-			unset($this->data[$path]);
-			return true;
-		}
-
-		$parts = explode($this->path_separator, $path);
-		if(!$parts){
-			return false;
-		}
-
-		if(!isset($parts[1])){
-			if(!isset($this->data[$parts[0]])){
-				return false;
-			}
-
-			unset($this->data[$parts[0]]);
-			return true;
-		}
-
-		$last_part = array_pop($parts);
-
-		$pointer = &$this->getPathReference($this->path_separator . implode($this->path_separator, $parts));
-		if(is_array($pointer) && isset($pointer[$last_part])){
-			unset($pointer[$last_part]);
-			return true;
-		}
-
-		return false;
-	}
 
 	/**
 	 * Get data value as int or (int)$default_value if not exists

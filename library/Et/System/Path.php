@@ -28,7 +28,14 @@ abstract class System_Path extends Object implements \JsonSerializable {
 	 * @return string
 	 */
 	public static function normalizeFilePath($file_path){
-		return rtrim(str_replace(array("\\", DIRECTORY_SEPARATOR), static::PATH_SEPARATOR, $file_path), static::PATH_SEPARATOR);
+		return rtrim(
+			str_replace(
+				array("\\", DIRECTORY_SEPARATOR),
+				static::PATH_SEPARATOR,
+				(string)$file_path
+			),
+			static::PATH_SEPARATOR
+		);
 	}
 
 	/**
@@ -109,15 +116,15 @@ abstract class System_Path extends Object implements \JsonSerializable {
 		}
 
 		try {
+
 			if(!chmod($this->path, $chmod_mode)){
-				Debug::triggerError(sprintf("chmod('%s', 0%o) failed", $this->path, $chmod_mode));
+				Debug::triggerErrorOrLastError(sprintf("chmod('%s', 0%o) failed", $this->path, $chmod_mode));
 			}
+
 		} catch(Debug_PHPError $e){
 			throw new System_Exception(
 				"chmod() failed - {$e->getMessage()}",
-				System_Exception::CODE_CHMOD_FAILED,
-				null,
-				$e
+				System_Exception::CODE_CHMOD_FAILED
 			);
 		}
 	}

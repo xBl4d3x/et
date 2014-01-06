@@ -1,7 +1,6 @@
 <?php
 namespace Et;
-et_require("Object");
-class Locales extends Object {
+class Locales {
 
 	const CURRENT_LOCALE = "_current_";
 	const APPLICATION_LOCALE = "_application_";

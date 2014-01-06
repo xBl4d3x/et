@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-abstract class Application_Modules_Module extends Object {
+abstract class MVC_Modules_Module extends Object {
 
 	/**
 	 * @var array
@@ -13,7 +13,7 @@ abstract class Application_Modules_Module extends Object {
 	protected $module_ID;
 
 	/**
-	 * @var Application_Modules_Module_Metadata
+	 * @var MVC_Modules_Module_Metadata
 	 */
 	protected $module_metadata;
 
@@ -29,10 +29,10 @@ abstract class Application_Modules_Module extends Object {
 
 
 	/**
-	 * @param Application_Modules_Module_Metadata $module_metadata
+	 * @param MVC_Modules_Module_Metadata $module_metadata
 	 * @param bool $initialize [optional]
 	 */
-	function __construct(Application_Modules_Module_Metadata $module_metadata, $initialize = true){
+	function __construct(MVC_Modules_Module_Metadata $module_metadata, $initialize = true){
 		$this->module_metadata = $module_metadata;
 		$this->module_ID = $module_metadata->getModuleID();
 
@@ -63,9 +63,9 @@ abstract class Application_Modules_Module extends Object {
 
 		foreach($signal_handlers as $signal_name => $handler){
 			if(!method_exists($this, $handler)){
-				throw new Application_Modules_Exception(
+				throw new MVC_Modules_Exception(
 					"Method " . static::class . "::{$handler}() does not exist, may not be used as signal handler",
-					Application_Modules_Exception::CODE_INVALID_METADATA
+					MVC_Modules_Exception::CODE_INVALID_METADATA
 				);
 			}
 			$this->_signal_handlers_identifiers[$signal_name] = System::subscribeSignal($signal_name, array($this, $handler));
@@ -186,7 +186,7 @@ abstract class Application_Modules_Module extends Object {
 	}
 
 	/**
-	 * @return Application_Modules_Module_Metadata
+	 * @return MVC_Modules_Module_Metadata
 	 */
 	public function getModuleMetadata() {
 		return $this->module_metadata;
@@ -202,8 +202,8 @@ abstract class Application_Modules_Module extends Object {
 	/**
 	 * @return string
 	 */
-	public function getModuleName(){
-		return $this->module_metadata->getModuleName();
+	public function getModuleTitle(){
+		return $this->module_metadata->getModuleTitle();
 	}
 
 	/**
@@ -224,16 +224,17 @@ abstract class Application_Modules_Module extends Object {
 		return static::$auth_operations_list;
 	}
 
+
 	/**
 	 * @param string $operation_name
 	 * @return bool
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	public function checkAuthOperation($operation_name){
 		if(!isset(static::$auth_operations_list[$operation_name])){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module {$this->getModuleID()} does not have auth action '{$operation_name}' defined - check " . static::class . "::\$auth_actions_list",
-				Application_Modules_Exception::CODE_INVALID_AUTH_ACTION
+				MVC_Modules_Exception::CODE_INVALID_AUTH_ACTION
 			);
 		}
 		return Auth::checkModuleAction($this->getModuleID(), $operation_name);

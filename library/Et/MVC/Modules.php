@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Application_Modules extends Object {
+class MVC_Modules extends Object {
 
 	const SYSTEM_COMPONENTS_TYPE = "modules";
 	
@@ -10,12 +10,12 @@ class Application_Modules extends Object {
 	protected static $module_IDs = array();
 
 	/**
-	 * @var Application_Modules_Module_Metadata[]|System_Components_List
+	 * @var MVC_Modules_Module_Metadata[]|System_Components_List
 	 */
 	protected static $modules_metadata = array();
 
 	/**
-	 * @var Application_Modules_Module[]
+	 * @var MVC_Modules_Module[]
 	 */
 	protected static $module_instances = array();
 
@@ -30,16 +30,16 @@ class Application_Modules extends Object {
 			return;
 		}
 
-		ClassLoader::registerLoader(new Application_Modules_Loader());
+		ClassLoader::registerLoader(new MVC_Modules_Loader());
 
 		$modules_dir = System::getDir(ET_MODULES_PATH);
-		$modules_names = $modules_dir->listDirNames(
+		$module_IDs = $modules_dir->listDirNames(
 			function($dir_name){
 				return (bool)preg_match('~^\w+$~', $dir_name);
 			}
 		);
 		
-		static::$module_IDs = array_combine($modules_names, $modules_names);
+		static::$module_IDs = array_combine($module_IDs, $module_IDs);
 		static::$modules_metadata = System_Components::getComponentsList(static::SYSTEM_COMPONENTS_TYPE);
 
 		self::$initialized = true;
@@ -48,8 +48,8 @@ class Application_Modules extends Object {
 
 	/**
 	 * @param string $module_ID
-	 * @return Application_Modules_Module_Config
-	 * @throws Application_Modules_Exception
+	 * @return MVC_Modules_Module_Config
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function getModuleConfig($module_ID){
 		return self::getModuleMetadata($module_ID)->getConfig();
@@ -57,8 +57,8 @@ class Application_Modules extends Object {
 
 	/**
 	 * @param string $module_ID
-	 * @return Application_Modules_Module_Installer
-	 * @throws Application_Modules_Exception
+	 * @return MVC_Modules_Module_Installer
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function getModuleInstaller($module_ID){
 		return static::getModuleMetadata($module_ID)->getInstaller();
@@ -67,17 +67,17 @@ class Application_Modules extends Object {
 	/**
 	 * @param string $module_ID
 	 * @param bool $enabled_only [optional]
-	 * @return Application_Modules_Module
-	 * @throws Application_Modules_Exception
+	 * @return MVC_Modules_Module
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function getModuleInstance($module_ID, $enabled_only = true){
 
 		$metadata = self::getModuleMetadata($module_ID);
 		$enabled = $metadata->isEnabled();
 		if(!$enabled && $enabled_only){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module '{$module_ID}' is not enabled",
-				Application_Modules_Exception::CODE_MODULE_NOT_ENABLED
+				MVC_Modules_Exception::CODE_MODULE_NOT_ENABLED
 			);
 		}
 
@@ -91,10 +91,10 @@ class Application_Modules extends Object {
 
 
 		$module_class = "EtM\\{$module_ID}\\Module";
-		if(!class_exists($module_class) || !is_subclass_of($module_class, 'Et\Application_Modules_Module', true)){
-			throw new Application_Modules_Exception(
-				"Module '{$module_ID}' main model (class {$module_class}) does not exist or is not subclass of Et\\Application_Modules_Module",
-				Application_Modules_Exception::CODE_MODULE_NOT_EXIST
+		if(!class_exists($module_class) || !is_subclass_of($module_class, 'Et\MVC_Modules_Module', true)){
+			throw new MVC_Modules_Exception(
+				"Module '{$module_ID}' main model (class {$module_class}) does not exist or is not subclass of Et\\MVC_Modules_Module",
+				MVC_Modules_Exception::CODE_MODULE_NOT_EXIST
 			);
 		}
 
@@ -156,26 +156,26 @@ class Application_Modules extends Object {
 
 	/**
 	 * @param string $module_ID
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function checkModuleIDFormat($module_ID){
 		if(!preg_match('~^\w+$~', $module_ID)){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Invalid module name format of '{$module_ID}'",
-				Application_Modules_Exception::CODE_INVALID_MODULE_ID
+				MVC_Modules_Exception::CODE_INVALID_MODULE_ID
 			);
 		}
 	}
 
 	/**
 	 * @param string $module_ID
-	 * @return Application_Modules_Module_Metadata
-	 * @throws Application_Modules_Exception
+	 * @return MVC_Modules_Module_Metadata
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function getModuleMetadata($module_ID){
 		static::checkModuleExists($module_ID);
 		if(!isset(self::$modules_metadata[$module_ID])){
-			$metadata = new Application_Modules_Module_Metadata($module_ID);
+			$metadata = new MVC_Modules_Module_Metadata($module_ID);
 			static::$modules_metadata->addComponent($metadata);
 		}
 		return self::$modules_metadata[$module_ID];
@@ -191,10 +191,10 @@ class Application_Modules extends Object {
 	/**
 	 * @return array
 	 */
-	public static function getModuleNames(){
+	public static function getModuleTitles(){
 		$names = array();
 		foreach(static::$module_IDs as $module_ID){
-			$names[$module_ID] = static::getModuleMetadata($module_ID)->getModuleName();
+			$names[$module_ID] = static::getModuleMetadata($module_ID)->getModuleTitle();
 		}
 		return $names;
 	}
@@ -203,12 +203,12 @@ class Application_Modules extends Object {
 	 * @param string $module_ID
 	 * @return string
 	 */
-	public static function getModuleName($module_ID){
-		return static::getModuleMetadata($module_ID)->getModuleName();
+	public static function getModuleTitle($module_ID){
+		return static::getModuleMetadata($module_ID)->getModuleTitle();
 	}
 
 	/**
-	 * @return Application_Modules_Module_Metadata[]|System_Components_List
+	 * @return MVC_Modules_Module_Metadata[]|System_Components_List
 	 */
 	public static function getModulesMetadata(){
 		foreach(static::$module_IDs as $module_ID){
@@ -220,7 +220,7 @@ class Application_Modules extends Object {
 	}
 
 	/**
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getInstalledModulesMetadata(){
 		$output = array();
@@ -248,14 +248,14 @@ class Application_Modules extends Object {
 		$labels = array();
 		$modules_metadata = self::getInstalledModulesMetadata();
 		foreach($modules_metadata as $module_ID => $metadata){
-			$labels[$module_ID] = $metadata->getModuleName();
+			$labels[$module_ID] = $metadata->getModuleTitle();
 		}
 		return $labels;
 	}
 
 
 	/**
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getEnabledModulesMetadata(){
 		$output = array();
@@ -284,14 +284,14 @@ class Application_Modules extends Object {
 		$labels = array();
 		$modules_metadata = self::getEnabledModulesMetadata();
 		foreach($modules_metadata as $module_ID => $metadata){
-			$labels[$module_ID] = $metadata->getModuleName();
+			$labels[$module_ID] = $metadata->getModuleTitle();
 		}
 		return $labels;
 	}
 
 
 	/**
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getOutdatedModulesMetadata(){
 		$output = array();
@@ -320,48 +320,48 @@ class Application_Modules extends Object {
 		$labels = array();
 		$modules_metadata = self::getOutdatedModulesMetadata();
 		foreach($modules_metadata as $module_ID => $metadata){
-			$labels[$module_ID] = $metadata->getModuleName();
+			$labels[$module_ID] = $metadata->getModuleTitle();
 		}
 		return $labels;
 	}
 
 	/**
 	 * @param string $module_ID
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function checkModuleExists($module_ID){
 		if(!self::getModuleExists($module_ID)){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module '{$module_ID}' does not exist",
-				Application_Modules_Exception::CODE_MODULE_NOT_EXIST
+				MVC_Modules_Exception::CODE_MODULE_NOT_EXIST
 			);
 		}
 	}
 
 	/**
 	 * @param string $module_ID
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function checkModuleIsInstalled($module_ID){
 		self::checkModuleExists($module_ID);
 		if(!self::getModuleIsInstalled($module_ID)){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module '{$module_ID}' is not installed",
-				Application_Modules_Exception::CODE_MODULE_NOT_INSTALLED
+				MVC_Modules_Exception::CODE_MODULE_NOT_INSTALLED
 			);
 		}
 	}
 
 	/**
 	 * @param string $module_ID
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	public static function checkModuleIsEnabled($module_ID){
 		self::checkModuleExists($module_ID);
 		if(!self::getModuleIsEnabled($module_ID)){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module '{$module_ID}' is not enabled",
-				Application_Modules_Exception::CODE_MODULE_NOT_ENABLED
+				MVC_Modules_Exception::CODE_MODULE_NOT_ENABLED
 			);
 		}
 	}
@@ -378,7 +378,7 @@ class Application_Modules extends Object {
 	/**
 	 * @param array $tags
 	 * @param bool $enabled_only [optional]
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getModulesMetadataHavingAnyTag(array $tags, $enabled_only = true){
 		$output = array();
@@ -406,7 +406,7 @@ class Application_Modules extends Object {
 	/**
 	 * @param array $tags
 	 * @param bool $enabled_only [optional]
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getModulesMetadataHavingAllTags(array $tags, $enabled_only = true){
 		$output = array();
@@ -433,7 +433,7 @@ class Application_Modules extends Object {
 	/**
 	 * @param array $tags
 	 * @param bool $enabled_only [optional]
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getModulesMetadataNotHavingAnyTag(array $tags, $enabled_only = true){
 		$output = array();
@@ -460,7 +460,7 @@ class Application_Modules extends Object {
 	/**
 	 * @param array $tags
 	 * @param bool $enabled_only [optional]
-	 * @return Application_Modules_Module_Metadata[]
+	 * @return MVC_Modules_Module_Metadata[]
 	 */
 	public static function getModulesMetadataNotHavingAllTags(array $tags, $enabled_only = true){
 		$output = array();

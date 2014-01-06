@@ -1,21 +1,21 @@
 <?php
 namespace Et;
-abstract class Application_Modules_Module_Installer extends Object {
+abstract class MVC_Modules_Module_Installer extends Object {
 
 	/**
-	 * @var Application_Modules_Module_Metadata
+	 * @var MVC_Modules_Module_Metadata
 	 */
 	protected $module_metadata;
 
 	/**
-	 * @param Application_Modules_Module_Metadata $module_metadata
+	 * @param MVC_Modules_Module_Metadata $module_metadata
 	 */
-	function __construct(Application_Modules_Module_Metadata $module_metadata){
+	function __construct(MVC_Modules_Module_Metadata $module_metadata){
 		$this->module_metadata = $module_metadata;
 	}
 
 	/**
-	 * @return Application_Modules_Module_Metadata
+	 * @return MVC_Modules_Module_Metadata
 	 */
 	function getModuleMetadata(){
 		return $this->module_metadata;
@@ -32,11 +32,11 @@ abstract class Application_Modules_Module_Installer extends Object {
 	 * @return string
 	 */
 	function getModuleName(){
-		return $this->module_metadata->getModuleName();
+		return $this->module_metadata->getModuleTitle();
 	}
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	public function installModule(){
 		if($this->module_metadata->isInstalled()){
@@ -48,9 +48,9 @@ abstract class Application_Modules_Module_Installer extends Object {
 			$this->install();
 
 		} catch(Exception $e){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module {$this->getModuleID()} install failed - {$e->getMessage()}",
-				Application_Modules_Exception::CODE_INSTALLER_FAILURE,
+				MVC_Modules_Exception::CODE_INSTALLER_FAILURE,
 				null,
 				$e
 			);
@@ -60,12 +60,12 @@ abstract class Application_Modules_Module_Installer extends Object {
 	}
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	abstract protected function install();
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	function uninstallModule(){
 		if(!$this->module_metadata->isInstalled()){
@@ -77,9 +77,9 @@ abstract class Application_Modules_Module_Installer extends Object {
 			$this->uninstall();
 
 		} catch(Exception $e){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module {$this->getModuleID()} uninstall failed - {$e->getMessage()}",
-				Application_Modules_Exception::CODE_INSTALLER_FAILURE,
+				MVC_Modules_Exception::CODE_INSTALLER_FAILURE,
 				null,
 				$e
 			);
@@ -89,12 +89,12 @@ abstract class Application_Modules_Module_Installer extends Object {
 	}
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	abstract protected function uninstall();
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	function enableModule(){
 		$this->checkIfInstalled();
@@ -102,19 +102,19 @@ abstract class Application_Modules_Module_Installer extends Object {
 	}
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	protected function checkIfInstalled(){
 		if(!$this->module_metadata->isInstalled()){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module {$this->getModuleID()} is not installed",
-				Application_Modules_Exception::CODE_INSTALLER_FAILURE
+				MVC_Modules_Exception::CODE_INSTALLER_FAILURE
 			);
 		}
 	}
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	function disableModule(){
 		$this->checkIfInstalled();
@@ -136,9 +136,9 @@ abstract class Application_Modules_Module_Installer extends Object {
 			$this->update($installed_version, $current_version);
 
 		} catch(Exception $e){
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Module {$this->getModuleID()} update from version {$installed_version} to version {$current_version} failed - {$e->getMessage()}",
-				Application_Modules_Exception::CODE_INSTALLER_FAILURE,
+				MVC_Modules_Exception::CODE_INSTALLER_FAILURE,
 				null,
 				$e
 			);

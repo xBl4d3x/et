@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Application_Modules_Module_Metadata extends System_Components_Component {
+class MVC_Modules_Module_Metadata extends System_Components_Component {
 
 	const METADATA_PATH_RELATIVE = "config/metadata.php";
 
@@ -25,12 +25,12 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	protected $_module_URI;
 
 	/**
-	 * @var Application_Modules_Module_Config
+	 * @var MVC_Modules_Module_Config
 	 */
 	protected $_config;
 
 	/**
-	 * @var Application_Modules_Module_Installer
+	 * @var MVC_Modules_Module_Installer
 	 */
 	protected $_installer;
 
@@ -72,7 +72,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	 * @param string $module_ID
 	 */
 	function __construct($module_ID){
-		Application_Modules::checkModuleIDFormat($module_ID);
+		MVC_Modules::checkModuleIDFormat($module_ID);
 		$this->title = $module_ID;
 		$this->loadMetadata();
 		parent::__construct($module_ID, $this->getTitle(), $this->getDescription());
@@ -85,7 +85,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 
 
 	/**
-	 * @throws Application_Modules_Exception
+	 * @throws MVC_Modules_Exception
 	 */
 	protected function loadMetadata(){
 		try {
@@ -101,23 +101,20 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 			$this->factory_class_map = $metadata->getRawValue("factory_class_map", array());
 			$this->localized_names = $metadata->getRawValue("localized_names", array());
 
-			$assert = $this->assert();
-			$assert->isNotEmpty($this->vendor, "vendor not specified");
-			$assert->isNotEmpty($this->title, "module name not specified");
-			$assert->isArray($this->tags, "tags must be an array");
-			$assert->isArray($this->signal_handlers, "signal handlers must be an array");
-			$assert->isArray($this->factory_class_map, "factory class map must be an array");
-			$assert->isArray($this->localized_names, "localized names must be an array");
+			Debug_Assert::isNotEmpty($this->vendor, "vendor not specified");
+			Debug_Assert::isNotEmpty($this->title, "module name not specified");
+			Debug_Assert::isArray($this->tags, "tags must be an array");
+			Debug_Assert::isArray($this->signal_handlers, "signal handlers must be an array");
+			Debug_Assert::isArray($this->factory_class_map, "factory class map must be an array");
+			Debug_Assert::isArray($this->localized_names, "localized names must be an array");
 
 			$this->tags = array_combine(array_values($this->tags), array_values($this->tags));
 
 		} catch(Exception $e){
 
-			throw new Application_Modules_Exception(
+			throw new MVC_Modules_Exception(
 				"Failed to load module '{$this->getModuleID()}' metadata - {$e->getMessage()}",
-				Application_Modules_Exception::CODE_INVALID_METADATA,
-				null,
-				$e
+				MVC_Modules_Exception::CODE_INVALID_METADATA
 			);
 		}
 	}
@@ -174,8 +171,8 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	}
 
 	/**
-	 * @return Application_Modules_Module_Config
-	 * @throws Application_Modules_Exception
+	 * @return MVC_Modules_Module_Config
+	 * @throws MVC_Modules_Exception
 	 */
 	public function getConfig(){
 		if($this->_config){
@@ -183,10 +180,10 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 		}
 
 		$config_class = "EtM\\{$this->getModuleID()}\\Config";
-		if(!class_exists($config_class) || !is_subclass_of($config_class, 'Et\Application_Modules_Module_Config', true)){
-			throw new Application_Modules_Exception(
-				"Configuration class '{$config_class}' for module {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\Application_Modules_Module_Config",
-				Application_Modules_Exception::CODE_INVALID_CONFIG
+		if(!class_exists($config_class) || !is_subclass_of($config_class, 'Et\MVC_Modules_Module_Config', true)){
+			throw new MVC_Modules_Exception(
+				"Configuration class '{$config_class}' for module {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\MVC_Modules_Module_Config",
+				MVC_Modules_Exception::CODE_INVALID_CONFIG
 			);
 		}
 		$this->_config = new $config_class($this);
@@ -195,8 +192,8 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	}
 
 	/**
-	 * @return Application_Modules_Module_Installer
-	 * @throws Application_Modules_Exception
+	 * @return MVC_Modules_Module_Installer
+	 * @throws MVC_Modules_Exception
 	 */
 	public function getInstaller(){
 		if($this->_installer){
@@ -204,10 +201,10 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 		}
 
 		$installer_class = "EtM\\{$this->getModuleID()}\\Installer";
-		if(!class_exists($installer_class) || !is_subclass_of($installer_class, 'Et\Application_Modules_Module_Installer', true)){
-			throw new Application_Modules_Exception(
-				"Installer class '{$installer_class}' for module {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\Application_Modules_Module_Installer",
-				Application_Modules_Exception::CODE_INVALID_CONFIG
+		if(!class_exists($installer_class) || !is_subclass_of($installer_class, 'Et\MVC_Modules_Module_Installer', true)){
+			throw new MVC_Modules_Exception(
+				"Installer class '{$installer_class}' for module {$this->getID()} ({$this->getTitle()}) not found or is not subclass of Et\\MVC_Modules_Module_Installer",
+				MVC_Modules_Exception::CODE_INVALID_CONFIG
 			);
 		}
 		$this->_installer = new $installer_class($this);
@@ -225,7 +222,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 	/**
 	 * @return string
 	 */
-	public function getModuleName(){
+	public function getModuleTitle(){
 		return $this->getTitle();
 	}
 
@@ -295,7 +292,7 @@ class Application_Modules_Module_Metadata extends System_Components_Component {
 		$locale = Locales::getLocale($locale);
 		return isset($this->localized_names[(string)$locale])
 				? $this->localized_names[(string)$locale]
-				: $this->getModuleName();
+				: $this->getModuleTitle();
 	}
 
 	/**

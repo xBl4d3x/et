@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class Application_Modules_Exception extends Exception {
+class MVC_Modules_Exception extends Exception {
 
 	const CODE_INVALID_MODULE_ID = 10;
 	const CODE_MODULE_NOT_EXIST = 20;

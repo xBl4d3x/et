@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-abstract class Application_Modules_Module_Config extends Config {
+abstract class MVC_Modules_Module_Config extends Config {
 
 	/**
 	 * @var string
@@ -8,7 +8,7 @@ abstract class Application_Modules_Module_Config extends Config {
 	protected $_module_name;
 
 	/**
-	 * @var Application_Modules_Module_Metadata
+	 * @var MVC_Modules_Module_Metadata
 	 */
 	protected $_module_metadata;
 
@@ -18,9 +18,9 @@ abstract class Application_Modules_Module_Config extends Config {
 	protected $_config_file;
 
 	/**
-	 * @param Application_Modules_Module_Metadata $module_metadata
+	 * @param MVC_Modules_Module_Metadata $module_metadata
 	 */
-	function __construct(Application_Modules_Module_Metadata $module_metadata){
+	function __construct(MVC_Modules_Module_Metadata $module_metadata){
 		$this->_module_metadata = $module_metadata;
 		$this->_module_name = $module_metadata->getModuleID();
 		$options = $this->loadOptionsFromConfigFile();
@@ -52,7 +52,7 @@ abstract class Application_Modules_Module_Config extends Config {
 	}
 
 	/**
-	 * @return Application_Modules_Module_Metadata
+	 * @return MVC_Modules_Module_Metadata
 	 */
 	public function getModuleMetadata() {
 		return $this->_module_metadata;

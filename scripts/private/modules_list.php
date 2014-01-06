@@ -18,7 +18,7 @@ foreach($modules_metadata as $module_ID => $metadata){
 	$line = array(
 				$module_ID,
 				$metadata->getVendor(),
-				$metadata->getModuleName()
+				$metadata->getModuleTitle()
 			);
 
 	if($metadata->isInstalled()){
