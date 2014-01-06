@@ -1,3 +1,4 @@
+<?php /** @var $this Et\MVC_Layout */ ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,6 +7,10 @@
 <body>
 
 	<h1>My application</h1>
+
+	<?=$this->some_variable;?>
+	<br/>
+	<?=$this->getValue("some_variable");?>
 
 	<et_layout_main_position />
 

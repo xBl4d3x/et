@@ -34,7 +34,7 @@ class DB extends Object {
 	 */
 	public static function getConfig() {
 		if(!self::$config){
-			self::$config = DB_Config::getFromEnvironmentConfig();
+			self::$config = DB_Config::getFromSystemConfig();
 		}
 		return self::$config;
 	}

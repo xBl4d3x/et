@@ -18,7 +18,6 @@ class Session_Metadata extends Session_Namespace {
 		$this->data["access_count"] = 0;
 		
 		$this->data["access_list"] = array();
-		Session::getProfiler()->milestone("Session created");
 	}
 	
 	function sessionAccessed(){
@@ -29,9 +28,8 @@ class Session_Metadata extends Session_Namespace {
 		$this->data["last_access_at_URL"] = ET_REQUEST_URL_WITH_QUERY;
 		$this->data["last_access_by_user_agent"] = ET_REQUEST_USER_AGENT;
 		
-		$max_steps = Session::getConfig()->getKeepAccessHistorySteps();
+		$max_steps = Session::getSessionConfig()->getKeepAccessHistorySteps();
 		if(!$max_steps){
-			Session::getProfiler()->milestone("Session access logged");
 			return;
 		}
 		
@@ -54,7 +52,6 @@ class Session_Metadata extends Session_Namespace {
 		);
 
 		$this->data["access_list"][] = $record;
-		Session::getProfiler()->milestone("Session access logged");
 	}
 
 	/**

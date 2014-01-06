@@ -58,7 +58,7 @@ class System_Components extends Object {
 	 */
 	public static function getConfig() {
 		if(!static::$config){
-			static::$config = System_Components_Config::getFromEnvironmentConfig();
+			static::$config = System_Components_Config::getFromSystemConfig();
 		}
 		return static::$config;
 	}

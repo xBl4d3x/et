@@ -3,10 +3,6 @@ namespace Et;
 require(__DIR__ . "/environment.php");
 require(__DIR__ . "/init.php");
 
-$layout = new MVC_Layout(ET_APPLICATIONS_PATH . "Main/layouts");
-$layout->addMainPositionContent("TEST");
-Http_Headers::responseHTML($layout->renderLayout("default"));
-
 System::initialize();
 Http_Request::initialize();
 MVC_Modules::initialize();

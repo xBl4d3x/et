@@ -578,23 +578,23 @@ abstract class Config extends Object {
 
 
 	/**
-	 * @param null|string $custom_application_config_section [optional]
+	 * @param null|string $custom_system_config_section [optional]
 	 * @return static|\Et\Config
 	 * @throws Config_Exception
 	 */
-	public static function getFromEnvironmentConfig($custom_application_config_section = null){
-		if(!$custom_application_config_section){
-			$custom_application_config_section = static::$_system_config_section;
+	public static function getFromSystemConfig($custom_system_config_section = null){
+		if(!$custom_system_config_section){
+			$custom_system_config_section = static::$_system_config_section;
 		}
 		
-		if(!$custom_application_config_section){
+		if(!$custom_system_config_section){
 			throw new Config_Exception(
-				"No environment config section defined for config " . static::class,
+				"No system config section defined for config " . static::class,
 				Config_Exception::CODE_INVALID_SECTION
 			);
 		}
 		
-		$data = System::getConfig()->getSectionData($custom_application_config_section);
+		$data = System::getConfig()->getSectionData($custom_system_config_section);
 		return new static($data);
 	}
 

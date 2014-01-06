@@ -1,37 +1,30 @@
 <?php
 namespace Et;
-class Session extends Object {
+class Session {
 
+	const DEFAULT_NAMESPACE = "__default__";
 	const NAMESPACE_KEY_PREFIX = "___NS_";
-	const DEFAULT_NAMESPACE = "___default___";
 	const METADATA_NAMESPACE = "___metadata___";
-
-	/**
-	 * @var bool
-	 */
-	protected static $is_initialized = false;
 
 	/**
 	 * @var Session_Config
 	 */
-	protected static $config;
+	protected static $session_config;
 
 	/**
-	 * @var Debug_Profiler_Default
+	 * @var \Et\Session_Namespace[]
 	 */
-	protected static $profiler;
+	protected static $namespaces = array();
 
-	/**
-	 * @return bool
-	 */
-	public static function isInitialized(){
-		return static::$is_initialized;
-	}
 
 	/**
 	 * @return bool
 	 */
 	public static function getSessionStarted(){
+		if(ET_CLI_MODE){
+			return false;
+		}
+
 		return session_status() == PHP_SESSION_ACTIVE && session_id();
 	}
 
@@ -52,42 +45,44 @@ class Session extends Object {
 		return @session_destroy();
 	}
 
-	/**
-	 * @return \Et\Debug_Profiler_Default
-	 */
-	public static function getProfiler() {
-		if(!static::$profiler){
-			static::$profiler = new Debug_Profiler_Default("Session handler");
-			Debug_Profiler::addProfiler(static::$profiler);
-		}
-		return static::$profiler;
+	public static function closeSession(){
+		@session_write_close();
 	}
-
-
 
 
 	/**
 	 * @throws Session_Exception
 	 */
-	public static function initialize(){
-		if(static::$is_initialized){
-			return;
+	public static function startSession($session_ID = null){
+
+		$session_started = static::getSessionStarted();
+		$cfg = static::getSessionConfig();
+
+		if(!$session_started){
+			// initialize session settings
+			$ini_settings = $cfg->toIniSettings();
+
+			foreach($ini_settings as $key => $value){
+				ini_set($key, $value);
+			}
 		}
 
-		$cfg = static::getConfig();
-		$ini_settings = $cfg->toIniSettings();
-		static::getProfiler()->milestone("Initializing session");
+		if(!ET_CLI_MODE){
 
-
-		foreach($ini_settings as $key => $value){
-			ini_set($key, $value);
-		}
-
-		if(!static::getSessionStarted()){
 			try {
-				if(!session_start()){
-					Debug_PHPError::triggerError("session_start() returned FALSE");
+
+				if($session_started){
+					self::closeSession();
 				}
+
+				if($session_ID){
+					session_id($session_ID);
+				}
+
+				if(!session_start()){
+					Debug::triggerError("session_start() returned FALSE");
+				}
+
 			} catch(Debug_PHPError $e){
 				throw new Session_Exception(
 					"Failed to start session - {$e->getMessage()}",
@@ -95,9 +90,6 @@ class Session extends Object {
 				);
 			}
 		}
-		static::getProfiler()->milestone("Session started");
-
-		static::$is_initialized = true;
 
 		static::getSessionMetadata()->sessionAccessed();
 
@@ -111,15 +103,13 @@ class Session extends Object {
 	protected static function checkSessionHijacked(){
 		$metadata = static::getSessionMetadata();
 		if($metadata->getCreatedByIP() == ET_REQUEST_IP){
-			static::getProfiler()->milestone("Session owner checked");
 			return;
 		}
 
-		$ignore_list = static::getConfig()->getSessionHijackingIPIgnoreList();
+		$ignore_list = static::getSessionConfig()->getSessionHijackingIPIgnoreList();
 		foreach($ignore_list as $rule){
 			$rule = str_replace(array("*", "?"), array('\d+', '\d'), $rule);
 			if(preg_match('~^'.$rule.'$~', ET_REQUEST_IP)){
-				static::getProfiler()->milestone("Invalid session owner but ignored");
 				return;
 			}
 		}
@@ -127,19 +117,17 @@ class Session extends Object {
 		//toto: zalogovat ...
 
 		static::destroySession();
-		static::getProfiler()->milestone("Invalid session owner - session destroyed");
-		static::$is_initialized = false;
-		static::initialize();
+		static::startSession();
 	}
 
 	/**
 	 * @return Session_Config
 	 */
-	public static function getConfig() {
-		if(!static::$config){
-			static::$config = Session_Config::getFromEnvironmentConfig();
+	public static function getSessionConfig() {
+		if(!static::$session_config){
+			static::$session_config = Session_Config::getFromSystemConfig();
 		}
-		return static::$config;
+		return static::$session_config;
 	}
 
 	/**
@@ -154,11 +142,17 @@ class Session extends Object {
 	 * @param null|string $namespace_name [optional]
 	 * @return Session_Namespace
 	 */
-	public static function get($namespace_name = null){
+	public static function getNamespace($namespace_name = null){
 		if(!$namespace_name){
-			$namespace_name = static::DEFAULT_NAMESPACE;
+			$namespace_name = self::DEFAULT_NAMESPACE;
 		}
-		return new Session_Namespace($namespace_name);
+
+		if(isset(self::$namespaces[$namespace_name])){
+			return self::$namespaces[$namespace_name];
+		}
+
+		self::$namespaces[$namespace_name] = new Session_Namespace($namespace_name);
+		return self::$namespaces[$namespace_name];
 	}
 
 	/**
@@ -166,8 +160,8 @@ class Session extends Object {
 	 * @return bool
 	 */
 	public static function getNamespaceExists($namespace_name){
-		if(!static::isInitialized()){
-			static::initialize();
+		if(!static::getSessionStarted()){
+			static::startSession();
 		}
 		return isset($_SESSION[static::getNamespaceSessionKey($namespace_name)]);
 	}
@@ -187,6 +181,9 @@ class Session extends Object {
 	public static function removeNamespace($namespace_name){
 		if(static::getNamespaceExists($namespace_name)){
 			unset($_SESSION[static::getNamespaceSessionKey($namespace_name)]);
+			if(isset(self::$namespaces[$namespace_name])){
+				unset(self::$namespaces[$namespace_name]);
+			}
 			return true;
 		}
 		return false;
