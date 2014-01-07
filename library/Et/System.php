@@ -13,6 +13,16 @@ class System {
 	protected static $mime_type_detector;
 
 	/**
+	 * @var callable[]
+	 */
+	protected static $on_shutdown_callbacks = array();
+
+	/**
+	 * @var bool
+	 */
+	protected static $shutdown_called = false;
+
+	/**
 	 * @param string|System_Config|null $system_environment [optional] NULL = ET_SYSTEM_ENVIRONMENT constant content
 	 */
 	public static function initialize($system_environment = null){
@@ -44,6 +54,79 @@ class System {
 	public static function getEnvironmentName(){
 		return static::getConfig()->getName();
 	}
+
+
+
+	/**
+	 * @return array
+	 */
+	public static function getOnShutdownCallbacks() {
+		return static::$on_shutdown_callbacks;
+	}
+
+
+	/**
+	 * @param callable $callback
+	 * @param array $callback_arguments [optional]
+	 * @return int Callback ID
+	 */
+	public static function addShutdownCallback(callable $callback, array $callback_arguments = array()){
+		$ID = uniqid();
+		self::$on_shutdown_callbacks[$ID] = array($callback, $callback_arguments);
+		return $ID;
+	}
+
+	/**
+	 * @param int $callback_ID
+	 * @return bool
+	 */
+	public static function removeShutdownCallback($callback_ID){
+		if(isset(self::$on_shutdown_callbacks[$callback_ID])){
+			unset(self::$on_shutdown_callbacks[$callback_ID]);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Use this instead of exit();
+	 */
+	public static function shutdown($exit_status = 0){
+		if(self::$shutdown_called){
+			return;
+		}
+
+		self::$shutdown_called = true;
+		foreach(self::$on_shutdown_callbacks as $cb){
+			list($callback, $arguments) = $cb;
+			if(!is_callable($callback)){
+				continue;
+			}
+
+			call_user_func_array($callback, $arguments);
+		}
+
+		exit($exit_status);
+	}
+
+	/**
+	 * @param bool $enable_implicit_flush [optional]
+	 */
+	public static function flushOutput($enable_implicit_flush = false){
+
+		while(ob_get_level()) {
+			@ob_end_flush();
+		}
+		@ob_flush();
+		@flush();
+
+		if($enable_implicit_flush){
+			ob_implicit_flush(true);
+		}
+
+	}
+
+
 
 	/**
 	 * @param System_File_MimeType_Detector $mime_type_detector

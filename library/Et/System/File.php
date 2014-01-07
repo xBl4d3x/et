@@ -578,7 +578,7 @@ class System_File extends System_Path {
 
 
 		if($exit_after_download){
-			Application::end();
+			System::shutdown();
 		}
 	}
 }

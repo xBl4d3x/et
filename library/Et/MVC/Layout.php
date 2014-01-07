@@ -398,12 +398,7 @@ class MVC_Layout extends Data_Array {
 	 * @return MVC_Layout_Content
 	 */
 	function addMainPositionContent($content, $ID = null){
-		if(!$ID){
-			$ID = uniqid();
-		}
-		$instance = new MVC_Layout_Content($ID, $content, self::MAIN_POSITION_NAME);
-		$this->_contents[] = $instance;
-		return $instance;
+		return $this->addContent($content, self::MAIN_POSITION_NAME, $ID);
 	}
 
 	/**

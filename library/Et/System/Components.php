@@ -67,7 +67,7 @@ class System_Components extends Object {
 		if(static::$_save_registered){
 			return;
 		}
-		Application::addOnEndCallback(array(get_called_class(), "saveComponents"));
+		System::addShutdownCallback(array(static::class, "saveComponents"));
 		static::$_save_registered = true;
 	}
 

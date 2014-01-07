@@ -13,7 +13,7 @@ trait Debug_Trait {
 	 * @return \ReflectionClass
 	 */
 	public static function ___debug___getClassReflection(){
-		return new \ReflectionClass(get_called_class());
+		return new \ReflectionClass(static::class);
 	}
 
 	/**
@@ -65,7 +65,7 @@ trait Debug_Trait {
 	public static function ___debug___getClassPropertyReflection($property_name){
 		try {
 
-			$reflection = new \ReflectionProperty(get_called_class(), $property_name);
+			$reflection = new \ReflectionProperty(static::class, $property_name);
 			$reflection->setAccessible(true);
 			return $reflection;
 
@@ -76,7 +76,7 @@ trait Debug_Trait {
 				self::___debug___formatMessage(
 					"Failed to get '{CLASS}::{PROPERTY}' reflection - {ERROR}",
 					array(
-						"CLASS" => get_called_class(),
+						"CLASS" => static::class,
 						"PROPERTY" => $property_name,
 						"ERROR" => $e->getMessage()
 					)
@@ -202,7 +202,7 @@ trait Debug_Trait {
 	 */
 	public static function ___debug___getClassMethodReflection($method_name){
 		try {
-			$reflection = new \ReflectionMethod(get_called_class(), $method_name);
+			$reflection = new \ReflectionMethod(static::class, $method_name);
 			$reflection->setAccessible(true);
 			return $reflection;
 		} catch(\ReflectionException $e){
@@ -211,7 +211,7 @@ trait Debug_Trait {
 				self::___debug___formatMessage(
 					"Failed to get '{CLASS}::{METHOD}()' reflection - {ERROR}",
 					array(
-						"CLASS" => get_called_class(),
+						"CLASS" => static::class,
 						"METHOD" => $method_name,
 						"ERROR" => $e->getMessage()
 					)

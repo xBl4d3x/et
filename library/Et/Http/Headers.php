@@ -279,7 +279,7 @@ class Http_Headers {
 			}
 
 			if($die){
-				Application::end();
+				System::shutdown();
 			}
 
 			return;
@@ -306,7 +306,7 @@ class Http_Headers {
 		}
 
 		if($die){
-			Application::end();
+			System::shutdown();
 		}
 	}
 
@@ -446,7 +446,7 @@ class Http_Headers {
 	public static function refresh($die = true) {
 		self::sendHeader("Location", "?#");
 		if($die){
-			Application::end();
+			System::shutdown();
 		}
 	}
 

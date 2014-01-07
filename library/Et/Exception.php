@@ -120,7 +120,7 @@ abstract class Exception extends \Exception {
 	 * @return array
 	 */
 	public static function getErrorCodesLabels($get_inherited = true) {
-		$current_class = get_called_class();
+		$current_class = static::class;
 
 		$error_codes_labels = static::$error_codes_labels;
 		if(!$get_inherited || $current_class == __CLASS__){
