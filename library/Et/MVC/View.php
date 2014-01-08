@@ -237,7 +237,7 @@ class MVC_View extends Data_Array {
 	 * @param mixed $value
 	 */
 	function __set($path, $value){
-		$this->setValue($path, $value);
+		$this->set($path, $value);
 	}
 
 	/**
@@ -245,7 +245,7 @@ class MVC_View extends Data_Array {
 	 * @return bool
 	 */
 	function __isset($path){
-		return $this->getValueExists($path);
+		return $this->exists($path);
 	}
 
 	/**

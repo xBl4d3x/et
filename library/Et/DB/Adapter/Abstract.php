@@ -1,36 +1,16 @@
 <?php
 namespace Et;
-abstract class DB_Adapter_Abstract extends Object {
+abstract class DB_Adapter_Abstract extends \PDO {
 
-	const DB_TYPE_MYSQL = "mysql";
-	const DB_TYPE_SQLITE = "sqlite";
-	const DB_TYPE_SPHINX = "sphinx";
-	const DB_TYPE_CASSANDRA = "cassandra";
+	const DRIVER_MYSQL = "mysql";
+	const DRIVER_SQLITE = "sqlite";
+	const DRIVER_SPHINX = "sphinx";
+	const DRIVER_CASSANDRA = "cassandra";
 
 	/**
 	 * @var DB_Adapter_Config_Abstract
 	 */
 	protected $config;
-
-	/**
-	 * @var object|resource
-	 */
-	protected $connection;
-
-	/**
-	 * @var int
-	 */
-	protected $last_error_code = 0;
-
-	/**
-	 * @var string
-	 */
-	protected $last_error_message = "";
-
-	/**
-	 * @var \Et\Locales_Timezone|null
-	 */
-	protected $default_quote_timezone = null;
 
 	/**
 	 * @var string
@@ -44,35 +24,60 @@ abstract class DB_Adapter_Abstract extends Object {
 
 	/**
 	 * @param DB_Adapter_Config_Abstract $config
+	 * @throws DB_Adapter_Exception
 	 */
 	function __construct(DB_Adapter_Config_Abstract $config){
+
 		$this->config = $config;
-		$this->connect();
-	}
+		$driver_options = $this->getDefaultDriverOptions();
 
-	/**
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $default_quote_timezone
-	 */
-	public function setDefaultQuoteTimezone($default_quote_timezone = null) {
-		if(!$default_quote_timezone){
-			$this->default_quote_timezone = null;
-			return;
+		try {
+
+			parent::__construct(
+				$this->config->getDSN(),
+				$this->config->getUsername(),
+				$this->config->getPassword(),
+				$driver_options
+			);
+
+
+		} catch (\PDOException $e) {
+
+			throw new DB_Adapter_Exception(
+				"Failed to connect to database [DSN: {$this->config->getDSN()}] -  {$e->getMessage()}",
+				DB_Adapter_Exception::CODE_CONNECTION_FAILED
+			);
+
 		}
-		$this->default_quote_timezone = Locales::getTimezone($default_quote_timezone);
 	}
 
 	/**
-	 * @return \Et\Locales_Timezone|null
+	 * @return string
 	 */
-	public function getDefaultQuoteTimezone() {
-		return $this->default_quote_timezone;
+	function getDriverName(){
+		return strtolower($this->getAttribute(\PDO::ATTR_DRIVER_NAME));
 	}
 
-
 	/**
-	 * @throws DB_Exception
+	 * @return array
 	 */
-	abstract public function getDatabaseType();
+	protected function getDefaultDriverOptions(){
+
+		$driver_options = $this->config->getDriverOptions(true);
+
+		if(!isset($driver_options[\PDO::ATTR_TIMEOUT])){
+			$driver_options[\PDO::ATTR_TIMEOUT] = $this->config->getConnectionTimeout();
+		}
+
+		$driver_options[\PDO::ATTR_ERRMODE] = \PDO::ERRMODE_EXCEPTION;
+		$driver_options[\PDO::ATTR_STRINGIFY_FETCHES] = false;
+		if(!isset($driver_options[\PDO::ATTR_EMULATE_PREPARES])){
+			$driver_options[\PDO::ATTR_EMULATE_PREPARES] = false;
+		}
+
+		return $driver_options;
+	}
+
 
 	/**
 	 * @param \Et\DB_Profiler $profiler
@@ -89,10 +94,6 @@ abstract class DB_Adapter_Abstract extends Object {
 	}
 
 
-	function __destruct(){
-		$this->disconnect();
-	}
-
 	/**
 	 * @return DB_Adapter_Config_Abstract
 	 */
@@ -100,168 +101,63 @@ abstract class DB_Adapter_Abstract extends Object {
 		return $this->config;
 	}
 
-	function __sleep(){
-		return array("config");
-	}
-
-	function __wakeup(){
-		$this->connect();
-	}
-
 	/**
-	 * @return object|resource
+	 * @return string|bool
 	 */
-	public function getConnection() {
-		return $this->connection;
-	}
-
-
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	function connect(){
-		$this->resetLastError();
-
-		try {
-			$this->_connect();
-		} catch(Exception $e){
-			throw new DB_Adapter_Exception(
-				"DB connection failed - {$e->getMessage()}",
-				DB_Adapter_Exception::CODE_CONNECTION_FAILED,
-				null,
-				$e
-			);
+	function errorMessage(){
+		
+		$info = $this->errorInfo();
+		if(!$info || !isset($info[2])){
+			return false;
 		}
+		
+		list($error_code, ,$error_message) = $info;
+		return "[{$error_code}] {$error_message}";
 	}
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	abstract protected function _connect();
-
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	function disconnect(){
-		$this->resetLastError();
-		if(!$this->connection){
-			return;
-		}
-
-		try {
-			$this->_disconnect();
-		} catch(Exception $e){
-			throw new DB_Adapter_Exception(
-				"Failed to disconnect DB - {$e->getMessage()}",
-				DB_Adapter_Exception::CODE_DISCONNECTION_FAILED,
-				null,
-				$e
-			);
-		}
-
-		$this->connection = null;
-	}
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	abstract protected function _disconnect();
-
-	/**
-	 * @return int|string
-	 */
-	public function getLastErrorCode() {
-		return $this->last_error_code;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getLastErrorMessage() {
-		return $this->last_error_message;
-	}
-
-	/**
-	 * @return string
-	 */
-	function getLastError(){
-		$error_number = $this->getLastErrorCode();
-		$error_message = $this->getLastErrorMessage();
-		if(!$error_number && !$error_message){
-			return "";
-		}
-
-		$error = "";
-		if($error_number){
-			$error .= "[{$error_number}] ";
-		}
-
-		if($error_message){
-			$error .= $error_message;
-		}
-
-		return $error;
-	}
-
-	protected function resetLastError(){
-		$this->last_error_code = 0;
-		$this->last_error_message = "";
-	}
-
-	/**
-	 * @param int|string $error_code
-	 * @param string $error_message
-	 */
-	protected function setLastError($error_code, $error_message){
-		$this->last_error_code = $error_code;
-		$this->last_error_message = (string)$error_message;
-	}
-
-
-	abstract protected function fetchLastError();
-
 
 	/**
 	 * @param string $string
 	 * @return string
 	 */
-	abstract public function quoteString($string);
+	public function quoteString($string){
+		return parent::quote((string)$string, self::PARAM_STR);
+	}
 
 	/**
 	 * @param string $value
 	 * @return string
 	 */
-	abstract function quoteBinaryData($value);
+	function quoteBinary($value){
+		return parent::quote($value, self::PARAM_LOB);
+	}
 
 	/**
-	 * @param array $value
-	 * @return string|mixed
+	 * @param mixed $value
+	 * @return string
 	 */
-	public function quoteArrayData(array $value){
+	public function quoteJSON($value){
 		return $this->quoteString(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 	}
 
 
 	/**
 	 * @param null|string|int|\DateTime|\Et\Locales_DateTime $date [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $target_timezone [optional]
 	 * @return string
 	 */
-	public function quoteDate($date, $timezone = null, $target_timezone = null){
+	public function quoteDate($date, $target_timezone = null){
 		if(!$date){
 			return "''";
 		}
-
-		$date = Locales::getDate($date, $timezone);
-		if(!$target_timezone && $this->default_quote_timezone){
-			$target_timezone = $this->default_quote_timezone;
+		
+		if(!$date instanceof \DateTime){
+			$date = Locales::getDate($date);	
 		}
 
 		if($target_timezone){
-			$target_timezone = Locales::getTimezone($target_timezone);
+			if(!$target_timezone instanceof \DateTimeZone){
+				$target_timezone = Locales::getTimezone($target_timezone);	
+			}
 			$date->setTimezone($target_timezone);
 		}
 
@@ -270,27 +166,26 @@ abstract class DB_Adapter_Abstract extends Object {
 
 	/**
 	 * @param null|string|int|\DateTime|\Et\Locales_DateTime $datetime [optional]
-	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $timezone [optional]
 	 * @param null|string|\DateTimeZone|\Et\Locales_Timezone $target_timezone [optional]
 	 * @return string
 	 */
-	public function quoteDateTime($datetime, $timezone = null, $target_timezone = null){
+	public function quoteDateTime($datetime, $target_timezone = null){
 		if(!$datetime){
 			return "''";
 		}
 
-		$datetime = Locales::getDateTime($datetime, $timezone);
-
-		if(!$target_timezone && $this->default_quote_timezone){
-			$target_timezone = $this->default_quote_timezone;
+		if(!$datetime instanceof \DateTime){
+			$datetime = Locales::getDateTime($datetime);
 		}
 
 		if($target_timezone){
-			$target_timezone = Locales::getTimezone($target_timezone);
+			if(!$target_timezone instanceof \DateTimeZone){
+				$target_timezone = Locales::getTimezone($target_timezone);
+			}
 			$datetime->setTimezone($target_timezone);
 		}
 
-		return "'{$datetime->format("Y-m-d H:i:s")}'";
+		return "'{$datetime->format("Y-m-d H:i:s")}'";		
 	}
 
 
@@ -313,11 +208,11 @@ abstract class DB_Adapter_Abstract extends Object {
 
 	/**
 	 * @param array|\Iterator $values
-	 * @param bool $get_as_string [optional]
+	 * @param bool $return_string [optional]
 	 * @return array|string
 	 * @throws DB_Adapter_Exception
 	 */
-	function quoteValues($values, $get_as_string = false){
+	function quoteValues($values, $return_string = false){
 		if(!is_array($values) && !$values instanceof \Iterator){
 
 			throw new DB_Adapter_Exception(
@@ -329,10 +224,10 @@ abstract class DB_Adapter_Abstract extends Object {
 
 		$quoted = array();
 		foreach($values as $key => $value){
-			$quoted[$key] = $this->quoteValue($value);
+			$quoted[$key] = $this->quote($value);
 		}
 
-		if($get_as_string){
+		if($return_string){
 			return implode(", ", $quoted);
 		}
 
@@ -345,52 +240,54 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return string|int|float
 	 * @throws DB_Adapter_Exception
 	 */
-	function quoteValue($value){
-		if(is_string($value)){
-			return $this->quoteString($value);
-		}
+	function quote($value){
+		
+		switch(true){
+			// string
+			case is_string($value):
+				return parent::quote($value, self::PARAM_STR);
 
-		if($value === null){
-			return "NULL";
-		}
+			// NULL
+			case $value === null:
+				return parent::quote($value, self::PARAM_NULL);
 
-		if(is_bool($value)){
-			return (int)$value;
-		}
+			// boolean
+			case is_bool($value):
+				return parent::quote($value, self::PARAM_BOOL);
 
-		if(is_numeric($value)){
-			return $value;
-		}
+			// numbers
+			case is_numeric($value):
+				if(is_int($value)){
+					parent::quote((int)$value, self::PARAM_INT);
+				}
+				return (float)$value;
 
-		if($value instanceof DB_Expression){
-			return (string)$value;
-		}
+			// DB expression
+			case $value instanceof DB_Expression:
+				return (string)$value;
 
-		if($value instanceof DB_Table_Column){
-			return $this->quoteColumnName((string)$value);
-		}
-
-		if(is_array($value)){
-			return $this->quoteArrayData($value);
-		}
-
-		if(is_object($value)){
-
-			if($value instanceof Locales_DateTime){
+			// date and time
+			case $value instanceof \DateTime:
 				if($value instanceof Locales_Date){
 					return $this->quoteDate($value);
 				}
-
 				return $this->quoteDateTime($value);
-			}
 
-			if(method_exists($value, "__toString")){
-				return $this->quoteString((string)$value);
-			}
+			// locale
+			case $value instanceof Locales_Locale:
+				return parent::quote((string)$value, self::PARAM_STR);
 
-			if(method_exists($value, "toString")){
-				return $this->quoteString($value->toString());
-			}
+			// timezone
+			case $value instanceof \DateTimeZone:
+				return parent::quote($value->getName(), self::PARAM_STR);
+
+			// table column
+			case $value instanceof DB_Table_Column:
+				return $this->quoteTableOrColumn((string)$value);
+
+			// array
+			case is_array($value):
+				return $this->quoteJSON($value);
 		}
 
 		throw new DB_Adapter_Exception(
@@ -408,20 +305,9 @@ abstract class DB_Adapter_Abstract extends Object {
 	function quoteRow(array $row){
 		$output = array();
 		foreach($row as $r => $v){
-			$output[$this->quoteColumnName($r)] = $this->quoteValue($v);
+			$output[$this->quoteTableOrColumn($r)] = $this->quote($v);
 		}
 		return $output;
-	}
-
-	/**
-	 * @param string $table_name
-	 *
-	 * @return string
-	 */
-	function quoteTableName($table_name){
-		$table_name = (string)$table_name;
-		Debug_Assert::isVariableName($table_name);
-		return $table_name;
 	}
 
 	/**
@@ -429,9 +315,9 @@ abstract class DB_Adapter_Abstract extends Object {
 	 *
 	 * @return string
 	 */
-	function quoteColumnName($column_name){
+	function quoteTableOrColumn($column_name){
 		$column_name = (string)$column_name;
-		Debug_Assert::isStringMatching($column_name, '^\w+(\.\w+)?$');
+		Debug_Assert::isStringMatching($column_name, '^\w+(\.\w+)*$');
 		return $column_name;
 	}
 
@@ -443,9 +329,9 @@ abstract class DB_Adapter_Abstract extends Object {
 		$output = array();
 		foreach($columns_names as $k => $v){
 			if(is_numeric($k)){
-				$output[$k] = $this->quoteColumnName($v);
+				$output[$k] = $this->quoteTableOrColumn($v);
 			} else {
-				$output[$this->quoteColumnName($k)] = $this->quoteColumnName($v);
+				$output[$this->quoteTableOrColumn($k)] = $this->quoteTableOrColumn($v);
 			}
 		}
 		return $output;
@@ -467,19 +353,16 @@ abstract class DB_Adapter_Abstract extends Object {
 		foreach($query_data as $placeholder => $value){
 			try {
 
-				$replacements[":{$placeholder}"] = $this->quoteValue($value);
+				$replacements[":{$placeholder}"] = $this->quote($value);
 
 			} catch(DB_Adapter_Exception $e){
 
 				throw new DB_Adapter_Exception(
 					"Failed to quote value with key '{$placeholder}' - {$e->getMessage()}",
 					DB_Adapter_Exception::CODE_BINDING_FAILED,
-					array(
-					     "value" => $value
-					),
+					array("value" => $value),
 					$e
 				);
-
 			}
 
 		}
@@ -496,26 +379,13 @@ abstract class DB_Adapter_Abstract extends Object {
 
 
 	/**
-	 * @param string|DB_Query $sql_query
+	 * @param string|\Et\DB_Query $sql_query
 	 * @param array $query_data [optional]
 	 *
 	 * @throws DB_Adapter_Exception
 	 * @return int number of affected rows
 	 */
 	function exec($sql_query, array $query_data = array()){
-		return $this->runQuery($sql_query, $query_data, true);
-	}
-
-
-	/**
-	 * @param string|DB_Query $sql_query
-	 * @param array $query_data
-	 * @param bool $exec_only
-	 *
-	 * @throws DB_Adapter_Exception
-	 * @return resource|object|int
-	 */
-	protected function runQuery(&$sql_query, array &$query_data, $exec_only){
 
 		if($sql_query instanceof DB_Query){
 			$sql_query = $this->buildQuery($sql_query);
@@ -529,71 +399,92 @@ abstract class DB_Adapter_Abstract extends Object {
 
 			if($this->profiler){
 
-				$profiler_query = $sql_query;
-				$query_period = $this->profiler->period($profiler_query);
-
-				if($exec_only){
-					$result = $this->_exec($sql_query);
-				} else {
-					$result = $this->_query($sql_query);
-				}
-
+				$query_period = $this->profiler->queryStarted($sql_query);
+				$result = parent::exec($sql_query);
 				$query_period->end();
+				$query_period->setResultRowsCount($result);
 
 			} else {
 
-				if($exec_only){
-					$result = $this->_exec($sql_query);
-				} else {
-					$result = $this->_query($sql_query);
-				}
+				$result = parent::exec($sql_query);
 
 			}
 
 			if($result === false){
-				throw new DB_Adapter_Exception(
-					"FALSE returned as a result",
-					DB_Adapter_Exception::CODE_QUERY_FAILED
-				);
+				Debug::triggerErrorOrLastError("Query exec failed");
 			}
+
+			unset($sql_query);
+			unset($query_data);
+
+			return $result;
 
 		} catch(\Exception $e){
 
-			$this->fetchLastError();
-
-			$exception = new DB_Adapter_Exception(
-				"SQL query execution failed - {$e->getMessage()}",
+			throw new DB_Adapter_Exception(
+				"SQL query execution failed - {$e->getMessage()}\n\nSQL ERROR: {$this->errorMessage()}\n\nSQL QUERY:\n{$sql_query}",
 				DB_Adapter_Exception::CODE_QUERY_FAILED,
-				array(
-					"SQL query" => $sql_query,
-					"query data" => $query_data
-				),
+				null,
 				$e
 			);
 
-			$exception->setSqlErrorCode($this->getLastErrorCode());
-			$exception->setSqlErrorMessage($this->getLastErrorMessage());
-
-			throw $exception;
 		}
 
-
-		return $result;
 	}
 
 	/**
-	 * @param string $sql_query
+	 * @param string|\Et\DB_Query $sql_query
+	 * @param array $query_data [optional]
 	 *
-	 * @return int
+	 * @throws DB_Adapter_Exception
+	 * @return \PDOStatement
 	 */
-	abstract protected function _exec(&$sql_query);
+	function query($sql_query, array $query_data = array()){
 
-	/**
-	 * @param string $sql_query
-	 *
-	 * @return object|resource
-	 */
-	abstract protected function _query(&$sql_query);
+		if($sql_query instanceof DB_Query){
+			$sql_query = $this->buildQuery($sql_query);
+		}
+
+		if($query_data){
+			$sql_query = $this->bindDataToQuery($sql_query, $query_data);
+		}
+
+		try {
+
+			if($this->profiler){
+
+				$query_period = $this->profiler->queryStarted($sql_query);
+				$result = parent::query($sql_query);
+				$query_period->end();
+				$query_period->setResultRowsCount($result->rowCount());
+
+			} else {
+
+				$result = parent::query($sql_query);
+
+			}
+
+			if($result === false){
+				Debug::triggerErrorOrLastError("Query failed");
+			}
+
+			unset($sql_query);
+			unset($query_data);
+
+			return $result;
+
+		} catch(\Exception $e){
+
+			throw new DB_Adapter_Exception(
+				"SQL query execution failed - {$e->getMessage()}\n\nSQL ERROR: {$this->errorMessage()}\n\nSQL QUERY:\n{$sql_query}",
+				DB_Adapter_Exception::CODE_QUERY_FAILED,
+				null,
+				$e
+			);
+
+		}
+
+	}
 
 
 	/**
@@ -626,29 +517,45 @@ abstract class DB_Adapter_Abstract extends Object {
 	}
 
 	/**
-	 * @param string|DB_Query $sql_query
-	 * @param array $query_data [optional]
-	 * @param null|string $fetch_type [optional] One of DB::FETCH_ASSOCIATIVE|FETCH_VALUES, if NULL, FETCH_ASSOCIATIVE is used
-	 * @param bool $cache_iterator_results [optional]
-	 *
-	 * @return DB_Iterator_Abstract
+	 * @return bool|DB_Profiler_Query
 	 */
-	abstract function fetchIterator($sql_query, array $query_data = array(), $fetch_type = null, $cache_iterator_results = false);
+	protected function _profilerFetchStarted(){
+		if(!$this->profiler){
+			return false;
+		}
+		$query = $this->profiler->getLastQuery();
+		$query->fetchStarted();
+		return $query;
+	}
+
 
 	/**
 	 * @param string|DB_Query $sql_query
 	 * @param array $query_data [optional]
-	 * @param null|string $fetch_type [optional] One of DB::FETCH_ASSOCIATIVE|FETCH_VALUES, if NULL, FETCH_ASSOCIATIVE is used
+	 * @param null|string $fetch_type [optional] \PDO::FETCH_*
 	 *
 	 * @return array|bool
 	 *
 	 * @throws DB_Adapter_Exception
 	 */
 	function fetchRow($sql_query, array $query_data = array(), $fetch_type = null){
-		$iterator = $this->fetchIterator($sql_query, $query_data, $fetch_type, false);
-		$row = $iterator->fetchRow();
-		$iterator->freeResult();
-		unset($iterator);
+		$result = $this->query($sql_query, $query_data);
+		$last_query = $this->_profilerFetchStarted();
+
+		if(!$result->rowCount()){
+			return false;
+		}
+
+		if(!$fetch_type){
+			$fetch_type = self::FETCH_ASSOC;
+		}
+
+		$row = $result->fetch($fetch_type);
+		if($last_query){
+			$last_query->fetchEnded();
+		}
+
+		$result->closeCursor();
 		return $row;
 	}
 
@@ -688,95 +595,6 @@ abstract class DB_Adapter_Abstract extends Object {
 	}
 
 	/**
-	 * @param DB_Table_Key[] $keys
-	 * @param array|null $row_columns [optional] If empty, * is used in select statement
-	 * @param DB_Query $query [optional]
-	 * @throws DB_Exception
-	 * @return array
-	 */
-	function fetchRowsByKeys(array $keys, array $row_columns = null, DB_Query $query = null){
-		if(!$keys){
-			return array();
-		}
-		Debug_Assert::isArrayOfInstances($keys, "Et\\DB_Table_Key");
-
-		$sets = array();
-
-		/** @var $key DB_Table_Key */
-		$key = null;
-		foreach($keys as $idx => $k){
-			if(!$k->hasAllColumnValues()){
-				throw new DB_Exception(
-					"Key '{$idx}' does not have values filled in",
-					DB_Exception::CODE_INVALID_KEY
-				);
-			}
-
-			if(!$key){
-				$key = $k;
-				$sets[] = new DB_Expression("(" . implode(", ",  $this->quoteValues($key->getColumnValues())) . ")");
-				continue;
-			}
-
-			if($k->getTableName() != $key->getTableName() || $k->getColumnNames() != $key->getColumnNames()){
-				throw new DB_Exception(
-					"Key '{$idx}' is different than first key (different table name or columns names",
-					DB_Exception::CODE_INVALID_KEY
-				);
-			}
-
-			$sets[] = new DB_Expression("(" . implode(", ",  $this->quoteValues($k->getColumnValues())) . ")");
-		}
-
-		if(!$query){
-			$query = new DB_Query($key->getTableName());
-		}
-
-		if(!$row_columns){
-			$query->getSelect()->addAllColumns($key->getTableName());
-		} else {
-			$query->getSelect()->addColumns($row_columns, $key->getTableName());
-		}
-
-		$query->getWhere()->addExpressionCompare(
-			implode(", ", $this->quoteColumnNames($key->getColumnNames())),
-			DB_Query_Where::CMP_IN,
-			$sets
-		);
-
-		return $this->fetchRows($query);
-	}
-
-	/**
-	 * @param array $row [reference]
-	 * @param string|null $key_column
-	 * @return string|int
-	 * @throws DB_Adapter_Exception
-	 */
-	protected function resolveColumnKey(array &$row, $key_column){
-		reset($row);
-		if($key_column === null){
-			return key($row);
-		}
-
-		if(array_key_exists($row, $key_column)){
-			return $key_column;
-		}
-
-		if(is_numeric($key_column)){
-			$keys = array_keys($row);
-			if(isset($keys[$key_column])){
-				return $keys[$key_column];
-			}
-		}
-
-		throw new DB_Adapter_Exception(
-			"Column '{$key_column}' not found in row",
-			DB_Adapter_Exception::CODE_INVALID_COLUMN
-		);
-	}
-
-	/**
 	 * @param string|DB_Query $sql_query
 	 * @param array $query_data [optional]
 	 * @param null|string|int $value_column [optional] Name of value column in row, if NULL, first column is used
@@ -785,11 +603,30 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return mixed|bool
 	 */
 	function fetchValue($sql_query, array $query_data = array(), $value_column = null){
-		$row = $this->fetchRow($sql_query, $query_data, DB::FETCH_ASSOCIATIVE);
+
+		if($value_column === null){
+			$value_column = 0;
+		}
+
+		$row = $this->fetchRow(
+					$sql_query,
+					$query_data,
+					is_numeric($value_column)
+					? self::FETCH_NUM
+					: self::FETCH_ASSOC
+		);
+
 		if(!$row){
 			return false;
 		}
-		$value_column = $this->resolveColumnKey($row, $value_column);
+
+		if(!isset($row[$value_column]) && !array_key_exists($value_column, $row)){
+			throw new DB_Adapter_Exception(
+				"Column '{$value_column}' not found in result row",
+				DB_Adapter_Exception::CODE_INVALID_COLUMN
+			);
+		}
+
 		return $row[$value_column];
 	}
 
@@ -803,16 +640,43 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return array
 	 */
 	function fetchColumn($sql_query, array $query_data = array(), $value_column = null){
-		$iterator = $this->fetchIterator($sql_query, $query_data, DB::FETCH_ASSOCIATIVE, false);
-		$output = array();
-		foreach($iterator as $row_idx => $row){
-			if(!$row_idx){
-				$value_column = $this->resolveColumnKey($row, $value_column);
-			}
-			$output[] = $row[$value_column];
+
+		$result = $this->query($sql_query, $query_data);
+		if(!$result->rowCount()){
+			return array();
 		}
-		$iterator->freeResult();
-		unset($iterator);
+
+		$last_query = $this->_profilerFetchStarted();
+		if($value_column === null){
+			$value_column = 0;
+		}
+
+		if(is_numeric($value_column)){
+
+			$output = $result->fetchAll(self::FETCH_COLUMN, $value_column);
+
+		} else {
+
+			$output = array();
+			$result->setFetchMode(self::FETCH_ASSOC);
+			foreach($result as $i => $row){
+				if(!$i){
+					if(!isset($row[$value_column]) && !array_key_exists($value_column, $row)){
+						throw new DB_Adapter_Exception(
+							"Column '{$value_column}' not found in result",
+							DB_Adapter_Exception::CODE_INVALID_COLUMN
+						);
+					}
+				}
+				$output[] = $row[$value_column];
+			}
+		}
+
+		if($last_query){
+			$last_query->fetchEnded();
+		}
+
+		$result->closeCursor();
 		return $output;
 	}
 
@@ -827,24 +691,51 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return array
 	 */
 	function fetchPairs($sql_query, array $query_data = array(), $key_column = null, $value_column = null){
-		$iterator = $this->fetchIterator($sql_query, $query_data, DB::FETCH_ASSOCIATIVE, false);
+		$result = $this->query($sql_query, $query_data);
+		if(!$result->rowCount()){
+			return array();
+		}
+
+		$last_query = $this->_profilerFetchStarted();
+		if($key_column === null){
+			$key_column = 0;
+		}
+
 		$output = array();
-		foreach($iterator as $row_idx => $row){
-			if(!$row_idx){
-				$key_row = $row;
-				$key_column = $this->resolveColumnKey($key_row, $key_column);
-				array_shift($key_row);
-				if(!$key_row){
-					$value_column = $key_column;
-				} else {
-					$value_column = $this->resolveColumnKey($key_row, $value_column);
+		$result->setFetchMode(self::FETCH_BOTH);
+
+		foreach($result as $i => $row){
+
+			if(!$i){
+				if(!isset($row[$key_column]) && !array_key_exists($key_column, $row)){
+					throw new DB_Adapter_Exception(
+						"Column '{$key_column}' not found in result",
+						DB_Adapter_Exception::CODE_INVALID_COLUMN
+					);
+				}
+
+				if($value_column === null){
+					$value_column = array_key_exists(1, $row)
+									? 1
+									: 0;
+				}
+
+				if(!isset($row[$value_column]) && !array_key_exists($value_column, $row)){
+					throw new DB_Adapter_Exception(
+						"Column '{$value_column}' not found in result",
+						DB_Adapter_Exception::CODE_INVALID_COLUMN
+					);
 				}
 			}
 
 			$output[$row[$key_column]] = $row[$value_column];
 		}
-		$iterator->freeResult();
-		unset($iterator);
+
+		if($last_query){
+			$last_query->fetchEnded();
+		}
+
+		$result->closeCursor();
 		return $output;
 	}
 
@@ -859,17 +750,48 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return array
 	 */
 	function fetchRowsAssociative($sql_query, array $query_data = array(), $fetch_type = null, $key_column = null){
-		$iterator = $this->fetchIterator($sql_query, $query_data, $fetch_type, false);
-
-		$output = array();
-		foreach($iterator as $row_idx => $row){
-			if(!$row_idx){
-				$key_column = $this->resolveColumnKey($row, $key_column);
-			}
-			$output[$row[$key_column]] = $row;
+		$result = $this->query($sql_query, $query_data);
+		if(!$result->rowCount()){
+			return array();
 		}
-		$iterator->freeResult();
-		unset($iterator);
+
+		$last_query = $this->_profilerFetchStarted();
+		if(!$fetch_type){
+			$fetch_type = self::FETCH_ASSOC;
+		}
+
+		if($key_column === null || is_numeric($key_column)){
+			$output = $result->fetchAll($fetch_type | self::FETCH_COLUMN, (int)$key_column);
+		} else {
+
+			$output = array();
+			$result->setFetchMode($fetch_type);
+
+			foreach($result as $i => $row){
+
+				if(!$i){
+
+					if($key_column === null){
+						list($key_column) = array_keys($row);
+					}
+
+					if(!isset($row[$key_column]) && !array_key_exists($key_column, $row)){
+						throw new DB_Adapter_Exception(
+							"Column '{$key_column}' not found in result",
+							DB_Adapter_Exception::CODE_INVALID_COLUMN
+						);
+					}
+				}
+
+				$output[$row[$key_column]] = $row;
+			}
+		}
+
+		if($last_query){
+			$last_query->fetchEnded();
+		}
+
+		$result->closeCursor();
 		return $output;
 	}
 
@@ -884,13 +806,23 @@ abstract class DB_Adapter_Abstract extends Object {
 	 */
 	function fetchRows($sql_query,  array $query_data = array(), $fetch_type = null){
 
-		$iterator = $this->fetchIterator($sql_query, $query_data, $fetch_type, false);
-		$output = array();
-		foreach($iterator as $row){
-			$output[] = $row;
+		$result = $this->query($sql_query, $query_data);
+		if(!$result->rowCount()){
+			return array();
 		}
-		$iterator->freeResult();
-		unset($iterator);
+
+		$last_query = $this->_profilerFetchStarted();
+		if(!$fetch_type){
+			$fetch_type = self::FETCH_ASSOC;
+		}
+
+		$output = $result->fetchAll($fetch_type);
+
+		if($last_query){
+			$last_query->fetchEnded();
+		}
+
+		$result->closeCursor();
 		return $output;
 	}
 
@@ -924,10 +856,10 @@ abstract class DB_Adapter_Abstract extends Object {
 
 		$query_columns = array();
 		foreach($row as $r => $v){
-			$query_columns[$this->quoteColumnName($r)] = $this->quoteValue($v);
+			$query_columns[$this->quoteTableOrColumn($r)] = $this->quote($v);
 		}
 
-		$query = ($replace ? "REPLACE" : "INSERT") . " INTO " . $this->quoteTableName($table_name) . "(\n    ";
+		$query = ($replace ? "REPLACE" : "INSERT") . " INTO " . $this->quoteTableOrColumn($table_name) . "(\n    ";
 		$query .= implode(",\n    ", array_keys($query_columns));
 		$query .= "\n) VALUES (\n    ";
 		$query .= implode(",\n    ", array_values($query_columns));
@@ -1004,7 +936,7 @@ abstract class DB_Adapter_Abstract extends Object {
 			}
 
 			foreach($row as $i => $value){
-				$row[$i] = $this->quoteValue($value);
+				$row[$i] = $this->quote($value);
 			}
 			$query_data[] = $row;
 
@@ -1019,10 +951,10 @@ abstract class DB_Adapter_Abstract extends Object {
 		}
 
 		foreach($columns as $i => $column){
-			$columns[$i] = $this->quoteColumnName($column);
+			$columns[$i] = $this->quoteTableOrColumn($column);
 		}
 
-		$query_start = ($replace ? "REPLACE" : "INSERT")." INTO " . $this->quoteTableName($table_name) . "(\n    ";
+		$query_start = ($replace ? "REPLACE" : "INSERT")." INTO " . $this->quoteTableOrColumn($table_name) . "(\n    ";
 		$query_start .= implode(",\n    ", $columns);
 		$query_start .= "\n) VALUES ";
 
@@ -1114,10 +1046,10 @@ abstract class DB_Adapter_Abstract extends Object {
 
 		$query_columns = array();
 		foreach($new_row_data as $r => $v){
-			$query_columns[] = $this->quoteColumnName($r) . " = :{$r}";
+			$query_columns[] = $this->quoteTableOrColumn($r) . " = :{$r}";
 		}
 
-		$query = "UPDATE " . $this->quoteTableName($table_name) . "SET\n    ";
+		$query = "UPDATE " . $this->quoteTableOrColumn($table_name) . "SET\n    ";
 		$query .= implode(",\n    ", $query_columns);
 
 		if($where_query !== ""){
@@ -1162,7 +1094,7 @@ abstract class DB_Adapter_Abstract extends Object {
 			$where_query = $this->bindDataToQuery($where_query, $where_query_data);
 		}
 
-		$query = "DELETE FROM\n    " . $this->quoteTableName($table_name) . "\nWHERE\n    {$where_query}";
+		$query = "DELETE FROM\n    " . $this->quoteTableOrColumn($table_name) . "\nWHERE\n    {$where_query}";
 		return $this->exec($query);
 	}
 
@@ -1213,26 +1145,6 @@ abstract class DB_Adapter_Abstract extends Object {
 	}
 
 	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	abstract function beginTransaction();
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	abstract function commitTransaction();
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	abstract function rollbackTransaction();
-
-	/**
-	 * @return bool
-	 */
-	abstract function getTransactionStarted();
-
-	/**
 	 * @param string|DB_Query|DB_Table_Key $sql_query
 	 * @param array $query_data [optional]
 	 * @return bool
@@ -1247,7 +1159,7 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return int
 	 */
 	function dropTable($table_name){
-		return $this->exec("DROP TABLE " . $this->quoteTableName($table_name));
+		return $this->exec("DROP TABLE " . $this->quoteTableOrColumn($table_name));
 	}
 
 	/**
@@ -1277,13 +1189,6 @@ abstract class DB_Adapter_Abstract extends Object {
 	 * @return int
 	 */
 	abstract function copyTableColumns($source_table, $target_table, array $columns, $where_query = null, array $where_query_data = array());
-
-	/**
-	 * @param null|string $table_name [optional]
-	 *
-	 * @return string|int
-	 */
-	abstract function getLastInsertID($table_name = null);
 
 
 	/**
@@ -1332,16 +1237,16 @@ abstract class DB_Adapter_Abstract extends Object {
 			$output .= "\t" . str_replace("\n", "\n\t", $this->buildOrderByExpression($order_by)) . "\n";
 		}
 
-		if($query->getLimit() !== null){
+		if($query->getLimit() > 0){
 			$output .= "LIMIT {$query->getLimit()}\n";
 		}
 
-		if($query->getOffset() !== null){
+		if($query->getOffset() > 0){
 			$output .= "OFFSET {$query->getOffset()}\n";
 		}
 
 		if(count($query->getTablesInQuery()) == 1 && $query->getAllowSingleTableBuildSimplification()){
-			$search_for = preg_quote($this->quoteTableName($query->getMainTableName()). ".");
+			$search_for = preg_quote($this->quoteTableOrColumn($query->getMainTableName()). ".");
 			$output = preg_replace('~'.$search_for.'(\*|[^\s]?\w+[^\s]?)\b~sU', '\1', $output);
 		}
 
@@ -1403,13 +1308,13 @@ abstract class DB_Adapter_Abstract extends Object {
 
 			if($expression instanceof DB_Query_Select_Column){
 				// column select
-				$expr = $this->quoteColumnName($expression->getColumnName(true));
+				$expr = $this->quoteTableOrColumn($expression->getColumnName(true));
 
 			} elseif($expression instanceof DB_Query_Select_AllColumns){
 
 				// table.* select
 				if($expression->getTableName()){
-					$expr = $this->quoteTableName($expression->getTableName()) . ".*";
+					$expr = $this->quoteTableOrColumn($expression->getTableName()) . ".*";
 				} else {
 					$expr = "*";
 				}
@@ -1435,7 +1340,7 @@ abstract class DB_Adapter_Abstract extends Object {
 			}
 
 			if($expression->getSelectAs()){
-				$expr .= " AS {$this->quoteColumnName($expression->getSelectAs())}";
+				$expr .= " AS {$this->quoteTableOrColumn($expression->getSelectAs())}";
 			}
 			$output[] = $expr;
 		}
@@ -1448,7 +1353,7 @@ abstract class DB_Adapter_Abstract extends Object {
 	 */
 	protected function buildFromExpression(DB_Query $query){
 		$tables_in_query = $query->getTablesInQuery();
-		$output = $this->quoteTableName($query->getMainTableName());
+		$output = $this->quoteTableOrColumn($query->getMainTableName());
 		if(count($tables_in_query) == 1){
 			return $output;
 		}
@@ -1460,7 +1365,7 @@ abstract class DB_Adapter_Abstract extends Object {
 				if($table == $main_table){
 					continue;
 				}
-				$output .= ",\n{$this->quoteTableName($table)}";
+				$output .= ",\n{$this->quoteTableOrColumn($table)}";
 			}
 			return $output;
 		}
@@ -1477,17 +1382,17 @@ abstract class DB_Adapter_Abstract extends Object {
 		foreach($relations as $relation){
 			if($relation instanceof DB_Query_Relations_SimpleRelation){
 
-				$output .= "{$relation->getJoinType()} JOIN {$this->quoteTableName($relation->getRelatedTableName())} ON (\n";
+				$output .= "{$relation->getJoinType()} JOIN {$this->quoteTableOrColumn($relation->getRelatedTableName())} ON (\n";
 				$joins = array();
-				foreach($relation->join_on_columns as $col1 => $col2){
-					$joins[] = "{$this->quoteColumnName($col1)} = {$this->quoteColumnName($col2)}";
+				foreach($relation->getJoinOnColumns() as $col1 => $col2){
+					$joins[] = "{$this->quoteTableOrColumn($col1)} = {$this->quoteTableOrColumn($col2)}";
 				}
 				$output .= "\t" . implode(" AND\n\t", $joins) . "\n";
 				$output .= ")\n";
 
 			} elseif($relation instanceof DB_Query_Relations_ComplexRelation){
 
-				$output = "{$relation->getJoinType()} JOIN {$this->quoteTableName($relation->getRelatedTableName())} ON (\n";
+				$output = "{$relation->getJoinType()} JOIN {$this->quoteTableOrColumn($relation->getRelatedTableName())} ON (\n";
 				$output .= str_replace("\n", "\n\t", $this->buildWhereExpression($relation)) . "\n)\n";
 
 			}
@@ -1573,7 +1478,7 @@ abstract class DB_Adapter_Abstract extends Object {
 
 		} elseif($expression instanceof DB_Query_Where_ColumnCompare){
 
-			$output = $this->quoteColumnName($expression->getColumnName(true)) . " ";
+			$output = $this->quoteTableOrColumn($expression->getColumnName(true)) . " ";
 
 		} else {
 
@@ -1595,11 +1500,11 @@ abstract class DB_Adapter_Abstract extends Object {
 		}
 
 		if($value instanceof DB_Table_Column){
-			return "{$output} " . $this->quoteColumnName($value->getColumnName(true));
+			return "{$output} " . $this->quoteTableOrColumn($value->getColumnName(true));
 		}
 
 		if(!$expression->isNULLCompare()){
-			return "{$output} {$this->quoteValue($value)}";
+			return "{$output} {$this->quote($value)}";
 		}
 
 		return "{$output} (" .$this->quoteIN($value) . ")";
@@ -1614,7 +1519,7 @@ abstract class DB_Adapter_Abstract extends Object {
 		$output = array();
 
 		foreach($columns as $column){
-			$output[] = $this->quoteColumnName($column->getColumnName(true));
+			$output[] = $this->quoteTableOrColumn($column->getColumnName(true));
 		}
 
 		return implode(",\n", $output);
@@ -1631,7 +1536,7 @@ abstract class DB_Adapter_Abstract extends Object {
 		foreach($expressions as $expression){
 			if($expression instanceof DB_Query_OrderBy_Column){
 
-				$output[] = $this->quoteColumnName($expression->getColumnName(true)) . " {$expression->getOrderHow()}";
+				$output[] = $this->quoteTableOrColumn($expression->getColumnName(true)) . " {$expression->getOrderHow()}";
 
 			} elseif($expression instanceof DB_Query_OrderBy_ColumnNumber){
 
@@ -1664,7 +1569,7 @@ abstract class DB_Adapter_Abstract extends Object {
 			}
 			// column
 			if($arg instanceof DB_Table_Column){
-				$output .= $this->quoteColumnName($arg->getColumnName(true));
+				$output .= $this->quoteTableOrColumn($arg->getColumnName(true));
 				continue;
 			}
 
@@ -1678,7 +1583,7 @@ abstract class DB_Adapter_Abstract extends Object {
 				continue;
 			}
 
-			$output .= $this->quoteValue($arg);
+			$output .= $this->quote($arg);
 		}
 		$output .= ")";
 		return $output;

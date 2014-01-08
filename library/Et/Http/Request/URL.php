@@ -265,7 +265,7 @@ class Http_Request_URL extends Object {
 	 * @param mixed $value
 	 */
 	public function setQueryParameter($parameter, $value){
-		$this->getQueryData()->setValue($parameter, $value);
+		$this->getQueryData()->set($parameter, $value);
 	}
 
 	/**
@@ -273,7 +273,7 @@ class Http_Request_URL extends Object {
 	 * @return bool
 	 */
 	public function removeQueryParameter($parameter){
-		return $this->getQueryData()->removeValue($parameter);
+		return $this->getQueryData()->remove($parameter);
 	}
 
 	/**
@@ -281,7 +281,7 @@ class Http_Request_URL extends Object {
 	 * @return bool
 	 */
 	public function getQueryParameterExists($parameter){
-		return $this->getQueryData()->getValueExists($parameter);
+		return $this->getQueryData()->exists($parameter);
 	}
 
 	/**
@@ -290,7 +290,7 @@ class Http_Request_URL extends Object {
 	 * @return mixed|null
 	 */
 	public function getQueryParameter($parameter, $default_value = null){
-		return $this->getQueryData()->getRawValue($parameter, $default_value);
+		return $this->getQueryData()->getRaw($parameter, $default_value);
 	}
 
 	/**

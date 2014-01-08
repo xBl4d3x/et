@@ -200,4 +200,13 @@ abstract class Debug_Profiler_Abstract implements \JsonSerializable  {
 		$output .= "</div>";
 		return $output;
 	}
+
+	/**
+	 * @return \Et\Debug_Profiler_Period
+	 */
+	function getLastPeriod(){
+		$period = end($this->periods);
+		reset($this->periods);
+		return $period;
+	}
 }

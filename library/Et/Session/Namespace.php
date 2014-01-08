@@ -78,7 +78,7 @@ class Session_Namespace extends Data_Array {
 				$ref[$k] = $v;
 			}
 		} else {
-			$this->setValue($import_at_path, $data);
+			$this->set($import_at_path, $data);
 		}
 	}
 }

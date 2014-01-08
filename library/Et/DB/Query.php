@@ -72,12 +72,12 @@ class DB_Query extends Object {
 	/**
 	 * @var int
 	 */
-	protected $limit;
+	protected $limit = 0;
 
 	/**
 	 * @var int
 	 */
-	protected $offset;
+	protected $offset = 0;
 
 	/**
 	 * @param string $main_table_name
@@ -419,11 +419,11 @@ class DB_Query extends Object {
 	}
 	
 	/**
-	 * @param null|int $limit
-	 * @param null|int $offset
+	 * @param int $limit
+	 * @param int $offset
 	 * @return static|DB_Query
 	 */
-	function limit($limit = null, $offset = null){
+	function limit($limit = 0, $offset = 0){
 		$this->setLimit($limit);
 		$this->setOffset($offset);
 		return $this;
@@ -445,10 +445,7 @@ class DB_Query extends Object {
 	 * @return static|DB_Query
 	 */
 	function setLimit($limit){
-		if($limit !== null){
-			$limit = max(0, (int)$limit);
-		}
-		$this->limit = $limit;
+		$this->limit = max(0, (int)$limit);
 		return $this;
 	}
 
@@ -464,15 +461,12 @@ class DB_Query extends Object {
 	 * @return static|DB_Query
 	 */
 	function setOffset($offset){
-		if($offset !== null){
-			$offset = max(0, (int)$offset);
-		}
-		$this->offset = $offset;
+		$this->offset = max(0, (int)$offset);;
 		return $this;
 	}
 
 	/**
-	 * @return int|null
+	 * @return int
 	 */
 	function getOffset(){
 		return $this->offset;

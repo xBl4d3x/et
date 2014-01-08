@@ -28,6 +28,11 @@ class Debug_Profiler_Period implements \JsonSerializable {
 	protected $end_memory;
 
 	/**
+	 * @var array
+	 */
+	protected $backtrace = array();
+
+	/**
 	 * @var bool
 	 */
 	protected $is_finished = false;
@@ -37,6 +42,7 @@ class Debug_Profiler_Period implements \JsonSerializable {
 	 */
 	function __construct($name){
 		$this->name = trim($name);
+		$this->fetchBacktrace();
 		$this->start();
 	}
 
@@ -117,18 +123,55 @@ class Debug_Profiler_Period implements \JsonSerializable {
 	}
 
 	/**
+	 * @param int $backtrace_offset
+	 */
+	function fetchBacktrace($backtrace_offset = 2){
+		$backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+		while($backtrace && $backtrace_offset-- > 0){
+			array_shift($backtrace);
+		}
+
+		$base_dir_len = strlen(ET_BASE_PATH);
+		$this->backtrace = array();
+		foreach($backtrace as $i => $row){
+			if(empty($row["file"])){
+				$row["file"] = "?";
+			}
+			$row["file"] = str_replace(array("\\", DIRECTORY_SEPARATOR), "/", $row["file"]);
+			if(substr($row["file"], 0, $base_dir_len) == ET_BASE_PATH){
+				$row["file"] = "[root]/" . substr($row["file"], $base_dir_len);
+			}
+			$line = "#" . ($i+1) . " {$row["file"]}:{$row["line"]}";
+			if(!empty($row["function"])){
+				if(!empty($row["class"])){
+					$line .= " | {$row["class"]}{$row["type"]}{$row["function"]}( ... )";
+				} else {
+					$line .= " | {$row["function"]}( ... )";
+				}
+			}
+			$this->backtrace[] = $line;
+		}
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getBacktrace() {
+		return $this->backtrace;
+	}
+
+
+
+	/**
 	 * @return array
 	 */
 	function toArray(){
 		return array(
 			"name" => $this->getName(),
-			"start_time" => $this->getStartTime(),
-			"start_memory" => $this->getStartMemory(),
-			"end_time" => $this->getEndTime(),
-			"end_memory" => $this->getEndMemory(),
 			"is_finished" => $this->isFinished(),
 			"duration" => $this->getDuration(),
-			"memory_difference" => $this->getMemoryDifference()
+			"memory_difference" => $this->getMemoryDifference(),
+			"backtrace" => $this->getBacktrace()
 		);
  	}
 

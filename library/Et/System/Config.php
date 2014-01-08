@@ -87,7 +87,7 @@ class System_Config extends Object {
 	 */
 	function getSectionData($section_path, array $default_value = array()){
 		$section_path = (string)$section_path;
-		$section = $this->config_sections->getRawValue($section_path, $default_value);
+		$section = $this->config_sections->getRaw($section_path, $default_value);
 		if(!is_array($section)){
 			throw new System_Exception(
 				"System config section '{$section_path}' should be array, not " .gettype($section),

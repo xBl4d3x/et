@@ -1,11 +1,11 @@
 <?php
 namespace Et;
-class DB_Adapter_PDO_MySQL_Config extends DB_Adapter_PDO_Config {
+class DB_Adapter_MySQL_Config extends DB_Adapter_Config_Abstract {
 
 	/**
 	 * @var string
 	 */
-	protected $_type = "PDO_MySQL";
+	protected $_type = "MySQL";
 
 	/**
 	 * @var string

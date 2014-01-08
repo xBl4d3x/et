@@ -94,6 +94,21 @@ abstract class Object {
 	}
 
 	/**
+	 * @return array
+	 */
+	function __sleep(){
+		$vars = get_object_vars($this);
+		$output = array();
+		foreach($vars as $k => &$v){
+			if($k[0] == "_" && $k[1] == "_"){
+				continue;
+			}
+			$output[] = $k;
+		}
+		return $output;
+	}
+
+	/**
 	 * Returns object variables names which do not begin with '_'
 	 *
 	 * @return array
@@ -177,6 +192,15 @@ abstract class Object {
 	protected function hasVisibleObjectProperty($property){
 		return property_exists($this, $property) && $property[0] != "_";
 	}
+
+	/**
+	 * @param string $property_name
+	 * @return string
+	 */
+	function getSetterMethodName($property_name){
+		return "set" . str_replace("_", "", $property_name);
+	}
+
 
 	/**
 	 * @param bool $deep_object_clone [optional]

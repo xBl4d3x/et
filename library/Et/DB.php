@@ -2,8 +2,9 @@
 namespace Et;
 class DB extends Object {
 
-	const FETCH_VALUES = "values";
-	const FETCH_ASSOCIATIVE = "associative";
+	const FETCH_VALUES = \PDO::FETCH_NUM;
+	const FETCH_ASSOCIATIVE = \PDO::FETCH_ASSOC;
+	const FETCH_BOTH = \PDO::FETCH_BOTH;
 
 	/**
 	 * @var DB_Config

@@ -1,11 +1,11 @@
 <?php
 namespace Et;
-class DB_Adapter_PDO_Sphinx_Config extends DB_Adapter_PDO_Config {
+class DB_Adapter_Sphinx_Config extends DB_Adapter_MySQL {
 
 	/**
 	 * @var string
 	 */
-	protected $_type = "PDO_Sphinx";
+	protected $_type = "Sphinx";
 
 	/**
 	 * PDO connection string

@@ -3,68 +3,32 @@ namespace Et;
 /**
  * Sphinx PDO database adapter
  */
-class DB_Adapter_PDO_Sphinx extends DB_Adapter_PDO_MySQL {
+class DB_Adapter_Sphinx extends DB_Adapter_MySQL {
 
 	/**
 	 * @var string
 	 */
-	protected static $_adapter_type = "PDO_Sphinx";
+	protected static $_adapter_type = "Sphinx";
 
 
 	/**
-	 * @var DB_Adapter_PDO_Sphinx_Config
+	 * @var DB_Adapter_Sphinx_Config
 	 */
 	protected $config;
 
 	/**
-	 * @param DB_Adapter_PDO_Sphinx_Config $config
+	 * @param DB_Adapter_Sphinx_Config $config
 	 */
-	function __construct(DB_Adapter_PDO_Sphinx_Config $config){
-		$this->config = $config;
-		$this->connect();
+	function __construct(DB_Adapter_Sphinx_Config $config){
+		parent::__construct($config);
 	}
 
 
 	/**
-	 * @return DB_Adapter_PDO_Sphinx_Config
+	 * @return DB_Adapter_Sphinx_Config
 	 */
 	function getConfig(){
 		return parent::getConfig();
-	}
-
-	/**
-	 * @throws DB_Adapter_Exception
-	 */
-	protected function _connect() {
-
-		try {
-
-			$this->connection = new \PDO($this->config->getDSN());
-
-		} catch (\PDOException $e) {
-
-			throw new DB_Adapter_Exception(
-				"Failed to connect to database [DSN: {$this->config->getDSN()}] - PDO error: {$e->getMessage()}",
-				DB_Adapter_Exception::CODE_CONNECTION_FAILED,
-				null,
-				$e
-			);
-
-		}
-
-		$this->driver_name = strtolower($this->connection->getAttribute(\PDO::ATTR_DRIVER_NAME));
-
-	}
-
-	/**
-	 * @param string $table_name
-	 *
-	 * @throws DB_Adapter_Exception
-	 * @return string
-	 */
-	function quoteTableName($table_name){
-		Debug_Assert::isVariableName($table_name);
-		return $table_name;
 	}
 
 	/**
@@ -73,7 +37,7 @@ class DB_Adapter_PDO_Sphinx extends DB_Adapter_PDO_MySQL {
 	 * @throws DB_Adapter_Exception
 	 * @return string
 	 */
-	function quoteColumnName($column_name){
+	function quoteTableOrColumn($column_name){
 		Debug_Assert::isStringMatching($column_name, '^\w+(?:\.\w+)?$');
 		return $column_name;
 	}
@@ -200,9 +164,9 @@ class DB_Adapter_PDO_Sphinx extends DB_Adapter_PDO_MySQL {
 	}
 
 	/**
-	 * @throws DB_Exception
+	 * @return string
 	 */
-	public function getDatabaseType() {
-		return self::DB_TYPE_SPHINX;
+	function getDriverName() {
+		return static::DRIVER_SPHINX;
 	}
 }

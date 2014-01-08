@@ -71,7 +71,7 @@ class Http_AJAXResponse_Data extends Http_AJAXResponse_Abstract implements \Arra
 	 * @return bool
 	 */
 	public function offsetExists($offset) {
-		return $this->data->getValueExists($offset);
+		return $this->data->exists($offset);
 	}
 
 	/**
@@ -79,7 +79,7 @@ class Http_AJAXResponse_Data extends Http_AJAXResponse_Abstract implements \Arra
 	 * @return mixed
 	 */
 	public function offsetGet($offset) {
-		return $this->data->getValue($offset);
+		return $this->data->get($offset);
 	}
 
 	/**
@@ -87,11 +87,11 @@ class Http_AJAXResponse_Data extends Http_AJAXResponse_Abstract implements \Arra
 	 * @param mixed $value
 	 */
 	public function offsetSet($offset, $value) {
-		$this->data->setValue($offset, $value);
+		$this->data->set($offset, $value);
 	}
 
 	public function offsetUnset($offset) {
-		$this->data->removeValue($offset);
+		$this->data->remove($offset);
 	}
 
 	/**

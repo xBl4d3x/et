@@ -95,11 +95,11 @@ class MVC_Modules_Module_Metadata extends System_Components_Component {
 			$this->vendor = trim($metadata->getString("vendor"));
 			$this->title = trim($metadata->getString("name"));
 			$this->description = trim($metadata->getString("description"));
-			$this->tags = $metadata->getRawValue("tags", array());
+			$this->tags = $metadata->getRaw("tags", array());
 			$this->version = $metadata->getInt("version");
-			$this->signal_handlers = $metadata->getRawValue("signal_handlers", array());
-			$this->factory_class_map = $metadata->getRawValue("factory_class_map", array());
-			$this->localized_names = $metadata->getRawValue("localized_names", array());
+			$this->signal_handlers = $metadata->getRaw("signal_handlers", array());
+			$this->factory_class_map = $metadata->getRaw("factory_class_map", array());
+			$this->localized_names = $metadata->getRaw("localized_names", array());
 
 			Debug_Assert::isNotEmpty($this->vendor, "vendor not specified");
 			Debug_Assert::isNotEmpty($this->title, "module name not specified");

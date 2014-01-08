@@ -1,7 +1,7 @@
 <?php
 namespace Et;
 
-class Entity extends Object {
+class Entity {
 
 	/**
 	 * @var Entity_ID_Generator_Abstract

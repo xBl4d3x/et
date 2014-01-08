@@ -22,6 +22,7 @@ abstract class Entity_Abstract extends Object {
 	const DEF_PART_TYPE = "part_type";
 	const DEF_RELATED_ENTITY_CLASS = "related_entity_class";
 	const DEF_ALLOWED_VALUES = "allowed_values";
+	const DEF_ADAPTER_OPTIONS = "adapter_options";
 
 	const PROPERTY_TYPE_INT = "Int";
 	const PROPERTY_TYPE_BOOL = "Bool";

@@ -41,49 +41,4 @@ class DB_Adapter_Exception extends Exception {
 		self::CODE_OPERATION_FAILED => "Operation failed",
 		self::CODE_INVALID_COLUMN => "Invalid column"
 	);
-
-	/**
-	 * @var int
-	 */
-	protected $sql_error_code = 0;
-
-	/**
-	 * @var string
-	 */
-	protected $sql_error_message = "";
-
-	/**
-	 * @param int $sql_error_code
-	 *
-	 * @return DB_Adapter_Exception
-	 */
-	public function setSqlErrorCode($sql_error_code) {
-		$this->sql_error_code = (int)$sql_error_code;
-	}
-
-	/**
-	 * @return int
-	 */
-	public function getSqlErrorCode() {
-		return $this->sql_error_code;
-	}
-
-	/**
-	 * @param string $sql_error_message
-	 *
-	 * @return DB_Adapter_Exception
-	 */
-	public function setSqlErrorMessage($sql_error_message) {
-		$this->sql_error_message = (string)$sql_error_message;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getSqlErrorMessage() {
-		return $this->sql_error_message;
-	}
-
-
 }

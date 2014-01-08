@@ -3,6 +3,12 @@ namespace Et;
 class DB_Profiler extends Debug_Profiler_Abstract {
 
 	/**
+	 * @var DB_Profiler_Query[]
+	 */
+	protected $periods = array();
+
+
+	/**
 	 * @return string
 	 */
 	public function getMilestonesHTML() {
@@ -34,6 +40,34 @@ class DB_Profiler extends Debug_Profiler_Abstract {
 		$output .= "</table>";
 
 		return $output;
+	}
+
+	/**
+	 * @return \Et\DB_Profiler_Query
+	 */
+	function getLastQuery(){
+		return $this->getLastPeriod();
+	}
+
+	/**
+	 * @param string $period_name
+	 * @return DB_Profiler_Query|bool
+	 */
+	function period($period_name){
+		if(!$this->isEnabled()){
+			return false;
+		}
+		$period = new DB_Profiler_Query($period_name);
+		$this->periods[] = $period;
+		return $period;
+	}
+
+	/**
+	 * @param string $query
+	 * @return bool|DB_Profiler_Query
+	 */
+	function queryStarted($query){
+		return $this->period($query);
 	}
 
 }

@@ -65,7 +65,7 @@ class Session_Metadata extends Session_Namespace {
 	 * @return array
 	 */
 	function getAccessList(){
-		return $this->getValue("access_list", array());
+		return $this->get("access_list", array());
 	}
 
 	/**

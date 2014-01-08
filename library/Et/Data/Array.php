@@ -159,7 +159,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param string $path
 	 * @return bool
 	 */
-	public function getValueExists($path){
+	public function exists($path){
 		$this->getReference($path, $found);
 		return $found;
 	}
@@ -172,7 +172,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isString($path){
-		return is_string($this->getRawValue($path));
+		return is_string($this->getRaw($path));
 	}
 
 	/**
@@ -195,7 +195,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isBool($path){
-		return is_bool($this->getRawValue($path));
+		return is_bool($this->getRaw($path));
 	}
 
 	/**
@@ -206,7 +206,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isNumeric($path){
-		return is_numeric($this->getRawValue($path));
+		return is_numeric($this->getRaw($path));
 	}
 
 	/**
@@ -217,7 +217,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isInt($path){
-		return is_int($this->getRawValue($path));
+		return is_int($this->getRaw($path));
 	}
 
 	/**
@@ -228,7 +228,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isFloat($path){
-		return is_float($this->getRawValue($path));
+		return is_float($this->getRaw($path));
 	}
 
 	/**
@@ -239,7 +239,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isArray($path){
-		return is_array($this->getRawValue($path));
+		return is_array($this->getRaw($path));
 	}
 
 	/**
@@ -250,7 +250,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isObject($path){
-		return is_object($this->getRawValue($path));
+		return is_object($this->getRaw($path));
 	}
 
 	/**
@@ -261,7 +261,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isCallable($path){
-		return is_callable($this->getRawValue($path));
+		return is_callable($this->getRaw($path));
 	}
 
 	/**
@@ -273,7 +273,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function isInstanceOf($path, $class_name){
-		return $this->getRawValue($path) instanceof $class_name;
+		return $this->getRaw($path) instanceof $class_name;
 	}
 
 	/**
@@ -289,7 +289,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * 
 	 * @return mixed
 	 */
-	public function getRawValue($path, $default_value = null, &$found = null){
+	public function getRaw($path, $default_value = null, &$found = null){
 		$value = $this->getReference($path, $found);
 		if(!$found){
 			return $default_value;
@@ -353,7 +353,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param string $path
 	 * @param mixed $value
 	 */
-	public function setValue($path, $value){
+	public function set($path, $value){
 		if(strpos($path, $this->path_separator) === false){
 			$this->data[$path] = $value;
 			return;
@@ -382,7 +382,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param string $path
 	 * @return bool
 	 */
-	public function removeValue($path){
+	public function remove($path){
 
 		if(array_key_exists($path, $this->data)){
 			unset($this->data[$path]);
@@ -445,7 +445,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function getBool($path, $default_value = false){
-		return (bool)$this->getRawValue($path, $default_value);
+		return (bool)$this->getRaw($path, $default_value);
 	}
 
 	/**
@@ -458,7 +458,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return mixed
 	 */
 	public function getScalar($path, $default_value = null){
-		$v = $this->getRawValue($path, $default_value);
+		$v = $this->getRaw($path, $default_value);
 		if(!is_scalar($v) && $v !== null){
 
 			throw new Data_Array_Exception(
@@ -486,7 +486,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 */
 	public function getString($path, $default_value = ''){
 
-		$v = $this->getRawValue($path, $default_value);
+		$v = $this->getRaw($path, $default_value);
 
 		if(is_bool($v)){
 			$v = (int)$v;
@@ -553,7 +553,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 */
 	public function getHtmlSafeMixed($path, $default_value = null, $encode_single_quotes = false){
 
-		$raw_value = $this->getRawValue($path, $default_value);
+		$raw_value = $this->getRaw($path, $default_value);
 		if(is_string($raw_value)){
 			return htmlspecialchars(
 				$raw_value,
@@ -571,8 +571,8 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param mixed $default_value [optional]
 	 * @return mixed
 	 */
-	public function getValue($path, $default_value = null){
-		return $this->getRawValue($path, $default_value);
+	public function get($path, $default_value = null){
+		return $this->getRaw($path, $default_value);
 	}
 
 	/**
@@ -582,7 +582,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @param mixed $value
 	 */
 	public function __set($path, $value) {
-		$this->setValue($path, $value);
+		$this->set($path, $value);
 	}
 
 	/**
@@ -592,7 +592,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function __isset($path) {
-		return $this->getValueExists($path);
+		return $this->exists($path);
 	}
 
 	/**
@@ -602,7 +602,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return void
 	 */
 	public function __unset($path) {
-		$this->removeValue($path);
+		$this->remove($path);
 	}
 
 	/**
@@ -614,7 +614,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return mixed
 	 */
 	public function __get($path) {
-		return $this->getValue($path);
+		return $this->get($path);
 	}
 
 	/**
@@ -628,7 +628,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 			$this->data[] = $value;
 			return;
 		}
-		$this->setValue($path, $value);
+		$this->set($path, $value);
 	}
 
 	/**
@@ -638,7 +638,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return bool
 	 */
 	public function offsetExists($path) {
-		return $this->getValueExists($path);
+		return $this->exists($path);
 	}
 
 	/**
@@ -649,7 +649,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return void
 	 */
 	public function offsetUnset($path) {
-		$this->removeValue($path);
+		$this->remove($path);
 	}
 
 	/**
@@ -661,7 +661,7 @@ class Data_Array extends Object implements \ArrayAccess, \Countable, \Iterator, 
 	 * @return mixed
 	 */
 	public function offsetGet($path) {
-		return $this->getValue($path);
+		return $this->get($path);
 	}
 
 	/**
