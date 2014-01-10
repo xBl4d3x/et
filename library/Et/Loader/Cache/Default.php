@@ -1,7 +1,7 @@
 <?php
 namespace Et;
-et_require("ClassLoader_Cache_Abstract");
-class ClassLoader_Cache_Default extends ClassLoader_Cache_Abstract {
+et_require("Loader_Cache_Abstract");
+class Loader_Cache_Default extends Loader_Cache_Abstract {
 
 	/**
 	 * @return string

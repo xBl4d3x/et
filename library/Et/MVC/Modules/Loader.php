@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class MVC_Modules_Loader extends ClassLoader_Abstract {
+class MVC_Modules_Loader extends Loader_Abstract {
 
 	/**
 	 * @var string

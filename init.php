@@ -36,11 +36,11 @@ Debug::initializeErrorHandler();
 // =========================================================================================
 // Et\* Class loader
 // =========================================================================================
-et_require("ClassLoader");
-ClassLoader::activate();
+et_require("Loader");
+Loader::activate();
 
-et_require("ClassLoader_Et");
-ClassLoader::registerLoader(new ClassLoader_Et());
+et_require("Loader_Et");
+Loader::registerLoader(new Loader_Et());
 
 
 et_require("Factory");

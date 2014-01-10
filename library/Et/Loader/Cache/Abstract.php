@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-abstract class ClassLoader_Cache_Abstract {
+abstract class Loader_Cache_Abstract {
 
 	/**
 	 * @var array

@@ -1,8 +1,8 @@
 <?php
 namespace Et;
-class DB_Query_Where_ColumnCompare extends DB_Query_Column {
+class DB_Query_Compare_Column extends DB_Query_Column {
 
-	use DB_Query_Where_CompareTrait;
+	use DB_Query_Compare_Trait;
 
 	/**
 	 * @param DB_Query $query

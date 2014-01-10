@@ -30,7 +30,7 @@ class MVC_Modules extends Object {
 			return;
 		}
 
-		ClassLoader::registerLoader(new MVC_Modules_Loader());
+		Loader::registerLoader(new MVC_Modules_Loader());
 
 		$modules_dir = System::getDir(ET_MODULES_PATH);
 		$module_IDs = $modules_dir->listDirNames(

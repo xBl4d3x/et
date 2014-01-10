@@ -82,21 +82,8 @@ class Debug_Error_Handler {
 
 	protected function initPHPLogs(){
 
-		$php_errors_dir = ET_LOGS_PATH . "php_error_log/";
-		if(!file_exists($php_errors_dir)){
-			@mkdir($php_errors_dir, ET_DEFAULT_DIRS_CHMOD);
-			if(ET_DEFAULT_CHOWN_GROUP){
-				@chgrp($php_errors_dir, ET_DEFAULT_CHOWN_GROUP);
-			}
-			if(ET_DEFAULT_CHOWN_USER){
-				@chown($php_errors_dir, ET_DEFAULT_CHOWN_USER);
-			}
-		}
-
-		$error_log_file = $php_errors_dir . date("Y-m-d") . ".log";
-		if(file_exists($error_log_file) && @is_writable($error_log_file)){
-			@ini_set("error_log", $error_log_file);
-		} elseif(file_exists($php_errors_dir) && @is_writable($php_errors_dir)){
+		if(is_writable(ET_LOGS_PATH)){
+			$error_log_file = ET_LOGS_PATH . "php_errors_" . date("Y-m-d") . (PHP_SAPI == "cli" ? "_cli" : "") . ".log";
 			@ini_set("error_log", $error_log_file);
 		}
 

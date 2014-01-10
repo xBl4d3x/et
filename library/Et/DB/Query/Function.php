@@ -2,10 +2,6 @@
 namespace Et;
 class DB_Query_Function extends Object {
 
-	/**
-	 * @var string
-	 */
-	protected $select_as = "";
 
 	/**
 	 * @var string

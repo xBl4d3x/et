@@ -7,10 +7,7 @@ class DB_Query_Select_SubQuery extends Object {
 	 */
 	protected $sub_query;
 
-	/**
-	 * @var string
-	 */
-	protected $select_as = "";
+	use DB_Query_Select_Trait;
 
 	/**
 	 * @param DB_Query $query
@@ -19,26 +16,7 @@ class DB_Query_Select_SubQuery extends Object {
 	 */
 	function __construct(DB_Query $query, DB_Query $sub_query, $select_as = null){
 		$this->sub_query = $sub_query;
-
-		if($select_as !== null){
-			$this->setSelectAs($select_as);
-		}
-	}
-
-
-	/**
-	 * @return string
-	 */
-	public function getSelectAs() {
-		return $this->select_as;
-	}
-
-	/**
-	 * @param string $select_as
-	 */
-	protected function setSelectAs($select_as) {
-		DB_Query::checkColumnName($select_as);
-		$this->select_as = $select_as;
+		$this->setSelectAs($select_as);
 	}
 
 	/**

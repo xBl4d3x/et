@@ -1,8 +1,10 @@
 <?php
 namespace Et;
-class DB_Query extends Object {
+class DB_Query extends Object implements \ArrayAccess {
 
 	const MAIN_TABLE_ALIAS = "this";
+
+	const ALL_COLUMNS = "*";
 
 	const ORDER_ASC = "ASC";
 	const ORDER_DESC = "DESC";
@@ -20,14 +22,18 @@ class DB_Query extends Object {
 	protected $main_table_name;
 
 	/**
+	 * Check if all relations between tables are defined (if FALSE, multiple tables without relation are possible to use in query)
+	 *
 	 * @var bool
 	 */
 	protected $check_relations_before_build = true;
 
 	/**
+	 * Remove main table name from query if no other table is present
+	 *
 	 * @var bool
 	 */
-	protected $allow_single_table_build_simplification = true;
+	protected $allow_query_simplification = true;
 
 	/**
 	 * @var string
@@ -40,7 +46,7 @@ class DB_Query extends Object {
 	protected $tables_in_query = array();
 
 	/**
-	 * @var DB_Query_Select
+	 * @var DB_Query_Select|DB_Query_Select_Column_All[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
 	 */
 	protected $select;
 
@@ -60,14 +66,16 @@ class DB_Query extends Object {
 	protected $having;
 
 	/**
-	 * @var DB_Query_GroupBy
+	 * @var array
 	 */
-	protected $group_by;
+	protected $group_by = array();
 
 	/**
-	 * @var DB_Query_OrderBy
+	 * Column names or numbers
+	 *
+	 * @var array
 	 */
-	protected $order_by;
+	protected $order_by = array();
 
 	/**
 	 * @var int
@@ -191,7 +199,7 @@ class DB_Query extends Object {
 	 * @return static|DB_Query
 	 */
 	function where(array $expressions){
-		$this->getWhere()->setExpressions($expressions, false);
+		$this->getWhere()->setStatements($expressions, false);
 		return $this;
 	}
 
@@ -255,98 +263,217 @@ class DB_Query extends Object {
 	 * @return static|DB_Query
 	 */
 	function having(array $expressions){
-		$this->getHaving()->setExpressions($expressions, false);
+		$this->getHaving()->setStatements($expressions, false);
 		return $this;
 	}
 
+
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+
+
 	/**
-	 * @return static|DB_Query_Select
+	 * @return DB_Query_Select|DB_Query_Select_Column_All[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
 	 */
 	function getSelect(){
 		if(!$this->select){
-			$this->select = new DB_Query_Select($this);
+			$this->select = $this->_getEmptySelect();
 		}	
 		return $this->select;
 	}
 
 	/**
-	 * @param array $expressions
+	 * Array values (statements) may be:
+	 * - instance of DB_Expression
+	 * - instance of DB_Query for nested query
+	 * - column_name | table_name.column_name
+	 * - * | table_name.*
+	 * - COUNT(*) | COUNT(column_name) | COUNT(table_name.column_name)
+	 *
+	 * @param string[]|DB_Expression[]|DB_Query[]|DB_Query_Column[] $statements
 	 * @return static|DB_Query
 	 */
-	function select(array $expressions = array()){
-		$this->getSelect()->setExpressions($expressions, false);
+	function select(array $statements = array()){
+		$this->getSelect()->setStatements($statements, false);
 		return $this;
 	}
 
 	/**
+	 * @return DB_Query_Select
+	 */
+	protected function _getEmptySelect(){
+		return new DB_Query_Select($this);
+	}
+
+	/**
+	 * SELECT column_name | table_name.column_name AS select_as
+	 *
+	 * @param string|DB_Query_Column $column_name
+	 * @param null|string $table_name [optional]
+	 * @param null|string $select_as [optional]
+	 * @return static|DB_Query
+	 */
+	function selectColumn($column_name, $table_name = null, $select_as = null){
+		$this->select = $this->_getEmptySelect()->addColumn($column_name, $table_name, $select_as);
+		return $this;
+	}
+
+	/**
+	 * Array like:
+	 * array(column1, table1.column2 ... )
+	 * -> SELECT column1, table1.column2, ...
+	 * OR
+	 * array(select_as1 => column1, select_as2 => table1.column2, ...)
+	 * -> SELECT column1 AS select_as1, table1.column2 AS select_as2
+	 *
 	 * @param array $columns
 	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query
 	 */
 	function selectColumns(array $columns, $table_name = null){
-		$this->getSelect()->removeExpressions()->addColumns($columns, $table_name);
+		$this->select = $this->_getEmptySelect()->addColumns($columns, $table_name);
 		return $this;
 	}
 
 	/**
+	 * SELECT COUNT(*) | COUNT(column_name) | COUNT(table_name.column_name) AS select_as
+	 *
 	 * @param string $column_name [optional] Use '*' for "all columns"
 	 * @param null|string $table_name [optional]
 	 * @param null|string $select_as [optional]
 	 * @return static|DB_Query
 	 */
-	function selectCount($column_name = "*", $table_name = null, $select_as = null){
-		$this->getSelect()->removeExpressions()->addCount($column_name, $table_name, $select_as);
+	function selectCount($column_name = self::ALL_COLUMNS, $table_name = null, $select_as = null){
+		$this->select = $this->_getEmptySelect()->addCount($column_name, $table_name, $select_as);
 		return $this;
 	}
 
 	/**
+	 * SELECT function_name(arg1, arg2, ... )
+	 *
+	 * @param string $function_name
+	 * @param array|DB_Table_Column[]|DB_Expression[]|DB_Query[] $function_arguments [optional]
+	 * @param null|string $select_as
+	 * @return static|DB_Query
+	 */
+	function selectFunction($function_name, array $function_arguments = array(), $select_as = null){
+		$this->select = $this->_getEmptySelect()->addFunction($function_name, $function_arguments, $select_as);
+		return $this;
+	}
+
+	/**
+	 * SELECT * | table_name.* ....
+	 *
 	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query
 	 */
-	function selectAll($table_name = null){
-		$this->getSelect()->removeExpressions()->addAllColumns($table_name);
+	function selectAllColumns($table_name = null){
+		$this->select = $this->_getEmptySelect()->addAllColumns($table_name);
 		return $this;
 	}
 
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
+
+
+
+
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+
+
 	/**
-	 * @return static|DB_Query_OrderBy
+	 * Array like:
+	 * array(column_name => ASC | DESC)
+	 * or
+	 * array(column_index => ASC | DESC)
+	 *
+	 * @return array
 	 */
 	function getOrderBy(){
-		if(!$this->order_by){
-			$this->order_by = new DB_Query_OrderBy($this);
-		}
 		return $this->order_by;
 	}
 
 	/**
-	 * @param array $order_by_expressions [optional]
+	 * Array like:
+	 * array(column_name => ASC | DESC)
+	 * or
+	 * array(column_index => ASC | DESC)
+	 *
+	 * -> ORDER BY column1 ASC, column2 DESC ...
+	 *
+	 * @param array $column_names_or_indexes [optional]
 	 * @return static|DB_Query
 	 */
-	function orderBy(array $order_by_expressions = array()){
-		$this->getOrderBy()->setOrderByExpressions($order_by_expressions, false);
+	function orderBy(array $column_names_or_indexes = array()){
+
+		$this->order_by = array();
+		foreach($column_names_or_indexes as $column_name_or_number => $order_how){
+
+			$order_how = strtoupper($order_how) == self::ORDER_DESC
+				? self::ORDER_DESC
+				: self::ORDER_ASC;
+
+			if(is_int($column_name_or_number) || preg_match('~^\w+$~', $column_name_or_number)){
+				$this->order_by[$column_name_or_number] = $order_how;
+				return $this;
+			}
+
+			$column = $this->getColumn($column_name_or_number);
+			$this->addTableToQuery($column->getTableName());
+			$this->order_by[(string)$column] = $order_how;
+		}
+
 		return $this;
 	}
 
 	/**
-	 * @param string $column_name
+	 * @param string $column_name_or_index
 	 * @param null|string $order_how [optional]
 	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query
 	 */
-	function orderByColumn($column_name, $order_how = null, $table_name = null){
-		$this->getOrderBy()->removeExpressions()->addOrderByColumn($column_name, $order_how, $table_name);
+	function orderByColumn($column_name_or_index, $order_how = null, $table_name = null){
+		$order_how = strtoupper($order_how) == self::ORDER_DESC
+					? self::ORDER_DESC
+					: self::ORDER_ASC;
+
+		if(is_int($column_name_or_index) || preg_match('~^\w+$~', $column_name_or_index)){
+			$this->order_by = array($column_name_or_index => $order_how);
+			return $this;
+		}
+
+		$column = $this->getColumn($column_name_or_index, $table_name);
+		$this->addTableToQuery($column->getTableName());
+		$this->order_by = array((string)$column => $order_how);
+
 		return $this;
 	}
 
-	/**
-	 * @param array $columns
-	 * @param null|string $table_name [optional]
-	 * @return static|DB_Query
-	 */
-	function orderByColumns(array $columns, $table_name = null){
-		$this->getOrderBy()->removeExpressions()->addOrderByColumns($columns, $table_name);
-		return $this;
-	}
+
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+	// ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY ORDER BY
+
+
+
+
+
+
+
 
 	/**
 	 * @return static|DB_Query_Relations
@@ -368,12 +495,9 @@ class DB_Query extends Object {
 	}
 
 	/**
-	 * @return static|DB_Query_GroupBy
+	 * @return array
 	 */
 	function getGroupBy(){
-		if(!$this->group_by){
-			$this->group_by = new DB_Query_GroupBy($this);
-		}
 		return $this->group_by;
 	}
 
@@ -382,7 +506,12 @@ class DB_Query extends Object {
 	 * @return static|DB_Query
 	 */
 	function groupBy(array $group_by_columns = array()){
-		$this->getGroupBy()->setGroupByColumns($group_by_columns, false);
+		$this->group_by = array();
+		foreach($group_by_columns as $column_name){
+			$column = $this->getColumn($column_name);
+			$this->addTableToQuery($column->getTableName());
+			$this->group_by[] = (string)$column;
+		}
 		return $this;
 	}
 
@@ -392,7 +521,9 @@ class DB_Query extends Object {
 	 * @return static|DB_Query
 	 */
 	function groupByColumn($column_name, $table_name = null){
-		$this->getGroupBy()->removeGroupByColumns()->groupByColumn($column_name, $table_name);
+		$column = $this->getColumn($column_name, $table_name);
+		$this->addTableToQuery($column->getTableName());
+		$this->group_by = array((string)$column);
 		return $this;
 	}
 
@@ -575,7 +706,7 @@ class DB_Query extends Object {
 	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query_Column
 	 */
-	function column($column_name, $table_name = null){
+	function getColumn($column_name, $table_name = null){
 		return new DB_Query_Column($this, $column_name, $table_name);
 	}
 
@@ -633,17 +764,68 @@ class DB_Query extends Object {
 	 *
 	 * @param boolean $allow_build_simplification
 	 */
-	public function setAllowSingleTableBuildSimplification($allow_build_simplification) {
-		$this->allow_single_table_build_simplification = (bool)$allow_build_simplification;
+	public function setAllowQuerySimplification($allow_build_simplification) {
+		$this->allow_query_simplification = (bool)$allow_build_simplification;
 	}
 
 	/**
 	 * @return boolean
 	 */
-	public function getAllowSingleTableBuildSimplification() {
-		return $this->allow_single_table_build_simplification;
+	public function getAllowQuerySimplification() {
+		return $this->allow_query_simplification;
 	}
 
 
+	/**
+	 * @param mixed $offset
+	 * @return bool|void
+	 * @throws DB_Query_Exception
+	 */
+	public function offsetExists($offset) {
+		throw new DB_Query_Exception(
+			static::class . __METHOD__ . "() is not permitted",
+			DB_Query_Exception::CODE_NOT_PERMITTED
+		);
+	}
 
+	/**
+	 * @param mixed $offset
+	 * @return mixed|void
+	 * @throws DB_Query_Exception
+	 */
+	public function offsetGet($offset) {
+		throw new DB_Query_Exception(
+			static::class . __METHOD__ . "() is not permitted",
+			DB_Query_Exception::CODE_NOT_PERMITTED
+		);
+	}
+
+
+	/**
+	 * Support for creating WHERE query using array access interface
+	 *
+	 * @see DB_Query_Compare::setStatements()
+	 *
+	 * @param string|int|null $column_function_null
+	 * @param mixed|string|array $value
+	 */
+	public function offsetSet($column_function_null, $value) {
+		$where = $this->getWhere();
+		if($column_function_null === null){
+			$where[] = $value;
+		} else {
+			$where[$column_function_null] = $value;
+		}
+	}
+
+	/**
+	 * @param mixed $offset
+	 * @throws DB_Query_Exception
+	 */
+	public function offsetUnset($offset) {
+		throw new DB_Query_Exception(
+			static::class . __METHOD__ . "() is not permitted",
+			DB_Query_Exception::CODE_NOT_PERMITTED
+		);
+	}
 }

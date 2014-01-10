@@ -2,15 +2,12 @@
 namespace Et;
 class DB_Query_Select_Expression extends Object {
 
+	use DB_Query_Select_Trait;
+
 	/**
 	 * @var DB_Expression
 	 */
 	protected $expression;
-
-	/**
-	 * @var string
-	 */
-	protected $select_as = "";
 
 	/**
 	 * @param DB_Query $query
@@ -19,31 +16,16 @@ class DB_Query_Select_Expression extends Object {
 	 * @param null|string $table_name [optional]
 	 */
 	function __construct(DB_Query $query, $expression, $select_as = null, $table_name = null){
-		$this->expression = new DB_Expression((string)$expression);
+		if(!$expression instanceof DB_Expression){
+			$expression = new DB_Expression((string)$expression);
+		}
+		$this->expression = $expression;
 
 		if($table_name){
 			$query->addTableToQuery($table_name);
 		}
 
-		if($select_as !== null){
-			$this->setSelectAs($select_as);
-		}
-	}
-
-
-	/**
-	 * @return string
-	 */
-	public function getSelectAs() {
-		return $this->select_as;
-	}
-
-	/**
-	 * @param string $select_as
-	 */
-	protected function setSelectAs($select_as) {
-		DB_Query::checkColumnName($select_as);
-		$this->select_as = $select_as;
+		$this->setSelectAs($select_as);
 	}
 
 	/**

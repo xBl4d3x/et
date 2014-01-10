@@ -569,7 +569,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	function fetchRowByKey(DB_Table_Key $key, array $row_columns = null, DB_Query $query = null){
 		$query = $key->getWhereQuery($query);
 		if(!$row_columns){
-			$query->selectAll($key->getTableName());
+			$query->selectAllColumns($key->getTableName());
 		} else {
 			$query->selectColumns($row_columns, $key->getTableName());
 		}
@@ -1245,7 +1245,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 			$output .= "OFFSET {$query->getOffset()}\n";
 		}
 
-		if(count($query->getTablesInQuery()) == 1 && $query->getAllowSingleTableBuildSimplification()){
+		if(count($query->getTablesInQuery()) == 1 && $query->getAllowQuerySimplification()){
 			$search_for = preg_quote($this->quoteTableOrColumn($query->getMainTableName()). ".");
 			$output = preg_replace('~'.$search_for.'(\*|[^\s]?\w+[^\s]?)\b~sU', '\1', $output);
 		}
@@ -1301,7 +1301,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	 * @return string
 	 */
 	protected function buildSelectExpression(DB_Query_Select $select){
-		$expressions = $select->getExpressions();
+		$expressions = $select->getStatements();
 		$output = array();
 		foreach($expressions as $expression){
 
@@ -1310,7 +1310,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 				// column select
 				$expr = $this->quoteTableOrColumn($expression->getColumnName(true));
 
-			} elseif($expression instanceof DB_Query_Select_AllColumns){
+			} elseif($expression instanceof DB_Query_Select_Column_All){
 
 				// table.* select
 				if($expression->getTableName()){
@@ -1426,7 +1426,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	 * @return string
 	 */
 	protected function buildWhereExpression(DB_Query_Where $where){
-		$expressions = $where->getExpressions();
+		$expressions = $where->getStatements();
 		$output = array();
 		$last_idx = -1;
 
@@ -1464,19 +1464,19 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	}
 
 	/**
-	 * @param DB_Query_Where_ExpressionCompare|DB_Query_Where_ColumnCompare $expression
+	 * @param DB_Query_Compare_Expression|DB_Query_Compare_Column $expression
 	 * @return string
 	 */
 	protected function buildCompareExpression($expression){
 
-		if($expression instanceof DB_Query_Where_ExpressionCompare){
+		if($expression instanceof DB_Query_Compare_Expression){
 			if($expression->getCompareOperator() == null){
 				return (string)$expression->getExpression();
 			}
 
 			$output = (string)$expression->getExpression() . " ";
 
-		} elseif($expression instanceof DB_Query_Where_ColumnCompare){
+		} elseif($expression instanceof DB_Query_Compare_Column){
 
 			$output = $this->quoteTableOrColumn($expression->getColumnName(true)) . " ";
 

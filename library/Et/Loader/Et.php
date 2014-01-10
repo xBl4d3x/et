@@ -1,7 +1,7 @@
 <?php
 namespace Et;
-et_require("ClassLoader_Abstract");
-class ClassLoader_Et extends ClassLoader_Abstract {
+et_require("Loader_Abstract");
+class Loader_Et extends Loader_Abstract {
 
 
 	/**
@@ -18,7 +18,7 @@ class ClassLoader_Et extends ClassLoader_Abstract {
 
 	/**
 	 * @return string
-	 * @throws ClassLoader_Exception
+	 * @throws Loader_Exception
 	 */
 	function getLoaderName() {
 		return "et";

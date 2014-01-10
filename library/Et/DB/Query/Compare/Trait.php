@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-trait DB_Query_Where_CompareTrait {
+trait DB_Query_Compare_Trait {
 
 	/**
 	 * @var string
@@ -8,7 +8,7 @@ trait DB_Query_Where_CompareTrait {
 	protected $compare_operator;
 
 	/**
-	 * @var mixed|null|array|\Iterator|DB_Query|DB_Query_Column
+	 * @var mixed|null|array|\Iterator|DB_Query_Function|DB_Query|DB_Query_Column
 	 */
 	protected $value;
 

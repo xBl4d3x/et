@@ -1,7 +1,7 @@
 <?php
 namespace Et;
 
-class ClassLoader {
+class Loader {
 
 	/**
 	 * @var bool
@@ -9,13 +9,13 @@ class ClassLoader {
 	protected static $activated = false;
 
 	/**
-	 * @var ClassLoader_Abstract[]
+	 * @var Loader_Abstract[]
 	 */
 	protected static $registered_loaders = array();
 
 
 	/**
-	 * @var ClassLoader_Cache_Abstract
+	 * @var Loader_Cache_Abstract
 	 */
 	protected static $cache;
 
@@ -44,8 +44,8 @@ class ClassLoader {
 		}
 
 		if(!static::$cache){
-			et_require("ClassLoader_Cache_Default");
-			static::$cache = new ClassLoader_Cache_Default();
+			et_require("Loader_Cache_Default");
+			static::$cache = new Loader_Cache_Default();
 		}
 
 		static::$cache->loadsPaths();
@@ -58,14 +58,14 @@ class ClassLoader {
 	}
 
 	/**
-	 * @param \Et\ClassLoader_Cache_Abstract $cache
+	 * @param \Et\Loader_Cache_Abstract $cache
 	 */
-	public static function setCache(ClassLoader_Cache_Abstract $cache) {
+	public static function setCache(Loader_Cache_Abstract $cache) {
 		static::$cache = $cache;
 	}
 
 	/**
-	 * @return \Et\ClassLoader_Cache_Abstract|null
+	 * @return \Et\Loader_Cache_Abstract|null
 	 */
 	public static function getCache() {
 		return static::$cache;
@@ -95,17 +95,17 @@ class ClassLoader {
 	}
 
 	/**
-	 * @return \Et\ClassLoader_Abstract[]
+	 * @return \Et\Loader_Abstract[]
 	 */
 	public static function getRegisteredLoaders(){
 		return static::$registered_loaders;
 	}
 
 	/**
-	 * @param ClassLoader_Abstract $loader
+	 * @param Loader_Abstract $loader
 	 * @return string
 	 */
-	public static function registerLoader(ClassLoader_Abstract $loader){
+	public static function registerLoader(Loader_Abstract $loader){
 		$ID = get_class($loader) . ":" . spl_object_hash($loader);
 		static::$registered_loaders[$ID] = $loader;
 		return $ID;
@@ -136,7 +136,7 @@ class ClassLoader {
 	/**
 	 * @param string $loader_ID
 	 *
-	 * @return bool|\Et\ClassLoader_Abstract
+	 * @return bool|\Et\Loader_Abstract
 	 */
 	public static function getRegisteredLoader($loader_ID){
 		if(!isset(static::$registered_loaders[$loader_ID])){
@@ -149,13 +149,13 @@ class ClassLoader {
 	/**
 	 * @param string $class_name
 	 *
-	 * @throws \Et\ClassLoader_Exception
+	 * @throws \Et\Loader_Exception
 	 */
 	public static function checkClassExists($class_name){
 		if(!class_exists($class_name)){
-			throw new ClassLoader_Exception(
+			throw new Loader_Exception(
 				"Class '{$class_name}' not found",
-				ClassLoader_Exception::CODE_NOT_EXISTS
+				Loader_Exception::CODE_NOT_EXISTS
 			);
 		}
 	}
@@ -163,13 +163,13 @@ class ClassLoader {
 	/**
 	 * @param string $interface_name
 	 *
-	 * @throws \Et\ClassLoader_Exception
+	 * @throws \Et\Loader_Exception
 	 */
 	public static function checkInterfaceExists($interface_name){
 		if(!interface_exists($interface_name)){
-			throw new ClassLoader_Exception(
+			throw new Loader_Exception(
 				"Interface '{$interface_name}' not found",
-				ClassLoader_Exception::CODE_NOT_EXISTS
+				Loader_Exception::CODE_NOT_EXISTS
 			);
 		}
 	}
@@ -177,13 +177,13 @@ class ClassLoader {
 	/**
 	 * @param string $trait_name
 	 *
-	 * @throws \Et\ClassLoader_Exception
+	 * @throws \Et\Loader_Exception
 	 */
 	public static function checkTraitExists($trait_name){
 		if(!trait_exists($trait_name)){
-			throw new ClassLoader_Exception(
+			throw new Loader_Exception(
 				"Trait '{$trait_name}' not found",
-				ClassLoader_Exception::CODE_NOT_EXISTS
+				Loader_Exception::CODE_NOT_EXISTS
 			);
 		}
 	}
@@ -192,15 +192,15 @@ class ClassLoader {
 	 * @param string $class_name
 	 * @param string $parent_class_name
 	 *
-	 * @throws ClassLoader_Exception
+	 * @throws Loader_Exception
 	 */
 	public static function checkSubclass($class_name, $parent_class_name){
 		self::checkClassExists($class_name);
 		self::checkClassExists($parent_class_name);
 		if(!is_subclass_of($class_name, $parent_class_name, true)){
-			throw new ClassLoader_Exception(
+			throw new Loader_Exception(
 				"Class '{$class_name}' is not subclass of '{$parent_class_name}'",
-				ClassLoader_Exception::CODE_NOT_SUBCLASS
+				Loader_Exception::CODE_NOT_SUBCLASS
 			);
 		}
 	}
@@ -209,16 +209,16 @@ class ClassLoader {
 	 * @param string $class_name
 	 * @param string $interface_name
 	 *
-	 * @throws ClassLoader_Exception
+	 * @throws Loader_Exception
 	 */
 	public static function checkClassInterface($class_name, $interface_name){
 		self::checkClassExists($class_name);
 		self::checkInterfaceExists($interface_name);
 
 		if(!is_subclass_of($class_name, $interface_name)){
-			throw new ClassLoader_Exception(
+			throw new Loader_Exception(
 				"Class '{$class_name}' does not implement interface '{$interface_name}'",
-				ClassLoader_Exception::CODE_NOT_SUBCLASS
+				Loader_Exception::CODE_NOT_SUBCLASS
 			);
 		}
 	}
@@ -228,7 +228,7 @@ class ClassLoader {
 	 * @param string $class_name
 	 * @param string $parent_class_name
 	 *
-	 * @throws ClassLoader_Exception
+	 * @throws Loader_Exception
 	 */
 	public static function checkSubclassOrSameClass($class_name, $parent_class_name){
 		if($class_name == $parent_class_name){

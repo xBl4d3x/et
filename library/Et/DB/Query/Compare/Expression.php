@@ -1,8 +1,8 @@
 <?php
 namespace Et;
-class DB_Query_Where_ExpressionCompare extends Object {
+class DB_Query_Compare_Expression extends Object {
 
-	use DB_Query_Where_CompareTrait;
+	use DB_Query_Compare_Trait;
 
 	/**
 	 * @var DB_Expression

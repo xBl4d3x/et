@@ -3,6 +3,7 @@ namespace Et;
 require(__DIR__ . "/environment.php");
 require(__DIR__ . "/init.php");
 
+/*
 $cfg = new DB_Adapter_SQLite_Config(array(
 	"dsn" => "sqlite:" . ET_TEMPORARY_DATA_PATH . "/sqlite.db"
 ));
@@ -16,13 +17,19 @@ $db->insert("some_table", array("ID" => 1, "name" => "John", "surname" => "Doe")
 $db->insert("some_table", array("ID" => 2, "name" => "Peter", "surname" => "Jackson"));
 $db->insert("some_table", array("ID" => 3, "name" => "Jackie", "surname" => "Chan"));
 
+
 Http_Headers::responseText("", false);
 
 print_r($db->fetchColumn(DB_Query::getInstance("some_table")));
 
 echo json_encode($profiler, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 exit();
-
+*/
+$query = new DB_Query("test");
+$query["key"] = "value";
+$query["other"] = array("IN", array("a", "b", "c"));
+var_dump($query);
+exit();
 
 System::initialize();
 Http_Request::initialize();

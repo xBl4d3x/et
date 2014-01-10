@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class DB_Query_Select_AllColumns extends Object {
+class DB_Query_Select_Column_All extends Object {
 
 	/**
 	 * @var string
