@@ -1,9 +1,22 @@
 <?php
 namespace Et;
+
+require_once (__DIR__ . "/Object/MagicGetTrait.php");
+require_once (__DIR__ . "/Object/MagicSetTrait.php");
+require_once (__DIR__ . "/Object/MagicUnsetTrait.php");
+require_once (__DIR__ . "/Object/MagicSleepTrait.php");
+require_once (__DIR__ . "/Object/VisiblePropertiesTrait.php");
+
 /**
  * Base object
  */
 abstract class Object {
+
+	use Object_MagicGetTrait;
+	use Object_MagicSetTrait;
+	use Object_MagicUnsetTrait;
+	use Object_MagicSleepTrait;
+	use Object_VisiblePropertiesTrait;
 
 	/**
 	 * @return string
@@ -27,143 +40,6 @@ abstract class Object {
 		return array_pop($parts);
 	}
 
-
-
-	/**
-	 * Avoid setting undefined properties (probably error in code .. )
-	 *
-	 * @param string $property
-	 * @param mixed $value
-	 *
-	 * @throws Object_Exception
-	 */
-	public function __set($property, $value){
-		if(!property_exists($this, $property)){
-			throw new Object_Exception(
-				"Property {$this->className()}->{$property} does not exist",
-				Object_Exception::CODE_UNKNOWN_PROPERTY_ACCESS
-			);
-		}
-
-		throw new Object_Exception(
-			"Cannot set {$this->className()}->{$property} property value - permission denied",
-			Object_Exception::CODE_PROTECTED_PROPERTY_ACCESS
-		);
-	}
-
-	/**
-	 * Avoid getting undefined properties (probably error in code .. )
-	 *
-	 * @param string $property
-	 *
-	 * @throws Object_Exception
-	 */
-	public function __get($property){
-		if(!property_exists($this, $property)){
-			throw new Object_Exception(
-				"Property {$this->className()}->{$property} does not exist",
-				Object_Exception::CODE_UNKNOWN_PROPERTY_ACCESS
-			);
-		}
-
-		throw new Object_Exception(
-			"Cannot get {$this->className()}->{$property} property value - permission denied",
-			Object_Exception::CODE_PROTECTED_PROPERTY_ACCESS
-		);
-	}
-
-	/**
-	 * Avoid removing undefined properties (probably error in code .. )
-	 *
-	 * @param string $property
-	 *
-	 * @throws Object_Exception
-	 */
-	public function __unset($property){
-		if(!property_exists($this, $property)){
-			throw new Object_Exception(
-				"Property {$this->className()}->{$property} does not exist",
-				Object_Exception::CODE_UNKNOWN_PROPERTY_ACCESS
-			);
-		}
-
-		throw new Object_Exception(
-			"Cannot remove {$this->className()}->{$property} property value - permission denied",
-			Object_Exception::CODE_PROTECTED_PROPERTY_ACCESS
-		);
-	}
-
-	/**
-	 * @return array
-	 */
-	function __sleep(){
-		$vars = get_object_vars($this);
-		$output = array();
-		foreach($vars as $k => &$v){
-			if($k[0] == "_" && $k[1] == "_"){
-				continue;
-			}
-			$output[] = $k;
-		}
-		return $output;
-	}
-
-	/**
-	 * Returns object variables names which do not begin with '_'
-	 *
-	 * @return array
-	 */
-	protected function getVisiblePropertiesNames(){
-		$props = array_keys(get_object_vars($this));
-		$output = array();
-		foreach($props as $k){
-			if($k[0] == "_"){
-				continue;
-			}
-			$output[] = $k;
-		}
-		return $output;
-	}
-
-	/**
-	 * Returns object variables values which names do not begin with '_'
-	 *
-	 * @return array
-	 */
-	protected function getVisiblePropertiesValues(){
-		$props = $this->getVisiblePropertiesNames();
-		$output = array();
-		foreach($props as $prop){
-			$output[$prop] = $this->{$prop};
-		}
-		return $output;
-	}
-
-	/**
-	 * Returns class variables names which do not begin with '_'
-	 *
-	 * @return array
-	 */
-	protected static function getVisibleClassPropertiesNames(){
-		return array_keys(static::getVisibleClassPropertiesValues());
-	}
-
-	/**
-	 * Returns class variables values which names do not begin with '_'
-	 *
-	 * @return array
-	 */
-	protected static function getVisibleClassPropertiesValues(){
-		$properties = get_class_vars(static::class);
-		$props = array_keys($properties);
-		foreach($props as $k){
-			if($k[0] == "_"){
-				unset($properties[$k]);
-			}
-		}
-		return $properties;
-	}
-
 	/**
 	 * Create instance of object without calling constructor
 	 *
@@ -172,25 +48,6 @@ abstract class Object {
 	public static function getInstanceWithoutConstructor(){
 		$reflection = new \ReflectionClass(static::class);
 		return $reflection->newInstanceWithoutConstructor();
-	}
-
-
-	/**
-	 * @param string $property
-	 *
-	 * @return bool
-	 */
-	protected static function hasVisibleClassProperty($property){
-		return property_exists(static::class, $property) && $property[0] != "_";
-	}
-
-	/**
-	 * @param string $property
-	 *
-	 * @return bool
-	 */
-	protected function hasVisibleObjectProperty($property){
-		return property_exists($this, $property) && $property[0] != "_";
 	}
 
 	/**
