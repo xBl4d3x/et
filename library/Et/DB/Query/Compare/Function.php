@@ -14,7 +14,7 @@ class DB_Query_Compare_Function extends DB_Query_Function {
 	 */
 	function __construct(DB_Query $query, $function_name, array $function_arguments,  $compare_operator, $value = null){
 		parent::__construct($query, $function_name, $function_arguments);
-		$this->setupValue($compare_operator, $value);
+		$this->setupValue($query, $compare_operator, $value);
 	}
 
 }

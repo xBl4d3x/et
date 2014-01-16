@@ -55,7 +55,11 @@ abstract class Object {
 	 * @return string
 	 */
 	function getSetterMethodName($property_name){
-		return "set" . str_replace("_", "", $property_name);
+		$method = "set" . str_replace("_", "", $property_name);
+		if(!method_exists($this, $method)){
+			return false;
+		}
+		return $method;
 	}
 
 

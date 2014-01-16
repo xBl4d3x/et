@@ -213,7 +213,7 @@ class MVC_View extends Data_Array {
 	 * @return array|mixed
 	 */
 	public function jsonSerialize() {
-		return $this->getVisiblePropertiesValues();
+		return $this->_getVisiblePropertiesValues();
 	}
 
 	/**

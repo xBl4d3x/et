@@ -14,12 +14,18 @@ class DB_Query_Function extends Object {
 	protected $arguments = array();
 
 	/**
+	 * @var DB_Query
+	 */
+	protected $query;
+
+	/**
 	 * @param DB_Query $query
 	 * @param string $function_name
 	 * @param array|DB_Table_Column[]|DB_Expression[]|DB_Query[] $function_arguments [optional]
 	 */
 	function __construct(DB_Query $query, $function_name, array $function_arguments = array()){
 		Debug_Assert::isVariableName($function_name);
+		$this->query = $query;
 		$this->function_name = $function_name;
 		if($function_arguments){
 			$this->setArguments($query, $function_arguments);
@@ -39,6 +45,15 @@ class DB_Query_Function extends Object {
 			$this->arguments[] = $arg;
 		}
 	}
+
+	/**
+	 * @return \Et\DB_Query
+	 */
+	public function getQuery() {
+		return $this->query;
+	}
+
+
 
 	/**
 	 * @return array|DB_Table_Column[]|DB_Expression[]|DB_Query[]

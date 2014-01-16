@@ -8,7 +8,7 @@ trait DB_Query_Compare_Trait {
 	protected $compare_operator;
 
 	/**
-	 * @var mixed|null|array|\Iterator|DB_Query_Function|DB_Query|DB_Query_Column
+	 * @var mixed|null|array|DB_Query_Function|DB_Query|DB_Query_Column
 	 */
 	protected $value;
 
@@ -24,34 +24,37 @@ trait DB_Query_Compare_Trait {
 
 
 	/**
+	 * @param DB_Query $query
 	 * @param string $compare_operator
 	 * @param mixed|null|array|\Iterator|DB_Query $value
 	 * @throws DB_Query_Exception
 	 */
-	protected function setupValue($compare_operator, $value){
-		DB_Query_Where::checkCompareOperator($compare_operator);
+	protected function setupValue(DB_Query $query, $compare_operator, $value){
+
+		if($compare_operator == "!="){
+			$compare_operator = DB_Query::CMP_NOT_EQUALS;
+		}
+
+		$query->checkCompareOperator($compare_operator);
 		$this->compare_operator = $compare_operator;
 
-		$this->is_IN_compare = in_array($compare_operator, array(DB_Query_Where::CMP_IN, DB_Query_Where::CMP_NOT_IN));
-		$this->is_NULL_compare = in_array($compare_operator, array(DB_Query_Where::CMP_IS_NULL, DB_Query_Where::CMP_IS_NOT_NULL));
+		$this->is_IN_compare = in_array($compare_operator, array(DB_Query::CMP_IN, DB_Query::CMP_NOT_IN));
+		$this->is_NULL_compare = in_array($compare_operator, array(DB_Query::CMP_IS_NULL, DB_Query::CMP_IS_NOT_NULL));
 
-		if($value instanceof DB_Query){
+		if($value instanceof DB_Query || $value instanceof DB_Expression){
 			$this->value = $value;
 			return;
 		}
 
-		if(!$this->is_IN_compare && ($value instanceof DB_Query_Column || $value instanceof DB_Table_Column_Definition)){
+		if(!$this->is_IN_compare && $value instanceof DB_Query_Column){
 			$this->value = $value;
 			return;
 		}
 
-		if($value instanceof \Iterator || is_array($value)){
+		if($value instanceof \Iterator){
 			$tmp = array();
-			foreach($value as $k => $v){
-				if(!is_scalar($v) && !is_null($v) && !$value instanceof DB_Expression){
-					$v = (string)$v;
-				}
-				$tmp[$k] = $v;
+			foreach($value as $v){
+				$tmp[] = $v;
 			}
 			$value = $tmp;
 		}
@@ -105,7 +108,7 @@ trait DB_Query_Compare_Trait {
 	}
 
 	/**
-	 * @return array|DB_Query|\Iterator|DB_Query_Column|mixed|null
+	 * @return array|DB_Query|DB_Query_Column|DB_Query_Function|mixed|null
 	 */
 	public function getValue() {
 		return $this->value;

@@ -6,6 +6,11 @@ namespace Et;
 class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 
 	/**
+	 * @var array
+	 */
+	protected static $__quoted_tables_and_columns_cache = array();
+
+	/**
 	 * @var string
 	 */
 	protected static $_adapter_type = "SQLite";
@@ -39,17 +44,23 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @throws DB_Adapter_Exception
 	 * @return string
 	 */
-	function quoteTableOrColumn($column_name){
-		$column_name = parent::quoteTableOrColumn($column_name);
-		return "`" . str_replace(".", "`.`", $column_name) . "`";
+	function quoteIdentifier($column_name){
+		$column_name = (string)$column_name;
+		if(isset(static::$__quoted_tables_and_columns_cache[$column_name])){
+			return static::$__quoted_tables_and_columns_cache[$column_name];
+		}
+		$column_name = parent::quoteIdentifier($column_name);
+		static::$__quoted_tables_and_columns_cache[$column_name] = "\"" . str_replace(".", "\".\"", $column_name) . "\"";
+		return static::$__quoted_tables_and_columns_cache[$column_name];
 	}
 
 	/**
 	 * @throws DB_Adapter_Exception
 	 * @return array
 	 */
-	protected function _listTables() {
-		return $this->fetchColumn("SELECT name FROM sqlite_master WHERE type = 'table'");
+	protected function _getTablesList() {
+		$query = "SELECT name FROM sqlite_master WHERE type='table' UNION ALL SELECT name FROM sqlite_temp_master WHERE type='table' ORDER BY name";
+		return $this->fetchColumn($query);
 	}
 
 	/**
@@ -59,7 +70,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 *
 	 */
 	function truncateTable($table_name) {
-		return $this->exec("DELETE FROM " . $this->quoteTableOrColumn($table_name));
+		return $this->exec("DELETE FROM " . $this->quoteIdentifier($table_name));
 	}
 
 	/**
@@ -68,7 +79,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @throws DB_Adapter_Exception
 	 */
 	function renameTable($source_table_name, $target_table_name) {
-		$this->exec("ALTER TABLE {$this->quoteTableOrColumn($source_table_name)} RENAME TO {$this->quoteTableOrColumn($target_table_name)}");
+		$this->exec("ALTER TABLE {$this->quoteIdentifier($source_table_name)} RENAME TO {$this->quoteIdentifier($target_table_name)}");
 	}
 
 	/**
@@ -77,8 +88,8 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @throws DB_Adapter_Exception
 	 */
 	function copyTable($source_table_name, $target_table_name) {
-		$this->exec("CREATE TABLE {$this->quoteTableOrColumn($target_table_name)} LIKE {$this->quoteTableOrColumn($source_table_name)}");
-		$this->exec("INSERT INTO {$this->quoteTableOrColumn($target_table_name)} SELECT * FROM {$this->quoteTableOrColumn($source_table_name)}");
+		$this->exec("CREATE TABLE {$this->quoteIdentifier($target_table_name)} LIKE {$this->quoteIdentifier($source_table_name)}");
+		$this->exec("INSERT INTO {$this->quoteIdentifier($target_table_name)} SELECT * FROM {$this->quoteIdentifier($source_table_name)}");
 	}
 
 	/**
@@ -86,7 +97,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @return array
 	 */
 	function getTableColumnsNames($table_name) {
-		$cols = $this->fetchRowsAssociative("PRAGMA table_info({$this->quoteTableOrColumn($table_name)});");
+		$cols = $this->fetchRowsAssociative("PRAGMA table_info({$this->quoteIdentifier($table_name)});");
 		return array_keys($cols);
 	}
 
@@ -102,9 +113,9 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	function copyTableColumns($source_table, $target_table, array $columns, $where_query = "", array $where_query_data = array()) {
 		$this->beginTransaction();
 
-		$query = "INSERT INTO " . $this->quoteTableOrColumn($target_table) . "(";
+		$query = "INSERT INTO " . $this->quoteIdentifier($target_table) . "(";
 		foreach($columns as $target_column_name){
-			$query .= "\n\t{$this->quoteTableOrColumn($target_column_name)},";
+			$query .= "\n\t{$this->quoteIdentifier($target_column_name)},";
 		}
 		$query = rtrim($query, ",");
 
@@ -113,10 +124,10 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 			if(is_numeric($source_column_name)){
 				$source_column_name = $target_column_name;
 			}
-			$query .= "\n\t{$this->quoteTableOrColumn($source_column_name)},";
+			$query .= "\n\t{$this->quoteIdentifier($source_column_name)},";
 		}
 		$query = rtrim($query, ",");
-		$query .= "\nFROM\n\t" .  $this->quoteTableOrColumn($source_table);
+		$query .= "\nFROM\n\t" .  $this->quoteIdentifier($source_table);
 
 		if(trim($where_query) !== ""){
 			$query .= "\nWHERE\n\t{$where_query}";
@@ -140,7 +151,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 */
 	protected function getColumnCreateTableQuery($definition){
 		$default_value_supported = true;
-		$query = "\n\t" . $this->quoteTableOrColumn($definition->getColumnName(false)) . " ";
+		$query = "\n\t" . $this->quoteIdentifier($definition->getColumnName(false)) . " ";
 		switch($definition->getColumnType()){
 
 
@@ -242,7 +253,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	function getCreateTableQuery(DB_Table_Definition $table_definition) {
 		//todo: implement...
 		trigger_error("NOT IMPLEMENTED YET", E_USER_ERROR);
-		$table_name = $this->quoteTableOrColumn($table_definition->getTableName());
+		$table_name = $this->quoteIdentifier($table_definition->getTableName());
 		// HEADER
 		$query = "CREATE TABLE IF NOT EXISTS {$table_name}(";
 
@@ -257,7 +268,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 		$primary_key_columns = $table_definition->getPrimaryKeyColumns();
 		if($primary_key_columns){
 			foreach($primary_key_columns as &$col){
-				$col = $this->quoteTableOrColumn($col);
+				$col = $this->quoteIdentifier($col);
 			}
 			$query .= ",\n\tPRIMARY KEY (" . implode(", ", $primary_key_columns) . ")";
 		}
@@ -266,7 +277,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 		$unique_key_columns = $table_definition->getUniqueKeyColumns();
 		if($unique_key_columns){
 			foreach($unique_key_columns as &$col){
-				$col = $this->quoteTableOrColumn($col);
+				$col = $this->quoteIdentifier($col);
 			}
 			$query .= ",\n\tUNIQUE KEY (" . implode(", ", $unique_key_columns) . ")";
 		}
@@ -276,9 +287,9 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 
 		foreach($indexes_columns as $index_name => $index_columns){
 			foreach($index_columns as &$col){
-				$col = $this->quoteTableOrColumn($col);
+				$col = $this->quoteIdentifier($col);
 			}
-			$index_name = $this->quoteTableOrColumn($index_name);
+			$index_name = $this->quoteIdentifier($index_name);
 			$query .= ",\n\tKEY {$index_name} (" . implode(", ", $index_columns) . ")";
 		}
 

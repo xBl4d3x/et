@@ -73,7 +73,7 @@ trait Object_VisiblePropertiesTrait {
 	 * @return bool
 	 */
 	protected function _hasVisibleProperty($property){
-		return property_exists($this, $property) && $property[0] != "_";
+		return in_array($property, $this->_getVisiblePropertiesNames());
 	}
 
 }

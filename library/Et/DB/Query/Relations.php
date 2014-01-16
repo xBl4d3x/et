@@ -3,7 +3,7 @@ namespace Et;
 class DB_Query_Relations extends Object implements \Iterator,\Countable {
 
 	/**
-	 * @var DB_Query_Relations_ComplexRelation[]|DB_Query_Relations_SimpleRelation[]
+	 * @var DB_Query_Relations_Relation[]
 	 */
 	protected $relations = array();
 
@@ -14,13 +14,9 @@ class DB_Query_Relations extends Object implements \Iterator,\Countable {
 
 	/**
 	 * @param DB_Query $query
-	 * @param array $relations [optional]
 	 */
-	function __construct(DB_Query $query, array $relations = array()){
+	function __construct(DB_Query $query){
 		$this->query = $query;
-		if($relations){
-			$this->setRelations($relations);
-		}
 	}
 
 	/**
@@ -31,69 +27,54 @@ class DB_Query_Relations extends Object implements \Iterator,\Countable {
 
 	}
 
+
 	/**
-	 * @param array $tables_relations
-	 * @param bool $merge [optional]
-	 * @return static
+	 * @param string $related_table_name
+	 * @param string|null $join_type [optional]
+	 * @param array $compare_statements [optional]
+	 *
+	 * @return \Et\DB_Query_Relations_Relation
 	 */
-	function setRelations(array $tables_relations, $merge = true){
-		if(!$merge){
-			$this->relations = array();
+	function addRelation($related_table_name, array $compare_statements = array(), $join_type = null){
+		if(!$join_type){
+			$join_type = DB_Query::JOIN_LEFT;
 		}
-
-		foreach($tables_relations as $table_name => $relations){
-			$is_simple = false;
-			foreach($relations as $k => $v){
-				if(is_numeric($k) || is_array($v)){
-					$is_simple = false;
-					break;
-				}
-
-				if(!$v instanceof DB_Query_Column && !preg_match('~^\w+(:?\.\w+)?$~', $v)){
-					$is_simple = false;
-				}
-			}
-
-			if($is_simple){
-				$this->addSimpleRelation($table_name, $relations);
-			} else {
-				$this->addComplexRelation($table_name, $relations);
-			}
-		}
-
-
-		return $this;
+		$this->relations[$related_table_name] = new DB_Query_Relations_Relation($this->query, $related_table_name, $join_type, $compare_statements);
+		return $this->relations[$related_table_name];
 	}
 
 	/**
-	 * @return DB_Query_Relations_ComplexRelation[]|DB_Query_Relations_SimpleRelation[]
+	 * @param string $related_table_name
+	 * @return bool|DB_Query_Relations_Relation
+	 */
+	function getRelation($related_table_name){
+		return isset($this->relations[$related_table_name])
+				? $this->relations[$related_table_name]
+				: false;
+	}
+
+	/**
+	 * @param string $related_table_name
+	 * @param array $join_on_columns array like (column_name => related_table_column_name)
+	 * @param null|string $join_type [optional]
+	 *
+	 * @return \Et\DB_Query_Relations_Relation
+	 */
+	function addSimpleRelation($related_table_name, array $join_on_columns, $join_type = null){
+		if(!$join_type){
+			$join_type = DB_Query::JOIN_LEFT;
+		}
+		$this->relations[$related_table_name] = new DB_Query_Relations_Relation($this->query, $related_table_name, $join_type);
+		$this->relations[$related_table_name]->addRelatedColumnsEqual($join_on_columns);
+		return $this->relations[$related_table_name];
+	}
+
+
+	/**
+	 * @return DB_Query_Relations_Relation[]
 	 */
 	function getRelations(){
 		return $this->relations;
-	}
-
-	/**
-	 * @param string $related_table_name
-	 * @param array $join_on_columns [related_column_name => other_column_name]
-	 * @param null|string $join_type [optional] NULL = by default query join type
-	 * @return static
-	 */
-	function addSimpleRelation($related_table_name, array $join_on_columns, $join_type = null){
-		$relation = new DB_Query_Relations_SimpleRelation($this->getQuery(), $related_table_name, $join_on_columns, $join_type);
-		$this->relations[] = $relation;
-		return $this;
-	}
-
-	/**
-	 * @param string $related_table_name
-	 * @param array $join_expressions [related_column_name => other_column_name]
-	 * @param null|string $join_type [optional] NULL = by default query join type
-	 * @return static
-	 */
-	function addComplexRelation($related_table_name, array $join_expressions, $join_type = null){
-		$relation = new DB_Query_Relations_ComplexRelation($this->getQuery(), $related_table_name, $join_expressions, $join_type);
-		$this->relations[] = $relation;
-		return $this;
 	}
 
 	/**
@@ -111,7 +92,7 @@ class DB_Query_Relations extends Object implements \Iterator,\Countable {
 	}
 
 	/**
-	 * @return DB_Query_Relations_ComplexRelation|DB_Query_Relations_SimpleRelation
+	 * @return DB_Query_Relations_Relation|bool
 	 */
 	public function current() {
 		return current($this->relations);

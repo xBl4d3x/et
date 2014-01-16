@@ -19,7 +19,7 @@ trait Object_MagicSetTrait {
 		}
 
 		throw new Object_Exception(
-			"Cannot set  ".get_class($this)."->{$property} property value - permission denied",
+			"Cannot set ".get_class($this)."->{$property} property value - permission denied",
 			Object_Exception::CODE_PROTECTED_PROPERTY_ACCESS
 		);
 	}

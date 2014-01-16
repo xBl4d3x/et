@@ -2,19 +2,79 @@
 namespace Et;
 class DB_Query extends Object implements \ArrayAccess {
 
-	const MAIN_TABLE_ALIAS = "this";
+	const MAIN_TABLE_ALIAS = "_main_";
+	const SELECTED_COLUMN_ALIAS = "_selected_";
 
 	const ALL_COLUMNS = "*";
 
 	const ORDER_ASC = "ASC";
 	const ORDER_DESC = "DESC";
 
-	const JOIN_TYPE_INNER = "INNER";
-	const JOIN_TYPE_OUTER = "OUTER";
-	const JOIN_TYPE_LEFT = "LEFT";
-	const JOIN_TYPE_LEFT_OUTER = "LEFT OUTER";
-	const JOIN_TYPE_RIGHT = "RIGHT";
-	const JOIN_TYPE_RIGHT_OUTER = "RIGHT OUTER";
+	const JOIN_INNER = "INNER";
+	const JOIN_OUTER = "OUTER";
+	const JOIN_LEFT = "LEFT";
+	const JOIN_LEFT_OUTER = "LEFT OUTER";
+	const JOIN_RIGHT = "RIGHT";
+	const JOIN_RIGHT_OUTER = "RIGHT OUTER";
+
+	const OP_AND = "AND";
+	const OP_OR = "OR";
+	const OP_AND_NOT = "AND NOT";
+	const OP_OR_NOT = "OR NOT";
+
+	const CMP_EQUALS = "=";
+	const CMP_NOT_EQUALS = "<>";
+	const CMP_IS_GREATER = ">";
+	const CMP_IS_GREATER_OR_EQUAL = ">=";
+	const CMP_IS_LOWER = "<";
+	const CMP_IS_LOWER_OR_EQUAL = "<=";
+	const CMP_IS_NULL = "IS NULL";
+	const CMP_IS_NOT_NULL = "IS NOT NULL";
+	const CMP_LIKE = "LIKE";
+	const CMP_NOT_LIKE = "NOT LIKE";
+	const CMP_IN = "IN";
+	const CMP_NOT_IN = "NOT IN";
+
+	/**
+	 * @var array
+	 */
+	protected static $supported_join_types = array(
+		self::JOIN_INNER => self::JOIN_INNER,
+		self::JOIN_OUTER => self::JOIN_OUTER,
+		self::JOIN_LEFT => self::JOIN_LEFT,
+		self::JOIN_LEFT_OUTER => self::JOIN_LEFT_OUTER,
+		self::JOIN_RIGHT => self::JOIN_RIGHT,
+		self::JOIN_RIGHT_OUTER => self::JOIN_RIGHT_OUTER
+	);
+
+	/**
+	 * @var array
+	 */
+	protected static $supported_logical_operators = array(
+		DB_Query::OP_AND => DB_Query::OP_AND,
+		DB_Query::OP_OR => DB_Query::OP_OR,
+		DB_Query::OP_AND_NOT => DB_Query::OP_AND_NOT,
+		DB_Query::OP_OR_NOT => DB_Query::OP_OR_NOT,
+	);
+
+	/**
+	 * @var array
+	 */
+	protected static $supported_compare_operators = array(
+		DB_Query::CMP_EQUALS => DB_Query::CMP_EQUALS,
+		DB_Query::CMP_NOT_EQUALS => DB_Query::CMP_NOT_EQUALS,
+		DB_Query::CMP_IS_GREATER => DB_Query::CMP_IS_GREATER,
+		DB_Query::CMP_IS_GREATER_OR_EQUAL => DB_Query::CMP_IS_GREATER_OR_EQUAL,
+		DB_Query::CMP_IS_LOWER => DB_Query::CMP_IS_LOWER,
+		DB_Query::CMP_IS_LOWER_OR_EQUAL => DB_Query::CMP_IS_LOWER_OR_EQUAL,
+		DB_Query::CMP_IS_NULL => DB_Query::CMP_IS_NULL,
+		DB_Query::CMP_IS_NOT_NULL => DB_Query::CMP_IS_NOT_NULL,
+		DB_Query::CMP_LIKE => DB_Query::CMP_LIKE,
+		DB_Query::CMP_NOT_LIKE => DB_Query::CMP_NOT_LIKE,
+		DB_Query::CMP_IN => DB_Query::CMP_IN,
+		DB_Query::CMP_NOT_IN => DB_Query::CMP_NOT_IN,
+	);
+
 
 	/**
 	 * @var string
@@ -22,31 +82,12 @@ class DB_Query extends Object implements \ArrayAccess {
 	protected $main_table_name;
 
 	/**
-	 * Check if all relations between tables are defined (if FALSE, multiple tables without relation are possible to use in query)
-	 *
-	 * @var bool
-	 */
-	protected $check_relations_before_build = true;
-
-	/**
-	 * Remove main table name from query if no other table is present
-	 *
-	 * @var bool
-	 */
-	protected $allow_query_simplification = true;
-
-	/**
-	 * @var string
-	 */
-	protected $default_join_type = self::JOIN_TYPE_LEFT;
-
-	/**
 	 * @var array
 	 */
 	protected $tables_in_query = array();
 
 	/**
-	 * @var DB_Query_Select|DB_Query_Select_Column_All[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
+	 * @var DB_Query_Select|DB_Query_Select_AllColumns[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_Query[]
 	 */
 	protected $select;
 
@@ -56,26 +97,24 @@ class DB_Query extends Object implements \ArrayAccess {
 	protected $relations;
 
 	/**
-	 * @var DB_Query_Where
+	 * @var DB_Query_Compare
 	 */
 	protected $where;
 
 	/**
-	 * @var DB_Query_Having
+	 * @var DB_Query_Compare
 	 */
 	protected $having;
 
 	/**
-	 * @var array
+	 * @var DB_Query_GroupBy
 	 */
-	protected $group_by = array();
+	protected $group_by;
 
 	/**
-	 * Column names or numbers
-	 *
-	 * @var array
+	 * @var DB_Query_OrderBy
 	 */
-	protected $order_by = array();
+	protected $order_by;
 
 	/**
 	 * @var int
@@ -86,6 +125,8 @@ class DB_Query extends Object implements \ArrayAccess {
 	 * @var int
 	 */
 	protected $offset = 0;
+	
+	
 
 	/**
 	 * @param string $main_table_name
@@ -93,7 +134,7 @@ class DB_Query extends Object implements \ArrayAccess {
 	 */
 	function __construct($main_table_name){
 		$this->main_table_name = (string)$main_table_name;
-		if(!$this->main_table_name || $this->main_table_name == static::MAIN_TABLE_ALIAS){
+		if(!$this->main_table_name || $this->isTableAlias($this->main_table_name)){
 			throw new DB_Query_Exception(
 				"Invalid main table name in query",
 				DB_Query_Exception::CODE_INVALID_TABLE_NAME
@@ -103,31 +144,45 @@ class DB_Query extends Object implements \ArrayAccess {
 		$this->tables_in_query[$this->main_table_name] = $this->main_table_name;
 	}
 
+	/**
+	 * @param string $table_name
+	 * @return bool
+	 */
+	protected static function isTableAlias($table_name){
+		return in_array(
+			$table_name, 
+			array(
+				static::MAIN_TABLE_ALIAS, 
+				static::SELECTED_COLUMN_ALIAS
+			)
+		);
+	}
+
 
 	/**
 	 * @param string $main_table_name
-	 * @param array $select_expressions [optional]
-	 * @param array $where_expressions [optional]
+	 * @param array $select_statements [optional]
+	 * @param array $where_statements [optional]
 	 * @param array $order_by [optional]
-	 * @param null|int $limit [optional]
-	 * @param null|int $offset [optional]
-	 * @return static|DB_Query
+	 * @param int $limit [optional]
+	 * @param int $offset [optional]
+	 * @return DB_Query|static
 	 */
 	public static function getInstance($main_table_name,
-	                                   array $select_expressions = array(),
-	                                   array $where_expressions = array(),
+	                                   array $select_statements = array(),
+	                                   array $where_statements = array(),
 	                                   array $order_by = array(),
-										$limit = null,
-										$offset = null
+										$limit = 0,
+										$offset = 0
 
 	) {
 		/** @var $query DB_Query */
 		$query = new static($main_table_name);
-		if($select_expressions){
-			$query->select($select_expressions);
+		if($select_statements){
+			$query->select($select_statements);
 		}
-		if($where_expressions){
-			$query->where($where_expressions);
+		if($where_statements){
+			$query->where($where_statements);
 		}
 		if($order_by){
 			$query->orderBy($order_by);
@@ -142,12 +197,31 @@ class DB_Query extends Object implements \ArrayAccess {
 	 */
 	function addTableToQuery($table_name){
 		$table_name = (string)$table_name;
-		if(isset($this->tables_in_query[$table_name]) || $table_name == self::MAIN_TABLE_ALIAS){
+		if(isset($this->tables_in_query[$table_name]) || $this->isTableAlias($table_name)){
 			return $this;
 		}
 		$this->checkTableName($table_name);
 		$this->tables_in_query[$table_name] = $table_name;
 		return $this;
+	}
+
+	/**
+	 * @param string $column_name
+	 * @return string
+	 */
+	public function getMainColumnName($column_name){
+		return "{$this->getMainTableName()}.{$column_name}";
+	}
+
+	/**
+	 * @param array $column_names
+	 * @return array
+	 */
+	public function getMainColumnNames(array $column_names){
+		foreach($column_names as &$v){
+			$v = $this->getMainColumnName($v);
+		}
+		return $column_names;
 	}
 
 	/**
@@ -158,11 +232,19 @@ class DB_Query extends Object implements \ArrayAccess {
 		if(!$table_name){
 			return $this->getMainTableName();
 		}
+		
+		if($table_name == self::SELECTED_COLUMN_ALIAS){
+			return null;
+		}
 
 		$table_name = (string)$table_name;
 
-		if($table_name == static::MAIN_TABLE_ALIAS || $table_name == $this->getMainTableName()){
+		if($table_name == static::MAIN_TABLE_ALIAS){
 			return $this->getMainTableName();
+		}
+		
+		if(isset($this->tables_in_query[$table_name])){
+			return $table_name;
 		}
 
 		$this->checkTableName($table_name);
@@ -183,77 +265,86 @@ class DB_Query extends Object implements \ArrayAccess {
 		return $this->tables_in_query;
 	}
 
+	/**
+	 * @return int
+	 */
+	public function getTablesInQueryCount(){
+		return count($this->tables_in_query);
+	}
+	
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
 
 	/**
-	 * @return static|DB_Query_Where
+	 * @return DB_Query_Compare
 	 */
 	function getWhere(){
 		if(!$this->where){
-			$this->where = new DB_Query_Where($this);
+			$this->where = new DB_Query_Compare($this);
 		}
 		return $this->where;
 	}
 
 	/**
-	 * @param array $expressions
+	 * @param array $statements
 	 * @return static|DB_Query
 	 */
-	function where(array $expressions){
-		$this->getWhere()->setStatements($expressions, false);
+	function where(array $statements){
+		$this->getWhere()->setStatements($statements);
 		return $this;
 	}
 
 	/**
 	 * @param string $column
 	 * @param mixed $value
-	 * @param null|string $table_name [optional]
 	 *
 	 * @return static|DB_Query
 	 */
-	function whereColumnEquals($column, $value, $table_name = null){
-		$this->getWhere()->removeExpressions()->addColumnEquals($column, $value, $table_name);
+	function whereColumnEquals($column, $value){
+
+		$this->getWhere()
+			->resetStatements()
+			->addColumnEquals($column, $value);
+
 		return $this;
 	}
-
+	
 	/**
 	 * @param array $columns
-	 * @param null|string $table_name [optional]
 	 *
 	 * @return static|DB_Query
 	 */
-	function whereColumnsEqual(array $columns, $table_name = null){
-		$this->getWhere()->removeExpressions()->addColumnsEqual($columns, $table_name);
+	function whereColumnsEqual(array $columns){
+		$this->getWhere()
+			->resetStatements()
+			->addColumnsEqual($columns);
+
 		return $this;
 	}
 
-	/**
-	 * @param DB_Table_Key $key
-	 * @param array $other_columns_values [optional]
-	 *
-	 * @return static|DB_Query
-	 * @throws DB_Query_Exception
-	 */
-	function whereKeyEquals(DB_Table_Key $key, array $other_columns_values = array()){
-		if(!$key->hasAllColumnValues()){
-			throw new DB_Query_Exception(
-				"Cannot compare key with no or not all values defined",
-				DB_Query_Exception::CODE_INVALID_EXPRESSION
-			);
-		}
-		
-		$columns_values = $key->getColumnValues();
-		foreach($other_columns_values as $k => $v){
-			$columns_values[$k] = $v;
-		}
-		return $this->whereColumnsEqual($columns_values, $key->getTableName());
-	}
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+	// WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE WHERE
+
+
+
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
 
 	/**
-	 * @return static|DB_Query_Having
+	 * @return DB_Query_Compare
 	 */
 	function getHaving(){
 		if(!$this->having){
-			$this->having = new DB_Query_Having($this);
+			$this->having = new DB_Query_Compare($this);
 		}
 		return $this->having;
 	}
@@ -267,6 +358,43 @@ class DB_Query extends Object implements \ArrayAccess {
 		return $this;
 	}
 
+	/**
+	 * @param string $column
+	 * @param mixed $value
+	 *
+	 * @return static|DB_Query
+	 */
+	function havingColumnEquals($column, $value){
+
+		$this->getHaving()
+			->resetStatements()
+			->addColumnEquals($column, $value);
+
+		return $this;
+	}
+
+	/**
+	 * @param array $columns
+	 *
+	 * @return static|DB_Query
+	 */
+	function havingColumnsEqual(array $columns){
+		$this->getHaving()
+			->resetStatements()
+			->addColumnsEqual($columns);
+
+		return $this;
+	}
+
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	// HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING HAVING
+	
+	
+	
+
 
 	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
 	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
@@ -277,7 +405,7 @@ class DB_Query extends Object implements \ArrayAccess {
 
 
 	/**
-	 * @return DB_Query_Select|DB_Query_Select_Column_All[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_SubQuery[]
+	 * @return DB_Query_Select|DB_Query_Select_AllColumns[]|DB_Query_Select_Column[]|DB_Query_Select_Function[]|DB_Query_Select_Expression[]|DB_Query_Select_Query[]
 	 */
 	function getSelect(){
 		if(!$this->select){
@@ -313,12 +441,11 @@ class DB_Query extends Object implements \ArrayAccess {
 	 * SELECT column_name | table_name.column_name AS select_as
 	 *
 	 * @param string|DB_Query_Column $column_name
-	 * @param null|string $table_name [optional]
 	 * @param null|string $select_as [optional]
 	 * @return static|DB_Query
 	 */
-	function selectColumn($column_name, $table_name = null, $select_as = null){
-		$this->select = $this->_getEmptySelect()->addColumn($column_name, $table_name, $select_as);
+	function selectColumn($column_name, $select_as = null){
+		$this->select = $this->_getEmptySelect()->addColumn($column_name, $select_as);
 		return $this;
 	}
 
@@ -331,11 +458,10 @@ class DB_Query extends Object implements \ArrayAccess {
 	 * -> SELECT column1 AS select_as1, table1.column2 AS select_as2
 	 *
 	 * @param array $columns
-	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query
 	 */
-	function selectColumns(array $columns, $table_name = null){
-		$this->select = $this->_getEmptySelect()->addColumns($columns, $table_name);
+	function selectColumns(array $columns){
+		$this->select = $this->_getEmptySelect()->addColumns($columns);
 		return $this;
 	}
 
@@ -343,12 +469,11 @@ class DB_Query extends Object implements \ArrayAccess {
 	 * SELECT COUNT(*) | COUNT(column_name) | COUNT(table_name.column_name) AS select_as
 	 *
 	 * @param string $column_name [optional] Use '*' for "all columns"
-	 * @param null|string $table_name [optional]
 	 * @param null|string $select_as [optional]
 	 * @return static|DB_Query
 	 */
-	function selectCount($column_name = self::ALL_COLUMNS, $table_name = null, $select_as = null){
-		$this->select = $this->_getEmptySelect()->addCount($column_name, $table_name, $select_as);
+	function selectCount($column_name = self::ALL_COLUMNS, $select_as = null){
+		$this->select = $this->_getEmptySelect()->addCount($column_name, $select_as);
 		return $this;
 	}
 
@@ -365,16 +490,6 @@ class DB_Query extends Object implements \ArrayAccess {
 		return $this;
 	}
 
-	/**
-	 * SELECT * | table_name.* ....
-	 *
-	 * @param null|string $table_name [optional]
-	 * @return static|DB_Query
-	 */
-	function selectAllColumns($table_name = null){
-		$this->select = $this->_getEmptySelect()->addAllColumns($table_name);
-		return $this;
-	}
 
 	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
 	// SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT SELECT
@@ -394,14 +509,12 @@ class DB_Query extends Object implements \ArrayAccess {
 
 
 	/**
-	 * Array like:
-	 * array(column_name => ASC | DESC)
-	 * or
-	 * array(column_index => ASC | DESC)
-	 *
-	 * @return array
+	 * @return DB_Query_OrderBy
 	 */
 	function getOrderBy(){
+		if(!$this->order_by){
+			$this->order_by = new DB_Query_OrderBy($this);
+		}
 		return $this->order_by;
 	}
 
@@ -414,50 +527,27 @@ class DB_Query extends Object implements \ArrayAccess {
 	 * -> ORDER BY column1 ASC, column2 DESC ...
 	 *
 	 * @param array $column_names_or_indexes [optional]
-	 * @return static|DB_Query
+	 * @return DB_Query|static
 	 */
 	function orderBy(array $column_names_or_indexes = array()){
-
-		$this->order_by = array();
-		foreach($column_names_or_indexes as $column_name_or_number => $order_how){
-
-			$order_how = strtoupper($order_how) == self::ORDER_DESC
-				? self::ORDER_DESC
-				: self::ORDER_ASC;
-
-			if(is_int($column_name_or_number) || preg_match('~^\w+$~', $column_name_or_number)){
-				$this->order_by[$column_name_or_number] = $order_how;
-				return $this;
-			}
-
-			$column = $this->getColumn($column_name_or_number);
-			$this->addTableToQuery($column->getTableName());
-			$this->order_by[(string)$column] = $order_how;
-		}
-
+		$this->getOrderBy()->setOrderByColumns($column_names_or_indexes);
 		return $this;
 	}
+
+
 
 	/**
 	 * @param string $column_name_or_index
 	 * @param null|string $order_how [optional]
-	 * @param null|string $table_name [optional]
-	 * @return static|DB_Query
+	 * @return DB_Query|static
 	 */
-	function orderByColumn($column_name_or_index, $order_how = null, $table_name = null){
-		$order_how = strtoupper($order_how) == self::ORDER_DESC
-					? self::ORDER_DESC
-					: self::ORDER_ASC;
-
-		if(is_int($column_name_or_index) || preg_match('~^\w+$~', $column_name_or_index)){
-			$this->order_by = array($column_name_or_index => $order_how);
-			return $this;
+	function orderByColumn($column_name_or_index, $order_how = self::ORDER_ASC){
+		$order_by = $this->getOrderBy()->resetOrderBy();
+		if(is_numeric($column_name_or_index)){
+			$order_by->addOrderByColumnNumber($column_name_or_index, $order_how);
+		} else {
+			$order_by->addOrderByColumn($column_name_or_index, $order_how);
 		}
-
-		$column = $this->getColumn($column_name_or_index, $table_name);
-		$this->addTableToQuery($column->getTableName());
-		$this->order_by = array((string)$column => $order_how);
-
 		return $this;
 	}
 
@@ -486,69 +576,75 @@ class DB_Query extends Object implements \ArrayAccess {
 	}
 
 	/**
-	 * @param array $tables_relations [optional]
-	 * @return static|DB_Query
+	 * @param string $related_table_name
+	 * @param array $compare_statements [optional]
+	 * @param string $join_type [optional]
+	 * @return \Et\DB_Query_Relations_Relation
 	 */
-	function relations(array $tables_relations = array()){
-		$this->getRelations()->setRelations($tables_relations, false);
-		return $this;
+	function join($related_table_name, array $compare_statements = array(), $join_type = null){
+		return $this->getRelations()->addRelation($related_table_name, $compare_statements, $join_type);
 	}
 
 	/**
-	 * @return array
+	 * @param string $related_table_name
+	 * @param array $related_columns array like (column_name => related_table_column_name)
+	 * @param null|string $join_type [optional]
+	 * @return \Et\DB_Query_Relations_Relation
+	 */
+	function joinOnColumns($related_table_name, array $related_columns, $join_type = null){
+		return $this->getRelations()->addSimpleRelation($related_table_name, $related_columns, $join_type);
+	}
+
+
+
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+
+
+	/**
+	 * @return \Et\DB_Query_GroupBy
 	 */
 	function getGroupBy(){
+		if(!$this->group_by){
+			$this->group_by = new DB_Query_GroupBy($this);
+		}
 		return $this->group_by;
 	}
 
 	/**
 	 * @param array $group_by_columns
-	 * @return static|DB_Query
+	 * @return DB_Query|static
 	 */
 	function groupBy(array $group_by_columns = array()){
-		$this->group_by = array();
-		foreach($group_by_columns as $column_name){
-			$column = $this->getColumn($column_name);
-			$this->addTableToQuery($column->getTableName());
-			$this->group_by[] = (string)$column;
-		}
+		$this->getGroupBy()->resetColumns()->setGroupByColumns($group_by_columns);
 		return $this;
 	}
 
 	/**
 	 * @param string $column_name
-	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query
 	 */
-	function groupByColumn($column_name, $table_name = null){
-		$column = $this->getColumn($column_name, $table_name);
-		$this->addTableToQuery($column->getTableName());
-		$this->group_by = array((string)$column);
+	function groupByColumn($column_name){
+		$this->getGroupBy()->resetColumns()->addGroupByColumn($column_name);
 		return $this;
 	}
 
-	/**
-	 * @param string $related_table_name
-	 * @param array $join_on_columns [related_column_name => other_column_name]
-	 * @param null|string $join_type [optional] NULL = by default query join type
-	 * @return static|DB_Query
-	 */
-	function addSimpleRelation($related_table_name, array $join_on_columns, $join_type = null){
-		$this->getRelations()->addSimpleRelation($related_table_name, $join_on_columns, $join_type);
-		return $this;
-	}
 
-	/**
-	 * @param string $related_table_name
-	 * @param array $join_expressions [related_column_name => other_column_name]
-	 * @param null|string $join_type [optional] NULL = by default query join type
-	 * @return static|DB_Query
-	 */
-	function addComplexRelation($related_table_name, array $join_expressions, $join_type = null){
-		$this->getRelations()->addComplexRelation($related_table_name, $join_expressions, $join_type);
-		return $this;
-	}
-	
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+	// GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY GROUP BY
+
+
+
+
+
+
+
 	/**
 	 * @param int $limit
 	 * @param int $offset
@@ -644,20 +740,68 @@ class DB_Query extends Object implements \ArrayAccess {
 		}
 	}
 
+
+	/**
+	 * @return array
+	 */
+	public static function getSupportedCompareOperators() {
+		return static::$supported_compare_operators;
+	}
+
+	/**
+	 * @return array
+	 */
+	public static function getSupportedLogicalOperators() {
+		return static::$supported_logical_operators;
+	}
+
+
+
+	/**
+	 * @param string $operator
+	 * @throws DB_Query_Exception
+	 */
+	public static function checkCompareOperator($operator){
+		$operator = (string)$operator;
+		if(!isset(static::$supported_compare_operators[$operator])){
+			throw new DB_Query_Exception(
+				"Operator '{$operator}' is not supported. Supported operators: '" . implode("', '", static::$supported_compare_operators) . "'",
+				DB_Query_Exception::CODE_INVALID_OPERATOR
+			);
+		}
+	}
+
+	/**
+	 * @param string $operator
+	 * @throws DB_Query_Exception
+	 */
+	public static function checkLogicalOperator($operator){
+		$operator = (string)$operator;
+		if(!isset(static::$supported_logical_operators[$operator])){
+			throw new DB_Query_Exception(
+				"Operator '{$operator}' is not supported. Supported operators: '" . implode("', '", static::$supported_logical_operators) . "'",
+				DB_Query_Exception::CODE_INVALID_OPERATOR
+			);
+		}
+	}
+
+
 	/**
 	 * @param string $column_name
-	 * @param null|string $table_name [optional]
 	 * @return array [column_name, table_name]
 	 * @throws DB_Query_Exception
 	 */
-	public function resolveColumnAndTable($column_name, $table_name = null){
+	public function resolveColumnAndTable($column_name){
 		$column_name = (string)$column_name;
 		$this->checkColumnName($column_name);
 		if(strpos($column_name, ".") !== false){
 			list($table_name, $column_name) = explode(".", $column_name, 2);
+			if($table_name){
+				$table_name = $this->resolveTableName($table_name);
+			}
+		} else {
+			$table_name = $this->getMainTableName();
 		}
-
-		$table_name = $this->resolveTableName($table_name);
 		return array($column_name, $table_name);
 	}
 
@@ -667,47 +811,21 @@ class DB_Query extends Object implements \ArrayAccess {
 	 */
 	public static function checkJoinType($join_type){
 		$join_type = strtoupper($join_type);
-		$allowed_joins = array(
-			self::JOIN_TYPE_INNER,
-			self::JOIN_TYPE_OUTER,
-			self::JOIN_TYPE_LEFT,
-			self::JOIN_TYPE_LEFT_OUTER,
-			self::JOIN_TYPE_RIGHT,
-			self::JOIN_TYPE_RIGHT_OUTER
-		);
-		
-		if(!in_array($join_type, $allowed_joins)){
+		if(!isset(static::$supported_join_types[$join_type])){
 			throw new DB_Query_Exception(
-				"Invalid join type - must be one of '" . implode("', '", $allowed_joins) . "'",
+				"Invalid join type - must be one of '" . implode("', '", static::$supported_join_types) . "'",
 				DB_Query_Exception::CODE_INVALID_JOIN_TYPE
 			);
 		}
 	}
 
-	/**
-	 * @param string $default_join_type
-	 * @return static|DB_Query
-	 */
-	public function setDefaultJoinType($default_join_type) {
-		$this->checkJoinType($default_join_type);
-		$this->default_join_type = $default_join_type;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getDefaultJoinType() {
-		return $this->default_join_type;
-	}
 
 	/**
 	 * @param string $column_name
-	 * @param null|string $table_name [optional]
-	 * @return static|DB_Query_Column
+	 * @return DB_Query_Column
 	 */
-	function getColumn($column_name, $table_name = null){
-		return new DB_Query_Column($this, $column_name, $table_name);
+	function getColumn($column_name){
+		return new DB_Query_Column($this, $column_name);
 	}
 
 	/**
@@ -741,38 +859,6 @@ class DB_Query extends Object implements \ArrayAccess {
 			);
 		}
 
-	}
-
-	/**
-	 * Check if all tables have relations before trying to build query
-	 *
-	 * @param boolean $check_relations_before_build
-	 */
-	public function setCheckRelationsBeforeBuild($check_relations_before_build) {
-		$this->check_relations_before_build = (bool)$check_relations_before_build;
-	}
-
-	/**
-	 * @return boolean
-	 */
-	public function getCheckRelationsBeforeBuild() {
-		return $this->check_relations_before_build;
-	}
-
-	/**
-	 * Allow to remove main table name from built query when only 1 is present in query?
-	 *
-	 * @param boolean $allow_build_simplification
-	 */
-	public function setAllowQuerySimplification($allow_build_simplification) {
-		$this->allow_query_simplification = (bool)$allow_build_simplification;
-	}
-
-	/**
-	 * @return boolean
-	 */
-	public function getAllowQuerySimplification() {
-		return $this->allow_query_simplification;
 	}
 
 
@@ -828,4 +914,5 @@ class DB_Query extends Object implements \ArrayAccess {
 			DB_Query_Exception::CODE_NOT_PERMITTED
 		);
 	}
+
 }

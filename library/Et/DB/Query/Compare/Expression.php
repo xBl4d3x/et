@@ -26,7 +26,7 @@ class DB_Query_Compare_Expression extends Object {
 		}
 		$this->expression = $expression;
 		if($compare_operator !== null){
-			$this->setupValue($compare_operator, $value);
+			$this->setupValue($query, $compare_operator, $value);
 		}
 	}
 

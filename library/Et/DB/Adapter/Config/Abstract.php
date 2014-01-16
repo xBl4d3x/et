@@ -30,6 +30,11 @@ abstract class DB_Adapter_Config_Abstract extends Config {
 	protected $dsn;
 
 	/**
+	 * @var bool
+	 */
+	protected $profiling_enabled = false;
+
+	/**
 	 * @var string
 	 */
 	protected $username = "";
@@ -103,6 +108,15 @@ abstract class DB_Adapter_Config_Abstract extends Config {
 		return $driver_options;
 
 	}
+
+	/**
+	 * @return boolean
+	 */
+	public function getProfilingEnabled() {
+		return $this->profiling_enabled;
+	}
+
+
 
 	/**
 	 * @return string|\Et\DB_Adapter_Abstract

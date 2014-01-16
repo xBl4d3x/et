@@ -80,10 +80,11 @@ class DB extends Object {
 			);
 		}
 
-		if(Debug_Profiler::getProfilingEnabled() && $config->getAllowProfiling()){
-			$profiler = new DB_Profiler("DB connection '{$connection_name}'");
-			self::$connections[$connection_name]->setProfiler($profiler);
-			Debug_Profiler::addProfiler($profiler);
+		if(Debug_Profiler::getProfilingEnabled() && $config->getProfilingEnabled()){
+
+			self::$connections[$connection_name]->enableProfiler();
+			Debug_Profiler::addProfiler(self::$connections[$connection_name]->getProfiler());
+
 		}
 
 		return self::$connections[$connection_name];

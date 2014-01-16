@@ -1,57 +1,15 @@
 <?php
 namespace Et;
-abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, \ArrayAccess {
+class DB_Query_Compare extends Object implements \Countable,\Iterator, \ArrayAccess {
 
-	const OP_AND = "AND";
-	const OP_OR = "OR";
-	const OP_AND_NOT = "AND NOT";
-	const OP_OR_NOT = "OR NOT";
 
-	const CMP_EQUALS = "=";
-	const CMP_NOT_EQUALS = "!=";
-	const CMP_IS_GREATER = ">";
-	const CMP_IS_GREATER_OR_EQUAL = ">=";
-	const CMP_IS_LOWER = "<";
-	const CMP_IS_LOWER_OR_EQUAL = "<=";
-	const CMP_IS_NULL = "IS NULL";
-	const CMP_IS_NOT_NULL = "IS NOT NULL";
-	const CMP_LIKE = "LIKE";
-	const CMP_NOT_LIKE = "NOT LIKE";
-	const CMP_IN = "IN";
-	const CMP_NOT_IN = "NOT IN";
 
 	/**
-	 * @var DB_Query_Compare_Column[]|DB_Query_Compare_Expression[]|DB_Query_Compare[]|string[]
+	 * @var DB_Query_Compare_Column[]|DB_Query_Compare_Function[]|DB_Query_Compare_Expression[]|DB_Query_Compare[]|string[]
 	 */
 	protected $statements = array();
 
-	/**
-	 * @var array
-	 */
-	protected static $allowed_logical_operators = array(
-		self::OP_AND => self::OP_AND,
-		self::OP_OR => self::OP_OR,
-		self::OP_AND_NOT => self::OP_AND_NOT,
-		self::OP_OR_NOT => self::OP_OR_NOT,
-	);
 
-	/**
-	 * @var array
-	 */
-	protected static $allowed_compare_operators = array(
-		self::CMP_EQUALS => self::CMP_EQUALS,
-		self::CMP_NOT_EQUALS => self::CMP_NOT_EQUALS,
-		self::CMP_IS_GREATER => self::CMP_IS_GREATER,
-		self::CMP_IS_GREATER_OR_EQUAL => self::CMP_IS_GREATER_OR_EQUAL,
-		self::CMP_IS_LOWER => self::CMP_IS_LOWER,
-		self::CMP_IS_LOWER_OR_EQUAL => self::CMP_IS_LOWER_OR_EQUAL,
-		self::CMP_IS_NULL => self::CMP_IS_NULL,
-		self::CMP_IS_NOT_NULL => self::CMP_IS_NOT_NULL,
-		self::CMP_LIKE => self::CMP_LIKE,
-		self::CMP_NOT_LIKE => self::CMP_NOT_LIKE,
-		self::CMP_IN => self::CMP_IN,
-		self::CMP_NOT_IN => self::CMP_NOT_IN,
-	);
 
 	/**
 	 * @var DB_Query
@@ -70,32 +28,13 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 	}
 
 	/**
-	 * @param string $operator
-	 * @throws DB_Query_Exception
+	 * @param string $column_name
+	 * @return DB_Query_Column
 	 */
-	public static function checkCompareOperator($operator){
-		$operator = (string)$operator;
-		if(!isset(static::$allowed_compare_operators[$operator])){
-			throw new DB_Query_Exception(
-				"Operator '{$operator}' is not supported. Supported operators: '" . implode("', '", static::$allowed_compare_operators) . "'",
-				DB_Query_Exception::CODE_INVALID_OPERATOR
-			);
-		}
+	protected function getColumn($column_name){
+		return $this->query->getColumn((string)$column_name);
 	}
 
-	/**
-	 * @param string $operator
-	 * @throws DB_Query_Exception
-	 */
-	public static function checkLogicalOperator($operator){
-		$operator = (string)$operator;
-		if(!isset(static::$allowed_logical_operators[$operator])){
-			throw new DB_Query_Exception(
-				"Operator '{$operator}' is not supported. Supported operators: '" . implode("', '", static::$allowed_logical_operators) . "'",
-				DB_Query_Exception::CODE_INVALID_OPERATOR
-			);
-		}
-	}
 
 	/**
 	 * If key is numeric or null:
@@ -176,15 +115,14 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 		}
 		
 		// column
-		$column = $this->getQuery()->getColumn($k);
-		$this->getQuery()->addTableToQuery($column->getTableName());
-		
+		$column = $this->getColumn($k);
+
 		// column => value
 		if(!is_array($v)){
 			if($v === null){
-				$this->addColumnCompare($k, self::CMP_IS_NULL);	
+				$this->addColumnCompare($k, DB_Query::CMP_IS_NULL);
 			} else {
-				$this->addColumnCompare($k, self::CMP_EQUALS, $v);
+				$this->addColumnCompare($k, DB_Query::CMP_EQUALS, $v);
 			}
 			return;
 		}
@@ -230,14 +168,41 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 	 * @param string $column_name
 	 * @param string $compare_operator
 	 * @param null|mixed $value [optional]
-	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query_Compare
 	 */
-	function addColumnCompare($column_name, $compare_operator, $value = null, $table_name = null){
-		$column = new DB_Query_Compare_Column($this->getQuery(), $column_name, $compare_operator, $value, $table_name);
+	function addColumnCompare($column_name, $compare_operator, $value = null){
+		$column = new DB_Query_Compare_Column($this->getQuery(), $column_name, $compare_operator, $value);
 		$this->_addANDIfNecessary();
 		$this->statements[] = $column;
 		return $this;
+	}
+
+
+	/**
+	 * @param string $column_name
+	 * @param string $compare_operator
+	 * @param string $compare_to_column
+	 * @return DB_Query_Compare|static
+	 */
+	function addColumnCompareColumn($column_name, $compare_operator, $compare_to_column){
+		return $this->addColumnCompare(
+			$column_name,
+			$compare_operator,
+			$compare_to_column
+		);
+	}
+
+	/**
+	 * @param string $column_name
+	 * @param string $compare_to_column
+	 * @return DB_Query_Compare|static
+	 */
+	function addColumnEqualsColumn($column_name, $compare_to_column){
+		return $this->addColumnCompare(
+			$column_name,
+			DB_Query::CMP_EQUALS,
+			$this->getColumn($compare_to_column)
+		);
 	}
 
 	/**
@@ -247,7 +212,7 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 	 * @return static|DB_Query_Compare
 	 */
 	function addColumnEquals($column_name, $value, $table_name = null){
-		return $this->addColumnCompare($column_name, static::CMP_EQUALS, $value, $table_name);
+		return $this->addColumnCompare($column_name, DB_Query::CMP_EQUALS, $value, $table_name);
 	}
 
 	/**
@@ -283,18 +248,17 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 	 * @return static|DB_Query_Compare
 	 */
 	function addFunctionEquals($function_name, array $function_arguments, $value = null){
-		return $this->addFunctionCompare($function_name, $function_arguments, self::CMP_EQUALS, $value);
+		return $this->addFunctionCompare($function_name, $function_arguments, DB_Query::CMP_EQUALS, $value);
 	}
 
 	/**
 	 * @param string|DB_Expression $expression
 	 * @param string $compare_operator [optional]
 	 * @param null|mixed $value [optional]
-	 * @param null|string $table_name [optional]
 	 * @return static|DB_Query_Compare
 	 */
-	function addExpressionCompare($expression, $compare_operator = null, $value = null, $table_name = null){
-		$column = new DB_Query_Compare_Expression($this->getQuery(), $expression, $compare_operator, $value, $table_name);
+	function addExpressionCompare($expression, $compare_operator = null, $value = null){
+		$column = new DB_Query_Compare_Expression($this->getQuery(), $expression, $compare_operator, $value);
 		$this->_addANDIfNecessary();
 		$this->statements[] = $column;
 		return $this;
@@ -307,31 +271,31 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 	 */
 	function addNestedStatements($statements){
 		if(!$statements instanceof DB_Query_Compare){
-			
+
 			if(!is_array($statements)){
 				throw new DB_Query_Exception(
 					"Nested statements must be array or instance of Et\\DB_Query_Compare",
 					DB_Query_Exception::CODE_NOT_PERMITTED
-				);	
+				);
 			}
-			
+
 			if(!$statements){
 				return $this;
 			}
 			$where = new static($this->getQuery(), $statements);
-			
+
 		} else {
-			
+
 			if($statements->getQuery() !== $this->query){
 				throw new DB_Query_Exception(
 					"Trying to pass expression from different query - not allowed",
 					DB_Query_Exception::CODE_NOT_PERMITTED
 				);
 			}
-			
+
 			$where = $statements;
 		}
-		
+
 		$this->_addANDIfNecessary();
 		$this->statements[] = $where;
 		return $this;
@@ -344,7 +308,7 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 	 * @return static|DB_Query_Compare
 	 */
 	function addOperator($operator){
-		$this->checkLogicalOperator($operator);
+		$this->query->checkLogicalOperator($operator);
 		if(!$this->statements || is_string(end($this->statements))){
 			throw new DB_Query_Exception(
 				"Cannot add operator '{$operator}' into query when there's no compare statement before",
@@ -359,35 +323,35 @@ abstract class DB_Query_Compare extends Object implements \Countable,\Iterator, 
 		if(!$this->statements || is_string(end($this->statements))){
 			return;
 		}
-		$this->statements[] = self::OP_AND;
+		$this->statements[] = DB_Query::OP_AND;
 	}
 
 	/**
 	 * @return static|DB_Query_Compare
 	 */
 	function addAND(){
-		return $this->addOperator(self::OP_AND);
+		return $this->addOperator(DB_Query::OP_AND);
 	}
 
 	/**
 	 * @return static|DB_Query_Compare
 	 */
 	function addOR(){
-		return $this->addOperator(self::OP_OR);
+		return $this->addOperator(DB_Query::OP_OR);
 	}
 
 	/**
 	 * @return static|DB_Query_Compare
 	 */
 	function addAND_NOT(){
-		return $this->addOperator(self::OP_AND_NOT);
+		return $this->addOperator(DB_Query::OP_AND_NOT);
 	}
 
 	/**
 	 * @return static|DB_Query_Compare
 	 */
 	function addOR_NOT(){
-		return $this->addOperator(self::OP_OR_NOT);
+		return $this->addOperator(DB_Query::OP_OR_NOT);
 	}
 
 	/**

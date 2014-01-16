@@ -1,11 +1,11 @@
 <?php
 namespace Et;
-class DB_Query_OrderBy extends Object implements \Iterator,\Countable {
+class DB_Query_OrderBy extends Object implements \Iterator,\Countable,\ArrayAccess {
 
 	/**
-	 * @var DB_Query_OrderBy_Column[]|DB_Query_OrderBy_Expression[]|DB_Query_OrderBy_ColumnNumber[]
+	 * @var DB_Query_OrderBy_Column[]
 	 */
-	protected $order_by_expressions = array();
+	protected $order_by_columns = array();
 
 	/**
 	 * @var DB_Query
@@ -14,12 +14,12 @@ class DB_Query_OrderBy extends Object implements \Iterator,\Countable {
 
 	/**
 	 * @param DB_Query $query
-	 * @param array $order_by_expressions [optional] array like: [column_name => ASC, ... ] or [1 => ASC, .... ]
+	 * @param array $statements [optional] array like: [column_name => ASC, ... ] or [1 => ASC, .... ]
 	 */
-	function __construct(DB_Query $query, array $order_by_expressions = array()){
+	function __construct(DB_Query $query, array $statements = array()){
 		$this->query = $query;
-		if($order_by_expressions){
-			$this->setOrderByExpressions($order_by_expressions);
+		if($statements){
+			$this->setOrderByColumns($statements);
 		}
 	}
 
@@ -34,69 +34,60 @@ class DB_Query_OrderBy extends Object implements \Iterator,\Countable {
 	/**
 	 * @return static|DB_Query_OrderBy
 	 */
-	function removeExpressions(){
-		$this->order_by_expressions = array();
+	function resetOrderBy(){
+		$this->order_by_columns = array();
 		return $this;
 	}
 
 	/**
-	 * @param array $order_by_expressions Array like [column_name => ASC, ... ] or [1 => ASC, .... ]
-	 * @param bool $merge [optional]
+	 * @param array $statements Array like
+	 * [column_name => ASC, ... ]
+	 * [1 => ASC, .... ]
+	 * [table_name.column_name => ASC .... ]
+	 * [_none_.result_column_name => ASC ]
 	 * @return static
 	 */
-	function setOrderByExpressions(array $order_by_expressions, $merge = true){
-		if(!$merge){
-			$this->order_by_expressions = array();
-		}
-
-		foreach($order_by_expressions as $k => $v){
+	function setOrderByColumns(array $statements){
+		$this->order_by_columns = array();
+		foreach($statements as $k => $v){
 			if(is_numeric($k)){
 				$this->addOrderByColumnNumber($k, $v);
 			} else {
 				$this->addOrderByColumn($k, $v);
 			}
 		}
-
 		return $this;
 	}
 
 	/**
 	 * @param string $column_name
 	 * @param null|string $order_how  [optional]
-	 * @param null|string $table_name [optional]
 	 * @return static
 	 */
-	function setPrimaryOrderByColumn($column_name, $order_how = null, $table_name = null){
-		$column = new DB_Query_OrderBy_Column($this->getQuery(), $column_name, $table_name, $order_how);
-		if(!$this->order_by_expressions){
-			$this->order_by_expressions[(string)$column] = $column;
-		} else{
-			$this->order_by_expressions = array((string)$column => $column) + $this->order_by_expressions;
-		}
-
+	function addOrderByColumn($column_name, $order_how = null){
+		$column = new DB_Query_OrderBy_Column($this->getQuery(), $column_name, $order_how);
+		$this->order_by_columns[(string)$column] = $column;
 		return $this;
 	}
 
 	/**
 	 * @param string $column_name
 	 * @param null|string $order_how  [optional]
-	 * @param null|string $table_name [optional]
 	 * @return static
 	 */
-	function addOrderByColumn($column_name, $order_how = null, $table_name = null){
-		$column = new DB_Query_OrderBy_Column($this->getQuery(), $column_name, $table_name, $order_how);
-		$this->order_by_expressions[(string)$column] = $column;
+	function addOrderByResultColumn($column_name, $order_how = null){
+		$column = new DB_Query_OrderBy_Column($this->getQuery(), DB_Query::SELECTED_COLUMN_ALIAS . ".{$column_name}", $order_how);
+		$this->order_by_columns[(string)$column] = $column;
 		return $this;
 	}
 
 	/**
 	 * @param array $columns
-	 * @param null|string $table_name [optional]
 	 * @return static
 	 */
-	function addOrderByColumns(array $columns, $table_name = null){
+	function addOrderByColumns(array $columns){
 		foreach($columns as $column => $how){
-			$this->addOrderByColumn($column, $how, $table_name);
+			$this->addOrderByColumn($column, $how);
 		}
 		return $this;
 	}
@@ -107,80 +98,110 @@ class DB_Query_OrderBy extends Object implements \Iterator,\Countable {
 	 * @return static
 	 */
 	function addOrderByColumnNumber($column_number, $order_how = null){
-		$column = new DB_Query_OrderBy_ColumnNumber($this->getQuery(), $column_number, $order_how);
-		$this->order_by_expressions[$column->getColumnNumber()] = $column;
+		$column = new DB_Query_OrderBy_Column($this->getQuery(), (int)$column_number, $order_how);
+		$this->order_by_columns[(int)$column_number] = $column;
 		return $this;
 	}
 
-	/**
-	 * @param string|DB_Expression $expression
-	 * @param null|string $order_how  [optional]
-	 * @param null|string $table_name [optional]
-	 * @return static
-	 */
-	function addOrderByExpression($expression, $order_how = null, $table_name = null){
-		$column = new DB_Query_OrderBy_Expression($this->getQuery(), $expression, $order_how, $table_name);
-		$this->order_by_expressions[(string)$expression] = $column;
-		return $this;
-	}
+
 
 	/**
 	 * @return bool
 	 */
 	function isEmpty(){
-		return !$this->order_by_expressions;
+		return !$this->order_by_columns;
 	}
 
 	/**
 	 * @return int
 	 */
-	function getExpressionsCount(){
-		return count($this->order_by_expressions);
+	function getColumnsCount(){
+		return count($this->order_by_columns);
 	}
 
 	/**
-	 * @return DB_Query_OrderBy_Column[]|DB_Query_OrderBy_ColumnNumber[]|DB_Query_OrderBy_Expression[]
+	 * @return DB_Query_OrderBy_Column[]
 	 */
-	function getOrderByExpressions(){
-		return $this->order_by_expressions;
+	function getOrderByColumns(){
+		return $this->order_by_columns;
 	}
 
 
 	/**
-	 * @return DB_Query_OrderBy_Column|DB_Query_OrderBy_Expression|DB_Query_OrderBy_ColumnNumber|bool
+	 * @return DB_Query_OrderBy_Column
 	 */
 	public function current() {
-		return current($this->order_by_expressions);
+		return current($this->order_by_columns);
 	}
 
 
 	public function next() {
-		next($this->order_by_expressions);
+		next($this->order_by_columns);
 	}
 
 	/**
 	 * @return string|null
 	 */
 	public function key() {
-		return key($this->order_by_expressions);
+		return key($this->order_by_columns);
 	}
 
 	/**
 	 * @return bool
 	 */
 	public function valid() {
-		return key($this->order_by_expressions) !== null;
+		return key($this->order_by_columns) !== null;
 	}
 
 
 	public function rewind() {
-		reset($this->order_by_expressions);
+		reset($this->order_by_columns);
 	}
 
 	/**
 	 * @return int
 	 */
 	public function count() {
-		return $this->getExpressionsCount();
+		return $this->getColumnsCount();
+	}
+
+
+	/**
+	 * @param string|int $column_name_or_number
+	 * @return bool
+	 */
+	public function offsetExists($column_name_or_number) {
+		return isset($this->order_by_columns[$column_name_or_number]);
+	}
+
+	/**
+	 * @param string $column_name_or_number
+	 * @return bool|DB_Query_OrderBy_Column
+	 */
+	public function offsetGet($column_name_or_number) {
+		return isset($this->order_by_columns[$column_name_or_number])
+				? $this->order_by_columns[$column_name_or_number]
+				: false;
+	}
+
+	/**
+	 * @param string $column_name_or_number
+	 * @param string $order_how
+	 */
+	public function offsetSet($column_name_or_number, $order_how) {
+		if(is_numeric($column_name_or_number)){
+			$this->addOrderByColumnNumber($column_name_or_number, $order_how);
+		} else {
+			$this->addOrderByColumn($column_name_or_number, $order_how);
+		}
+	}
+
+	/**
+	 * @param string $column_name_or_number
+	 */
+	public function offsetUnset($column_name_or_number) {
+		if(isset($this->order_by_columns[$column_name_or_number])){
+			unset($this->order_by_columns[$column_name_or_number]);
+		}
 	}
 }

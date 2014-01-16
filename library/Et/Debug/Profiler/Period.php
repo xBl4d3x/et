@@ -122,15 +122,8 @@ class Debug_Profiler_Period implements \JsonSerializable {
 		return $this->getEndMemory() - $this->getStartMemory();
 	}
 
-	/**
-	 * @param int $backtrace_offset
-	 */
-	function fetchBacktrace($backtrace_offset = 2){
+	function fetchBacktrace(){
 		$backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-		while($backtrace && $backtrace_offset-- > 0){
-			array_shift($backtrace);
-		}
-
 		$base_dir_len = strlen(ET_BASE_PATH);
 		$this->backtrace = array();
 		foreach($backtrace as $i => $row){
@@ -144,6 +137,11 @@ class Debug_Profiler_Period implements \JsonSerializable {
 			$line = "#" . ($i+1) . " {$row["file"]}:{$row["line"]}";
 			if(!empty($row["function"])){
 				if(!empty($row["class"])){
+
+					if(is_a($row["class"], __CLASS__, true) || is_subclass_of($row["class"], "Et\\Debug_Profiler_Abstract", true)){
+						continue;
+					}
+
 					$line .= " | {$row["class"]}{$row["type"]}{$row["function"]}( ... )";
 				} else {
 					$line .= " | {$row["function"]}( ... )";

@@ -80,6 +80,6 @@ class Http_AJAXResponse_Abstract extends Object implements \JsonSerializable {
 	 * @return array
 	 */
 	public function jsonSerialize() {
-		return $this->getVisiblePropertiesValues();
+		return $this->_getVisiblePropertiesValues();
 	}
 }

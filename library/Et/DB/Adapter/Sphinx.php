@@ -6,6 +6,11 @@ namespace Et;
 class DB_Adapter_Sphinx extends DB_Adapter_MySQL {
 
 	/**
+	 * @var array
+	 */
+	protected static $__quoted_tables_and_columns_cache = array();
+
+	/**
 	 * @var string
 	 */
 	protected static $_adapter_type = "Sphinx";
@@ -37,7 +42,7 @@ class DB_Adapter_Sphinx extends DB_Adapter_MySQL {
 	 * @throws DB_Adapter_Exception
 	 * @return string
 	 */
-	function quoteTableOrColumn($column_name){
+	function quoteIdentifier($column_name){
 		Debug_Assert::isStringMatching($column_name, '^\w+(?:\.\w+)?$');
 		return $column_name;
 	}

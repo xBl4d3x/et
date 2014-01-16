@@ -25,7 +25,7 @@ class DB_Profiler_Query extends Debug_Profiler_Period {
 	/**
 	 * @var int
 	 */
-	protected $result_rows_count = -1;
+	protected $rows_count = -1;
 
 	/**
 	 * @param string $query
@@ -82,15 +82,15 @@ class DB_Profiler_Query extends Debug_Profiler_Period {
 	/**
 	 * @param int $result_rows_count
 	 */
-	public function setResultRowsCount($result_rows_count) {
-		$this->result_rows_count = (int)$result_rows_count;
+	public function setRowsCount($result_rows_count) {
+		$this->rows_count = (int)$result_rows_count;
 	}
 
 	/**
 	 * @return int
 	 */
-	public function getResultRowsCount() {
-		return $this->result_rows_count;
+	public function getRowsCount() {
+		return $this->rows_count;
 	}
 
 
@@ -125,7 +125,7 @@ class DB_Profiler_Query extends Debug_Profiler_Period {
 		$output += array(
 			"fetch_duration" => $this->getDuration(),
 			"fetch_memory_difference" => $this->getMemoryDifference(),
-			"fetch_rows_count" => $this->getResultRowsCount()
+			"fetch_rows_count" => $this->getRowsCount()
 		);
 		return $output;
 	}

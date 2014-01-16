@@ -120,7 +120,7 @@ class MVC_Modules_Module_Metadata extends System_Components_Component {
 	}
 
 	function __sleep(){
-		return $this->getVisiblePropertiesNames();
+		return $this->_getVisiblePropertiesNames();
 	}
 
 	/**

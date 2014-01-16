@@ -146,7 +146,7 @@ abstract class Config extends Object {
 	 * @return array
 	 */
 	public static function getDefaultValues(){
-		return static::getVisibleClassPropertiesValues();
+		return static::_getVisibleClassPropertiesValues();
 	}
 
 	/**
