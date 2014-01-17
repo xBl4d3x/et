@@ -10,16 +10,16 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 */
 	protected static $__quoted_tables_and_columns_cache = array();
 
-	/**
-	 * @var string
-	 */
-	protected static $_adapter_type = "SQLite";
-
 
 	/**
 	 * @var DB_Adapter_SQLite_Config
 	 */
 	protected $config;
+
+	/**
+	 * @var DB_Table_Builder_SQLite
+	 */
+	protected $table_builder;
 
 	/**
 	 * @param DB_Adapter_SQLite_Config $config
@@ -59,7 +59,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @return array
 	 */
 	protected function _getTablesList() {
-		$query = "SELECT name FROM sqlite_master WHERE type='table' UNION ALL SELECT name FROM sqlite_temp_master WHERE type='table' ORDER BY name";
+		$query = "SELECT "."name FROM sqlite_master WHERE type='table' UNION ALL SELECT name FROM sqlite_temp_master WHERE type='table' ORDER BY name";
 		return $this->fetchColumn($query);
 	}
 
@@ -79,7 +79,7 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @throws DB_Adapter_Exception
 	 */
 	function renameTable($source_table_name, $target_table_name) {
-		$this->exec("ALTER TABLE {$this->quoteIdentifier($source_table_name)} RENAME TO {$this->quoteIdentifier($target_table_name)}");
+		$this->exec("ALTER "."TABLE {$this->quoteIdentifier($source_table_name)} RENAME TO {$this->quoteIdentifier($target_table_name)}");
 	}
 
 	/**
@@ -88,8 +88,8 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 * @throws DB_Adapter_Exception
 	 */
 	function copyTable($source_table_name, $target_table_name) {
-		$this->exec("CREATE TABLE {$this->quoteIdentifier($target_table_name)} LIKE {$this->quoteIdentifier($source_table_name)}");
-		$this->exec("INSERT INTO {$this->quoteIdentifier($target_table_name)} SELECT * FROM {$this->quoteIdentifier($source_table_name)}");
+		$this->exec("CREATE "."TABLE {$this->quoteIdentifier($target_table_name)} LIKE {$this->quoteIdentifier($source_table_name)}");
+		$this->exec("INSERT "."INTO {$this->quoteIdentifier($target_table_name)} SELECT * FROM {$this->quoteIdentifier($source_table_name)}");
 	}
 
 	/**
@@ -135,171 +135,13 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 
 		try {
 			$affected = $this->exec($query, $where_query_data);
-			$this->commitTransaction();
+			$this->commit();
 			return $affected;
 		} catch(\Exception $e){
-			$this->rollbackTransaction();
+			$this->rollback();
 			throw $e;
 		}
 
-	}
-
-
-	/**
-	 * @param DB_Table_Column_Definition $definition
-	 * @return string
-	 */
-	protected function getColumnCreateTableQuery($definition){
-		$default_value_supported = true;
-		$query = "\n\t" . $this->quoteIdentifier($definition->getColumnName(false)) . " ";
-		switch($definition->getColumnType()){
-
-
-			case DB_Table_Column_Definition::TYPE_FLOAT:
-				$query .= "REAL";
-				break;
-
-			case DB_Table_Column_Definition::TYPE_INT:
-			case DB_Table_Column_Definition::TYPE_BOOL:
-			case DB_Table_Column_Definition::TYPE_DATE:
-			case DB_Table_Column_Definition::TYPE_DATETIME:
-				$query .= "INTEGER";
-				break;
-
-			case DB_Table_Column_Definition::TYPE_LOCALE:
-				$query .= "CHAR(5) CHARACTER SET utf8 COLLATE utf8_bin";
-				break;
-
-
-			case DB_Table_Column_Definition::TYPE_BINARY_DATA:
-			case DB_Table_Column_Definition::TYPE_SERIALIZED:
-			case DB_Table_Column_Definition::TYPE_STRING:
-				$use_blob = $definition->issBinaryDataColumn();
-				if($definition->getColumnType() == DB_Table_Column_Definition::TYPE_SERIALIZED){
-					if($definition->getColumnSize() > 0){
-						$size = $definition->getColumnSize();
-					} else {
-						$size = 2000000000;
-					}
-					$binary = true;
-				} else {
-					$size = $definition->getColumnSize();
-					$binary = $definition->isIndex();
-				}
-
-				$default_value_supported = false;
-				if($size < 256){
-					$default_value_supported = !$use_blob;
-					$query .= $use_blob ? "VARBINARY({$size})" : "VARCHAR({$size})";
-				} elseif($size < 65536){
-					$query .= $use_blob ? "BLOB" : "TEXT";
-				} elseif($size < pow(2, 24)){
-					$query .= $use_blob ? "MEDIUMBLOB" : "MEDIUMTEXT";
-				} else {
-					$query .= $use_blob ? "LONGBLOB" : "LONGTEXT";
-				}
-
-				if($binary && !$use_blob){
-					$query .= " CHARACTER SET utf8 COLLATE utf8_bin";
-				}
-				break;
-
-
-
-				$size = $definition->getColumnSize();
-				if($size <= 4){
-					$query .= "TINYINT({$size})";
-				} elseif($size <= 6){
-					$query .= "SMALLINT({$size})";
-				} elseif($size <= 8){
-					$query .= "MEDIUMINT({$size})";
-				} elseif($size <= 11){
-					$query .= "INT({$size})";
-				} else {
-					$query .= "BIGINT({$size})";
-				}
-
-				if($definition->isUnsigned()){
-					$query .= " UNSIGNED";
-				}
-
-				break;
-		}
-
-		if(!$definition->getAllowNull()){
-			$query .= " NOT NULL";
-		}
-
-		if($default_value_supported){
-			$default_value = $definition->getDefaultValueForDB();
-			if($default_value === null && $definition->getAllowNull()){
-				$query .= " DEFAULT NULL";
-			} else {
-				$query .= " DEFAULT ". $this->quoteString($default_value);
-			}
-		}
-
-		if($definition->getColumnComment()){
-			$query .= " COMMENT " . $this->quoteString($definition->getColumnComment());
-		}
-
-		return $query . ",";
-	}
-
-	/**
-	 * @param DB_Table_Definition $table_definition
-	 * @return string
-	 */
-	function getCreateTableQuery(DB_Table_Definition $table_definition) {
-		//todo: implement...
-		trigger_error("NOT IMPLEMENTED YET", E_USER_ERROR);
-		$table_name = $this->quoteIdentifier($table_definition->getTableName());
-		// HEADER
-		$query = "CREATE TABLE IF NOT EXISTS {$table_name}(";
-
-		// COLUMNS
-		$columns = $table_definition->getColumnsDefinitions();
-		foreach($columns as $column_definition){
-			$query .= $this->getColumnCreateTableQuery($column_definition);
-		}
-		$query = rtrim($query, ",");
-
-		// PRIMARY KEY
-		$primary_key_columns = $table_definition->getPrimaryKeyColumns();
-		if($primary_key_columns){
-			foreach($primary_key_columns as &$col){
-				$col = $this->quoteIdentifier($col);
-			}
-			$query .= ",\n\tPRIMARY KEY (" . implode(", ", $primary_key_columns) . ")";
-		}
-
-		// UNIQUE KEY
-		$unique_key_columns = $table_definition->getUniqueKeyColumns();
-		if($unique_key_columns){
-			foreach($unique_key_columns as &$col){
-				$col = $this->quoteIdentifier($col);
-			}
-			$query .= ",\n\tUNIQUE KEY (" . implode(", ", $unique_key_columns) . ")";
-		}
-
-		// INDEXES
-		$indexes_columns = $table_definition->getIndexesColumns();
-
-		foreach($indexes_columns as $index_name => $index_columns){
-			foreach($index_columns as &$col){
-				$col = $this->quoteIdentifier($col);
-			}
-			$index_name = $this->quoteIdentifier($index_name);
-			$query .= ",\n\tKEY {$index_name} (" . implode(", ", $index_columns) . ")";
-		}
-
-		// FOOTER
-		$query .= "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8";
-		if($table_definition->getTableComment()){
-			$query .= " COMMENT {$this->quote($table_definition->getTableComment())}";
-		}
-		$query .= ";";
-		return $query;
 	}
 
 	/**
@@ -307,5 +149,15 @@ class DB_Adapter_SQLite extends DB_Adapter_Abstract {
 	 */
 	public function getDatabaseType() {
 		return self::DRIVER_SQLITE;
+	}
+
+	/**
+	 * @return DB_Table_Builder_SQLite
+	 */
+	function getTableBuilder() {
+		if(!$this->table_builder){
+			$this->table_builder = new DB_Table_Builder_SQLite($this);
+		}
+		return $this->table_builder;
 	}
 }

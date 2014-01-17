@@ -15,6 +15,7 @@ class DB_Exception extends Exception {
 	const CODE_INVALID_TABLE_NAME = 80;
 	const CODE_INVALID_COLUMN_DEFINITION = 90;
 	const CODE_NOT_SUPPORTED = 100;
+	const CODE_TABLE_CREATION_FAILED = 110;
 
 	/**
 	 * Exception error codes human readable labels
@@ -31,6 +32,7 @@ class DB_Exception extends Exception {
 		self::CODE_KEY_ALREADY_EXISTS => "Key already exists",
 		self::CODE_INVALID_TABLE_NAME => "Invalid table name",
 		self::CODE_INVALID_COLUMN_DEFINITION => "Invalid column definition",
-		self::CODE_NOT_SUPPORTED => "Not supported"
+		self::CODE_NOT_SUPPORTED => "Not supported",
+		self::CODE_TABLE_CREATION_FAILED => "Table creation failed"
 	);
 }

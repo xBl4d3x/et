@@ -352,11 +352,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	function quoteIdentifiers(array $columns_names){
 		$output = array();
 		foreach($columns_names as $k => $v){
-			if(is_numeric($k)){
-				$output[$k] = $this->quoteIdentifier($v);
-			} else {
-				$output[$this->quoteIdentifier($k)] = $this->quoteIdentifier($v);
-			}
+			$output[$k] = $this->quoteIdentifier($v);
 		}
 		return $output;
 	}
@@ -937,7 +933,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 		}
 
 		if($where_query instanceof DB_Query){
-			$where_query = $this->buildWhereQueryPart($where_query);
+			$where_query = $this->getQueryBuilder()->buildCompareExpression($where_query->getWhere());
 		}
 
 		$where_query = trim($where_query);
@@ -980,7 +976,7 @@ abstract class DB_Adapter_Abstract extends \PDO {
 		}
 
 		if($where_query instanceof DB_Query){
-			$where_query = $this->buildWhereQueryPart($where_query);
+			$where_query = $this->getQueryBuilder()->buildCompareExpression($where_query->getWhere());
 		}
 
 		$where_query = trim($where_query);
@@ -1087,7 +1083,6 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	abstract function copyTableColumns($source_table, $target_table, array $columns, $where_query = null, array $where_query_data = array());
 
 
-
 	/**
 	 * @param DB_Table_Definition $table_definition
 	 * @param bool $drop_if_exists [optional]
@@ -1096,39 +1091,70 @@ abstract class DB_Adapter_Abstract extends \PDO {
 	 */
 	function createTable(DB_Table_Definition $table_definition, $drop_if_exists = false, $rename_to_if_exists = null){
 		$table_name = $table_definition->getTableName();
+
 		if($this->getTableExists($table_name, true)){
 			if($rename_to_if_exists){
+
 				DB::checkTableName($rename_to_if_exists);
 				if($this->getTableExists($rename_to_if_exists, true)){
+
 					throw new DB_Exception(
 						"Table '{$rename_to_if_exists}' already exists, cannot rename table '{$table_name}' to it",
 						DB_Exception::CODE_INVALID_TABLE_NAME
 					);
+
 				}
+
+				$this->beginTransaction();
 				$this->renameTable($table_name, $rename_to_if_exists);
+
 			} elseif($drop_if_exists){
+
+				$this->beginTransaction();
 				$this->dropTable($table_name);
+
 			} else {
 				return;
 			}
+		} else {
+			$this->beginTransaction();
 		}
 
-		$create_table_queries = $this->getCreateTableQuery($table_definition);
-		if(!is_array($create_table_queries)){
-			$create_table_queries = array($create_table_queries);
+		try {
+
+			$create_table_queries = $this->getCreateTableQueries($table_definition);
+			foreach($create_table_queries as $query){
+				$this->exec($query);
+			}
+			$this->commit();
+
+		} catch(\Exception $e){
+
+			$this->rollBack();
+
+			throw new DB_Exception(
+				"Failed to create table - {$e->getMessage()}",
+				DB_Exception::CODE_TABLE_CREATION_FAILED,
+				null,
+				$e
+			);
 		}
 
-		foreach($create_table_queries as $query){
-			$this->exec($query);
-		}
 
 	}
+
+	/**
+	 * @return DB_Table_Builder_Abstract
+	 */
+	abstract function getTableBuilder();
 
 	/**
 	 * @param DB_Table_Definition $table_definition
 	 * @return string|array
 	 */
-	abstract function getCreateTableQuery(DB_Table_Definition $table_definition);
+	function getCreateTableQueries(DB_Table_Definition $table_definition){
+		return $this->getTableBuilder()->getCreateTableQueries($table_definition);
+	}
 
 	/**
 	 * @param DB_Query $query

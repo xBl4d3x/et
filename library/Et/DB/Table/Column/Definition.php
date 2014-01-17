@@ -9,11 +9,15 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 	const TYPE_LOCALE = "Locale";
 	const TYPE_DATETIME = "DateTime";
 	const TYPE_DATE = "Date";
-	const TYPE_SERIALIZED = "Serialized";
 	const TYPE_BINARY_DATA = "BinaryData";
 
-	const SERIALIZATION_METHOD_SERIALIZE = "serialize";
-	const SERIALIZATION_METHOD_JSON = "json";
+	const DEF_TYPE = "type";
+	const DEF_BACKEND_OPTIONS = "backend_options";
+	const DEF_SIZE = "size";
+	const DEF_ALLOW_NULL = "allow_null";
+	const DEF_UNSIGNED = "unsigned";
+	const DEF_COMMENT = "comment";
+	const DEF_DEFAULT_VALUE = "default_value";
 
 	/**
 	 * @var array
@@ -26,17 +30,8 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 		self::TYPE_LOCALE,
 		self::TYPE_DATETIME,
 		self::TYPE_DATE,
-		self::TYPE_SERIALIZED,
 		self::TYPE_BINARY_DATA,
 	);
-
-	const DEF_TYPE = "type";
-	const DEF_SIZE = "size";
-	const DEF_ALLOW_NULL = "allow_null";
-	const DEF_UNSIGNED = "unsigned";
-	const DEF_SERIALIZATION_METHOD = "serialization_method";
-	const DEF_COMMENT = "comment";
-	const DEF_DEFAULT_VALUE = "default_value";
 
 	/**
 	 * @var string
@@ -66,22 +61,22 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 	/**
 	 * @var string
 	 */
-	protected $serialization_method = self::SERIALIZATION_METHOD_SERIALIZE;
+	protected $comment = "";
 
 	/**
-	 * @var string
+	 * @var array
 	 */
-	protected $comment = "";
+	protected $backend_options = array();
+
 
 	/**
 	 * @param string $column_name
 	 * @param string $column_type
 	 * @param null|int $column_size [optional]
-	 * @param null|string $table_name [optional]
 	 * @param array $parameters [optional]
 	 */
-	function __construct($column_name, $column_type, $column_size = null, $table_name = null, array $parameters = array()){
-		parent::__construct($column_name, $table_name);
+	function __construct($column_name, $column_type, $column_size = null, array $parameters = array()){
+		parent::__construct($column_name);
 		$this->setType($column_type, $column_size);
 		$this->setParameters($parameters);
 	}
@@ -104,12 +99,6 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 	 */
 	protected function setParameter($parameter, $value){
 		switch($parameter){
-			case self::DEF_SERIALIZATION_METHOD:
-				$this->checkSerializationMethod($value);
-				$this->serialization_method = $value;
-				return;
-
-
 			case self::DEF_SIZE:
 				$this->size = max(1, (int)$value);
 				return;
@@ -119,9 +108,15 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 				$this->{$parameter} = (bool)$value;
 				return;
 
+			case self::DEF_BACKEND_OPTIONS:
+				$this->setBackendOptions($value);
+				return;
+
 			case self::DEF_COMMENT:
 				$this->comment = trim($value);
 				return;
+
+
 
 			case self::DEF_DEFAULT_VALUE:
 				$this->setDefaultValue($value);
@@ -129,33 +124,49 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 		}
 	}
 
-	/**
-	 * @param string $method
-	 * @throws DB_Exception
-	 */
-	protected function checkSerializationMethod($method){
-		$allowed = array(
-			self::SERIALIZATION_METHOD_JSON,
-			self::SERIALIZATION_METHOD_SERIALIZE,
-		);
-		if(!in_array($method, $allowed)){
-			throw new DB_Exception(
-				"Invalid serialization method '{$method}' - must be one of '" . implode("', '", $allowed) . "'",
-				DB_Exception::CODE_INVALID_COLUMN_DEFINITION
-			);
-		}
-
-	}
 
 	/**
 	 * @return boolean
 	 */
 	public function isBinary() {
-		return $this->type == self::TYPE_BINARY_DATA ||
-			($this->type == self::TYPE_SERIALIZED && $this->serialization_method == self::SERIALIZATION_METHOD_SERIALIZE);
+		return $this->type == self::TYPE_BINARY_DATA;
 	}
 
 
+	/**
+	 * @param array $backend_options
+	 */
+	public function setBackendOptions(array $backend_options) {
+		foreach($backend_options as $k => $v){
+			$this->setBackendOption($k, $v);
+		}
+	}
+
+	/**
+	 * @param string $option
+	 * @param mixed $value
+	 */
+	function setBackendOption($option, $value){
+		$this->backend_options[$option] = $value;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getBackendOptions() {
+		return $this->backend_options;
+	}
+
+	/**
+	 * @param string $option
+	 * @param null|mixed $default_value [optional]
+	 * @return mixed|null
+	 */
+	function getBackendOption($option, $default_value = null){
+		return isset($this->backend_options[$option])
+			? $this->backend_options[$option]
+			: $default_value;
+	}
 
 
 	/**
@@ -167,10 +178,20 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 		$this->type = $column_type;
 		$column_size = max(0, (int)$column_size);
 		if(!$column_size){
-			if($column_type == self::TYPE_INT){
-				$column_size = 11;
-			} elseif($column_type == self::TYPE_STRING){
-				$column_size = 255;
+			switch($column_type){
+				case self::TYPE_STRING:
+					$column_size = 255;
+					break;
+
+				case self::TYPE_INT:
+					$column_size = 11;
+					break;
+
+				case self::TYPE_LOCALE:
+					$column_size = 5;
+					break;
+
+				default:
 			}
 		}
 		$this->size = $column_size;
@@ -194,7 +215,46 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 	 * @param mixed|null $default_value
 	 */
 	function setDefaultValue($default_value = null){
+		if($default_value === null){
+			$this->default_value = null;
+			return;
+		}
+
+		switch($this->type){
+
+			case self::TYPE_BOOL:
+				$default_value = (bool)$default_value;
+				break;
+
+			case self::TYPE_INT:
+				$default_value = (int)$default_value;
+				break;
+
+			case self::TYPE_FLOAT:
+				$default_value = (float)$default_value;
+				break;
+
+			case self::TYPE_LOCALE:
+				$default_value = Locales::getLocale($default_value);
+				break;
+
+			case self::TYPE_DATETIME:
+				$default_value = Locales::getDateTime($default_value);
+				break;
+
+			case self::TYPE_DATE:
+				$default_value = Locales::getDate($default_value);
+				break;
+
+			default:
+				$default_value = (string)$default_value;
+
+
+		}
+
 		$this->default_value = $default_value;
+
+
 	}
 
 	/**
@@ -254,34 +314,7 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 		if($value === null && $this->getAllowNull()){
 			return $value;
 		}
-
-		switch($this->getType()){
-			case self::TYPE_BOOL:
-				return $value ? 1 : 0;
-
-			case self::TYPE_INT:
-				return (int)$value;
-
-			case self::TYPE_FLOAT:
-				return (float)$value;
-
-			case self::TYPE_SERIALIZED:
-				return $this->serializeValue($value);
-
-			case self::TYPE_DATE:
-				return Locales_Date::getInstance($value)->format(Locales_Date::DATE);
-
-			case self::TYPE_DATETIME:
-				return Locales_DateTime::getInstance($value)->format(Locales_DateTime::MYSQL);
-
-			case self::TYPE_BINARY_DATA:
-				return (string)$value;
-
-			case self::TYPE_STRING:
-			case self::TYPE_LOCALE:
-			default:
-				return trim($value);
-		}
+		return $value;
 	}
 
 	/**
@@ -303,20 +336,17 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 			case self::TYPE_FLOAT:
 				return (float)$value;
 
-			case self::TYPE_SERIALIZED:
-				return $this->unserializeValue($value);
-
 			case self::TYPE_DATE:
 				if(trim($value) === ""){
 					return null;
 				}
-				return Locales_Date::getInstance($value);
+				return Locales::getDate($value);
 
 			case self::TYPE_DATETIME:
 				if(trim($value) === ""){
 					return null;
 				}
-				return Locales_DateTime::getInstance($value);
+				return Locales::getDateTime($value);
 
 			case self::TYPE_LOCALE:
 				if(trim($value) === ""){
@@ -332,43 +362,4 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 		}
 
 	}
-
-	/**
-	 * @return float|int|mixed|null|string
-	 */
-	function getDefaultValueForDB(){
-		$default_value = $this->getDefaultValue();
-		return $this->getValueForDB($default_value);
-	}
-
-
-	/**
-	 * @param string $value
-	 * @return string
-	 * @throws DB_Exception
-	 */
-	public function serializeValue($value){
-
-		return $this->serialization_method == self::SERIALIZATION_METHOD_JSON
-				? json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-				: serialize($value);
-
-	}
-
-	/**
-	 * @param string $value
-	 * @return mixed|null
-	 * @throws DB_Exception
-	 */
-	public function unserializeValue($value){
-
-		if($value === null || $value === "" || !is_scalar($value)){
-			return null;
-		}
-
-		return $this->serialization_method == self::SERIALIZATION_METHOD_JSON
-				? json_decode($value, true)
-				: unserialize($value);
-	}
-
 }
