@@ -25,7 +25,7 @@ class DB_Profiler extends Debug_Profiler_Abstract {
 
 		$locale = Locales::getLocale("en_US");
 		$output = "<strong>Queries ({$this->getPeriodsCount()})</strong><br/>\n";
-		$output .= "<table cellspacing='0' cellpadding='2' border='1' style='border-collapse: collapse;'>\n";
+		$output .= "<table border='1' style='border-collapse: collapse;'>\n";
 		$output .= "<thead><tr><th>Duration</th><th>Memory difference</th><th>Query</th></tr></thead>\n";
 		$output .= "<tbody>\n";
 		foreach($this->periods as $period){

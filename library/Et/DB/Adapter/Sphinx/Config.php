@@ -1,6 +1,6 @@
 <?php
 namespace Et;
-class DB_Adapter_Sphinx_Config extends DB_Adapter_MySQL {
+class DB_Adapter_Sphinx_Config extends DB_Adapter_MySQL_Config {
 
 	/**
 	 * @var string

@@ -235,14 +235,23 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 				break;
 
 			case self::TYPE_LOCALE:
+				if($default_value === ""){
+					break;
+				}
 				$default_value = Locales::getLocale($default_value);
 				break;
 
 			case self::TYPE_DATETIME:
+				if($default_value === ""){
+					break;
+				}
 				$default_value = Locales::getDateTime($default_value);
 				break;
 
 			case self::TYPE_DATE:
+				if($default_value === ""){
+					break;
+				}
 				$default_value = Locales::getDate($default_value);
 				break;
 
@@ -290,13 +299,6 @@ class DB_Table_Column_Definition extends DB_Table_Column {
 	 */
 	public function getComment() {
 		return $this->comment;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getSerializationMethod() {
-		return $this->serialization_method;
 	}
 
 	/**

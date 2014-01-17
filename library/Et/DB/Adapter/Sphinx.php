@@ -77,9 +77,11 @@ class DB_Adapter_Sphinx extends DB_Adapter_MySQL {
 			$query->getSelect()->addExpression($this->getWeightExpression(), null, "weight");
 		}
 
+		/*
 		if($query->getOrderBy()->isEmpty()){
 			$query->getOrderBy()->addOrderByExpression($this->getWeightExpression(), DB_Query::ORDER_DESC);
 		}
+		*/
 
 		return $query;
 	}

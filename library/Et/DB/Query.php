@@ -845,7 +845,7 @@ class DB_Query extends Object implements \ArrayAccess {
 			);
 		}
 
-		/** @var $relation DB_Query_Relations_SimpleRelation */
+		/** @var $relation DB_Query_Relations_Relation */
 		foreach($this->relations as $relation){
 			if(isset($unresolved_tables[$relation->getRelatedTableName()])){
 				unset($unresolved_tables[$relation->getRelatedTableName()]);
